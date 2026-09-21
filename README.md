@@ -45,6 +45,12 @@ The snapshot is scheduled through a user-level LaunchAgent installed on 2026-09-
 `logs/snapshot_launchd.log`). To remove it: `launchctl bootout gui/$(id -u)/com.katze.capstone.snapshot`.
 `scripts/install_snapshot_cron.sh` is the cron alternative.
 
+## Chapter pipelines
+
+| Chapter | Run | Outputs |
+|---|---|---|
+| 1 Current status (baseline grid, prices, carbon, existing data center load, institutions) | `make ch1` (= `scripts/run_chapter1.py`, `scripts/make_ch1_tables.py`, `scripts/build_notebook_ch1.py --execute`) | `data/processed/ch1_*`, `figures/fig1_*`, `report/tables/ch1_*.tex`, `notebooks/01_baseline_grid.ipynb`, `report/sections/02_current_status.tex` |
+
 ## Provenance rules
 
 1. Every raw file is downloaded by `src/fetch.py` from the URL recorded in `src/sources.py`,

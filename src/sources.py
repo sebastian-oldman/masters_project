@@ -641,6 +641,50 @@ STATIC += [
            "http://web.archive.org/web/20260709222236id_/https://www.siliconvalleypower.com/businesses/data-centers-in-santa-clara", filename="svp_data_centers_page_wayback.html", tags=["html", "mirror"]),
 ]
 
+STATIC += [
+    Source("cpuc_oir_rate_design_2026_04", "cpuc", "CPUC", "Order Instituting Rulemaking on electric rate design incl. data centers and large transmission-connected loads, issued Apr 10 2026",
+           "https://docs.cpuc.ca.gov/PublishedDocs/Published/G000/M604/K677/604677976.PDF", filename="CPUC_OIR_rate_design_large_loads_2026-04-10_604677976.pdf"),
+    Source("cpuc_news_streamlined_connections", "cpuc", "CPUC", "CPUC news: streamlines electric grid connections for high-energy users like data centers and EV chargers (HTML)",
+           "https://www.cpuc.ca.gov/news-and-updates/all-news/cpuc-streamlines-electric-grid-connections-for-high-energy-users-like-data-centers-and-ev-chargers", filename="cpuc_news_streamlined_connections.html", tags=["html"], optional=True),
+    Source("pge_press_2025_07_31_pipeline_10gw", "context", "PG&E Corporation", "PG&E press release, Jul 31 2025: data center demand pipeline swells to 10 gigawatts (HTML)",
+           "https://investor.pgecorp.com/news-events/press-releases/press-release-details/2025/PGE-Data-Center-Demand-Pipeline-Swells-to-10-Gigawatts-with-Potential-to-Unlock-Billions-in-Benefits-for-California/default.aspx", filename="pge_press_2025-07-31_pipeline_10gw.html", tags=["html"], optional=True),
+    Source("pge_press_accelerating_connection", "context", "PG&E Corporation", "PG&E press release: accelerating connection of new data centers throughout Northern and Central California (HTML)",
+           "https://investor.pgecorp.com/news-events/press-releases/press-release-details/2025/PGE-Accelerating-Connection-of-New-Data-Centers-throughout-Northern-and-Central-California/default.aspx", filename="pge_press_accelerating_connection.html", tags=["html"], optional=True),
+    Source("pge_8k_q2_2026", "context", "PG&E Corporation (SEC)", "PG&E Form 8-K, Q2 2026 earnings press release (data center pipeline 12.7 GW)",
+           "https://www.sec.gov/Archives/edgar/data/0001004980/000100498026000047/pge-q22026pressrelease.htm", filename="pge_8k_q2_2026_press_release.htm", tags=["html"], optional=True),
+    Source("utilitydive_pge_127gw_2026", "context", "Utility Dive", "PG&E says it has 12.7 GW in data center pipeline as it courts smaller loads (HTML)",
+           "https://www.utilitydive.com/news/pge-claims-127-gw-in-data-center-pipeline-as-utility-courts-smaller-loads/826099/", filename="utilitydive_pge_12.7gw_2026.html", tags=["html"], optional=True),
+    Source("ca_sb57_2025_status", "context", "California Legislature", "SB 57 (Padilla, 2025) bill status page: data center cost-shift assessment, signed Oct 11 2025 (HTML)",
+           "https://leginfo.legislature.ca.gov/faces/billStatusClient.xhtml?bill_id=202520260SB57", filename="leginfo_SB57_status.html", tags=["html"], optional=True),
+    Source("ca_sb886_2026_status", "context", "California Legislature", "SB 886 (Padilla, 2026) bill status page: data center tariff for 25 MW+ transmission-level customers (HTML)",
+           "https://leginfo.legislature.ca.gov/faces/billStatusClient.xhtml?bill_id=202520260SB886", filename="leginfo_SB886_status.html", tags=["html"], optional=True),
+    Source("ca_ab222_2025_status", "context", "California Legislature", "AB 222 (Bauer-Kahan, 2025) bill status page: data center PUE and cost shifts (HTML)",
+           "https://leginfo.legislature.ca.gov/faces/billStatusClient.xhtml?bill_id=202520260AB222", filename="leginfo_AB222_status.html", tags=["html"], optional=True),
+    Source("padilla_sb57_signed_release", "context", "Office of Sen. Steve Padilla", "Press release: legislation to protect ratepayers from data center energy costs signed into law (HTML)",
+           "https://sd18.senate.ca.gov/news/legislation-protect-california-ratepayers-paying-data-centers-energy-costs-signed-law", filename="padilla_sb57_signed.html", tags=["html"], optional=True),
+    Source("pillsbury_ca_data_center_deal_2026", "context", "Pillsbury (law firm summary)", "California data center deal puts new large loads on a cost-causation track (Aug 2026, HTML)",
+           "https://www.pillsburylaw.com/en/news-and-insights/california-data-center-deal-large-loads-cost-causation-track.html", filename="pillsbury_ca_data_center_deal_2026.html", tags=["html"], optional=True),
+    Source("hansonbridgett_cpuc_data_centers_2026", "context", "Hanson Bridgett (law firm summary)", "CPUC will address electric rate impacts of data centers and other large energy users (Apr 2026, HTML)",
+           "https://www.hansonbridgett.com/publications/260427_2087_cpuc-data-centers", filename="hansonbridgett_cpuc_data_centers_2026.html", tags=["html"], optional=True),
+    Source("mayerbrown_ca_data_center_bills_2025", "context", "Mayer Brown (law firm summary)", "Efforts to regulate California data centers falter for now (Dec 2025, HTML)",
+           "https://www.mayerbrown.com/en/insights/publications/2025/12/efforts-to-regulate-california-data-centers-falter-for-now", filename="mayerbrown_ca_data_center_bills_2025.html", tags=["html"], optional=True),
+]
+
+STATIC += [
+    Source("svp_assembly_hearing_2026_01_28", "svp", "Silicon Valley Power / CA Assembly", "SVP presentation to the Assembly joint oversight hearing on Energy Impacts of AI, Jan 28 2026 (data centers 55% of power use, 51% of sales)",
+           "https://autl.assembly.ca.gov/media/1404", filename="SVP_Assembly_AI_energy_hearing_2026-01-28.pdf"),
+    Source("ca_sb886_2026_text", "context", "California Legislature", "SB 886 (Padilla, 2026) chaptered bill text: California Technology Innovation and Ratepayer Protection Act (HTML)",
+           "https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB886", filename="leginfo_SB886_text.html", tags=["html"], optional=True),
+    Source("ca_sb57_2025_text", "context", "California Legislature", "SB 57 (Padilla, 2025) chaptered bill text (HTML)",
+           "https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB57", filename="leginfo_SB57_text.html", tags=["html"], optional=True),
+    Source("kqed_newsom_signs_data_center_bills_2026", "context", "KQED", "Newsom signs new restrictions on data center development (Sep 2026, HTML)",
+           "https://www.kqed.org/news/12100746/newsom-signs-new-restrictions-on-data-center-development", filename="kqed_newsom_signs_data_center_bills_2026.html", tags=["html"], optional=True),
+    Source("sjspotlight_santa_clara_capacity_2025", "context", "San Jose Spotlight", "Santa Clara data centers hit max energy capacity (2025, HTML; data centers ~60% of Santa Clara power)",
+           "https://sanjosespotlight.com/santa-clara-data-centers-hit-max-energy-capacity/", filename="sjspotlight_santa_clara_capacity_2025.html", tags=["html"], optional=True),
+    Source("cec_tn261964_pge_pipeline_feb2025", "cec_iepr_docket", "CEC", "PG&E Data Center Pipeline presentation, Feb 26 2025 IEPR workshop (duplicate id guard)",
+           "https://efiling.energy.ca.gov/GetDocument.aspx?tn=261964", optional=True),
+]
+
 
 def all_sources() -> list[Source]:
     srcs = (STATIC + eia930() + eia861() + eia923() + eia860() + eia860m()

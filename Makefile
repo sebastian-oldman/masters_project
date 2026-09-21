@@ -1,7 +1,7 @@
 PY=.venv/bin/python
 TODAY=$(shell date +%F)
 
-.PHONY: env fetch fetch-large caiso snapshot catalog lab report clean-parts
+.PHONY: env fetch fetch-large caiso snapshot catalog lab report clean-parts ch1
 
 env:                       ## create the virtual environment (Python 3.12) and install pins
 	/opt/homebrew/bin/python3.12 -m venv .venv
@@ -27,6 +27,9 @@ catalog:                   ## regenerate docs/DATA_CATALOG.md from the manifest
 
 lab:                       ## start JupyterLab
 	.venv/bin/jupyter lab
+
+ch1:                       ## chapter 1 tables, figures, notebook and LaTeX tables
+	$(PY) scripts/run_chapter1.py && $(PY) scripts/make_ch1_tables.py && $(PY) scripts/build_notebook_ch1.py --execute
 
 report:                    ## build report/main.pdf with tectonic
 	cd report && tectonic main.tex

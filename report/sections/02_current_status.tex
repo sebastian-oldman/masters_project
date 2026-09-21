@@ -1,2 +1,144 @@
-\chapter{Current Status}
-% TODO
+\chapter{Current Status of Data Centers and the Grid in California}
+\label{ch:current}
+
+This chapter establishes the baseline that the gap analysis in later chapters is measured against. It answers two questions: what the CAISO grid looks like hour by hour today, and how much electricity California's existing data centers already use. Every number is computed from the raw files listed in \texttt{data/raw/manifest.csv}; the notebook \texttt{notebooks/01\_baseline\_grid.ipynb} reproduces each table and figure.
+
+\section{Grid baseline: CAISO demand, net load and imports, 2019--2025}
+\label{sec:baseline}
+
+Hourly demand, generation by fuel and net interchange for the CAISO balancing authority come from the EIA-930 Hourly Electric Grid Monitor, using EIA's ``Adjusted'' series \citep{eia930}. Net load is demand minus utility-scale solar and wind. Two definitional points matter. First, EIA-930 demand for CISO includes battery charging and pumping load, whereas CAISO's own reported demand excludes charging; in 2025 the hourly gap between the two series tracks battery charging almost one for one (slope 0.91, correlation 0.87). Both definitions are kept in the processed table. Second, EIA's series contains reporting artifacts, chiefly in early 2019, where demand falls implausibly below CAISO's demand plus charging; those hours are nulled rather than corrected, and annual energy is computed from the mean of the remaining hours.
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{CAISO annual baseline from EIA-930 (Adjusted series), 2019--2025. Storage charging from CAISO's five-minute fuel mix. Import share is net imports divided by demand.}
+\label{tab:annual}
+\resizebox{\textwidth}{!}{\input{tables/ch1_annual_summary}}
+\end{table}
+
+Table~\ref{tab:annual} shows a grid whose annual demand has been flat since 2019 while its composition changed. Demand ranged between 216 and 224~TWh in every year. Utility-scale solar output rose from 27.7~TWh to 49.7~TWh and the combined solar and wind share of demand went from a fifth to nearly a third. Net imports fell from a quarter of demand in 2019 to a tenth in 2024 before recovering to 16 percent in 2025. Battery charging, negligible in 2019, reached 14~TWh in 2025, and battery discharge peaked above 10~GW (Table~\ref{tab:battery}). The hourly demand record remains 51.1~GW, set on September~6, 2022 at 18:00.
+
+\begin{figure}[H]
+\centering\includegraphics[width=0.85\textwidth]{fig1_01_load_duration_curves}
+\caption{Load duration curves, CAISO, 2019--2025. Source: EIA-930.}
+\label{fig:ldc}
+\end{figure}
+
+\begin{figure}[H]
+\centering\includegraphics[width=0.85\textwidth]{fig1_02_net_load_duration_curves}
+\caption{Net-load duration curves, CAISO, 2019--2025. The dashed line removes battery charging from 2025 demand. Source: EIA-930, CAISO fuel mix.}
+\label{fig:nldc}
+\end{figure}
+
+Figures~\ref{fig:ldc} and \ref{fig:nldc} make the contrast visible. The load duration curves are nearly indistinguishable across years. The net-load duration curves diverge at the low end: by 2024 and 2025 the lowest-net-load hours approach zero, and once battery charging, which is itself a response to the surplus, is removed from demand, utility solar and wind alone exceeded end-use demand in 80 hours of 2024 and 205 hours of 2025. This midday surplus is the physical basis for the flexibility question in Chapter~\ref{ch:together}.
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig1_03_seasonal_daily_profiles}
+\caption{Average daily profiles by season: demand (top) and net load (bottom), 2019, 2022 and 2025. Source: EIA-930.}
+\label{fig:profiles}
+\end{figure}
+
+The seasonal profiles in Figure~\ref{fig:profiles} show the mechanism. Demand profiles are similar across years, with a modest midday rise in 2025 that reflects storage charging. Net-load profiles deepen at midday and steepen in the evening: in spring the average midday net load fell from about 10.5~GW in 2019 to about 6~GW in 2025 while the 20:00 value stayed near 22~GW, and in summer the midday trough fell from about 15~GW to under 10~GW.
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{The 100 highest net-load hours of each year: when they occur and what serves them. Source: EIA-930.}
+\label{tab:top100}
+\resizebox{\textwidth}{!}{\input{tables/ch1_top100_timing}}
+\end{table}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig1_04_top100_net_load_timing}
+\caption{Month and hour of the 100 highest net-load hours, by year. Source: EIA-930.}
+\label{fig:top100}
+\end{figure}
+
+Table~\ref{tab:top100} and Figure~\ref{fig:top100} identify the hours that set capacity needs. In every year at least 90 percent of the top 100 net-load hours fall in July through September and at least 78 percent between 17:00 and 21:00. Their median start time moved from 18:00 in 2019 and 2020 to 19:00 in 2021 and 2022 and to 20:00 from 2023 onward, the signature of solar pushing the net peak past sunset and of storage shaving the early evening. Solar contributes between 0.6 and 1.2~GW on average in these hours; gas contributes 17 to 23~GW and imports 3 to 9~GW. The implication for a flat load such as a data center is direct: each megawatt adds one for one to hours that solar does not serve, and the relevant capacity resources are storage, gas and imports.
+
+\section{Day-ahead prices and negative-price hours}
+\label{sec:prices}
+
+Hourly day-ahead prices at the three investor-owned utility default load aggregation points come from CAISO OASIS \citep{caiso_oasis_lmp}. OASIS retains roughly 39 months of data, so hourly prices run from July 2023; 2024 and 2025 are complete years and 2026 covers January~1 to September~22. EIA's daily ICE hub prices at NP15 and SP15 extend to 2015 but are daily block averages \citep{eia_ice}.
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Day-ahead LMP statistics at CAISO default load aggregation points. Source: CAISO OASIS PRC\_LMP, DAM.}
+\label{tab:prices}
+\resizebox{\textwidth}{!}{\input{tables/ch1_price_stats}}\\[2pt] \input{tables/ch1_price_stats_note}
+\end{table}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig1_05_price_duration_and_diurnal}
+\caption{Price duration curves (left) and average price by hour of day (right), 2024 and 2025. Source: CAISO OASIS.}
+\label{fig:pdc}
+\end{figure}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig1_06_negative_price_hours}
+\caption{Negative-price hours per year (left) and by month (right) at the three DLAPs. Source: CAISO OASIS.}
+\label{fig:neg}
+\end{figure}
+
+Negative day-ahead prices are now routine in Southern California (Table~\ref{tab:prices}, Figures~\ref{fig:pdc} and \ref{fig:neg}). The SCE aggregation point cleared below zero in 1,131 hours of 2024 and 877 hours of 2025, and in 890 hours of 2026 through September~22; SDG\&E's point saw 989 and 748 hours; PG\&E's 190 and 218. Between 72 and 94 percent of those hours fall between 10:00 and 16:00, concentrated in February through June, and the average price by hour of day drops to \$7--\$30 per MWh at midday against \$50--\$70 in the evening peak. The daily ICE block prices show almost no negative days, which is why the hourly series is required. This is the California-specific fact that Chapter~\ref{ch:together} uses: a data center able to place consumption in those hours faces a zero or negative marginal energy price, and one that cannot adds to the evening hours where prices and net load are highest.
+
+\section{Hourly carbon intensity}
+\label{sec:carbon}
+
+CAISO's Today's Outlook reports five-minute CO$_2$ emissions by source, including imports at CAISO's default factor \citep{caiso_outlook}. Intensity is computed as total CO$_2$ divided by CAISO demand, energy-weighted per year. The EPA eGRID output emission rate for the CAMX subregion is the annual reference factor \citep{egrid2023}.
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Carbon intensity of CAISO demand (load-based, including imports) and the eGRID CAMX annual output rate. Source: CAISO Today's Outlook, eGRID 2023.}
+\label{tab:carbon}
+\input{tables/ch1_carbon}
+\end{table}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig1_07_carbon_intensity}
+\caption{Annual, duration-curve and diurnal views of CAISO carbon intensity. Source: CAISO Today's Outlook, eGRID 2023.}
+\label{fig:carbon}
+\end{figure}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{CAISO battery fleet energy and peak power from the five-minute fuel mix.}
+\label{tab:battery}
+\input{tables/ch1_battery}
+\end{table}
+
+Load-based intensity fell from 257~g/kWh in 2019 to 195~g/kWh in 2025 (Table~\ref{tab:carbon}, Figure~\ref{fig:carbon}). The hourly spread widened: in 2025 the fifth percentile was 34~g/kWh and the ninety-fifth 320~g/kWh, and the average spring midday hour was near 50~g/kWh against roughly 240~g/kWh at night. eGRID's 2023 CAMX output rate of 198~g/kWh is lower than the CAISO load-based figure for 2023 (242~g/kWh) because it is generation-based, excludes the default import factor and covers the whole CAMX subregion; both measures show the same decline. For a flat load, the annual factor is the right one; for a flexible load, the diurnal difference of roughly 4 to 1 is the relevant number.
+
+\section{How much of the state's power do data centers use}
+\label{sec:dcload}
+
+No agency meters California's data center consumption. Four independent estimates are therefore presented against California retail sales of 245.7~TWh in 2024 from EIA-861 (Parts~A, C and D, which avoids counting delivery-only sales twice) \citep{eia861}. No single estimate is chosen; the spread is the finding.
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Existing California data center electricity use, four estimates.}
+\label{tab:dc}
+\input{tables/ch1_dc_estimates}
+\end{table}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig1_08_existing_dc_load_estimates}
+\caption{Existing data center load in California, four estimates, against 2024 retail sales.}
+\label{fig:dc}
+\end{figure}
+
+\begin{enumerate}
+\item \textbf{EPRI state table.} EPRI's 2024 study estimates California data centers consumed 9,331,619~MWh in 2023, 3.70 percent of state consumption, the third-largest state total after Virginia and Texas \citep[pp.~13, 28]{epri2024}. That is 3.8 percent of 2024 retail sales.
+\item \textbf{CEC existing peak demand.} The CEC's methodology memo states that ``as of December 2025, approximately 1,000 megawatts (MW) of existing data center peak demand operates in California'' and that its forecast values ``represent incremental growth beyond approximately 1,000 MW of existing data center load'' \citep[pp.~2, 18]{cec_dc_memo2026}. The CEC's own hourly load-factor profiles for existing facilities range from 75 to 100 percent of annual maximum \citep{cec_prelim2025}; an annual load factor of 0.80 to 0.95 converts the 1,000~MW into 7.0 to 8.3~TWh, or 2.9 to 3.4 percent of retail sales.
+\item \textbf{Count-based bottom-up.} The Kollar and Grady inventory places 321 of its 2,484 facility points inside California, 102 of them within 12~km of Santa Clara \citep{kollar2025}; it carries no per-facility power, and Epoch AI's Frontier Data Centers Hub lists no California site at all \citep{epoch2026}. The estimate therefore multiplies the count by an average load per facility: 3.0~MW (low), 6.5~MW (high) and a central value of 5.0~MW anchored on Silicon Valley Power, where 58 data centers draw 55 percent of the utility's energy. The result, 8.4 to 18.3~TWh (3.4 to 7.4 percent), is the widest of the four because the size assumption dominates; it is a bound, not a measurement.
+\item \textbf{Silicon Valley Power cluster.} The municipal utility of Santa Clara reports 58 data centers, the largest cluster on the West Coast, taking 55 percent of its power use and 51 percent of its sales \citep{svp_assembly2026}; its web page states 53 percent \citep{svp_dcpage}, and city officials cited about 60 percent in 2025 \citep{sjspotlight2025}. SVP's 2023 fact sheet gives a peak of 669.2~MW and a system load factor of 78.3 percent \citep{svp_factsheets}, or about 4.6~TWh a year, so the cluster alone uses 2.4 to 2.8~TWh, about one percent of state retail sales. SVP also reports that its best-performing data center customers reach about 67 percent utilization of requested capacity and that observed utilization fell to about 64 percent in 2023 \citep{svp_irp2025}, the empirical origin of the CEC's 67 percent factor.
+\end{enumerate}
+
+The two institutional estimates agree with each other at 7 to 9~TWh, roughly 3 to 4 percent of California's retail sales, and the bottom-up bound admits values up to about 7 percent. One municipal utility hosts about a third of the institutional estimate. The defensible statement for the rest of this study is that existing data centers use about 3 to 4 percent of the state's electricity, and that the load is geographically concentrated. Against roughly 1~GW of existing peak, the CEC's December 2025 energization tiers total 23,277~MW \citep{cec_assembly2026}, a 23-fold ratio that is the California analogue of Finland's 27x \citep{manner2026} and the subject of Chapter~\ref{ch:growth}.
+
+\section{Institutional context}
+\label{sec:institutions}
+
+\paragraph{The January 2026 forecast decision.} The CEC adopted the California Energy Demand 2025--2045 forecast set on January~21, 2026 \citep{cec_ced2025}. The set includes three data center scenarios built from the energization tiers. What the joint agencies then chose to do with those scenarios is the institutional fact that matters. The Single Forecast Set Agreement between the CEC, the CPUC and the CAISO, signed in January 2026 and updated on April~15, 2026, directs that CPUC integrated resource planning and CAISO bulk-system transmission studies for the 2026--2027 cycle ``will continue to use the 2024 IEPR planning forecast,'' that the 2027--2028 cycle will use an IRP portfolio based on the same 2024 forecast, and that system resource adequacy requirements for 2027 ``will use the 2025 IEPR planning forecast without known loads'' \citep[pp.~7--8]{sfsa2026}. Only local transmission reliability studies use the 2025 IEPR local reliability forecast with known loads. The agencies give two reasons: the approach ``manages volatility and promotes stability in electric system resource and infrastructure planning currently underway,'' and it ``allows CEC staff additional time to collect and review historical data, observe the impacts of known loads, data centers, and recent federal policy changes, and refine forecast approaches as needed'' \citep[p.~8]{sfsa2026}. In plain terms, the state now tracks data center energization requests in tiers, converts them into forecast scenarios, and then holds the resulting increment out of the forecast that drives generation procurement and bulk transmission for at least two planning cycles. The 2024 IEPR data center mid case, built from the smaller December 2024 tiers, remains the number in use.
+
+\paragraph{Utility pipeline statements.} PG\&E told the CEC in February 2025 that it had ``a large pipeline of applications to interconnect new data centers'' with about 1.5~GW in final engineering or construction and more than half expected within four years \citep{pge_iepr2025}. In July 2025 it announced a 10~GW pipeline over ten years, of which 17 projects totaling about 1.5~GW were in final engineering for operation between 2026 and 2030, and estimated that each gigawatt of new data center demand could lower other customers' bills by one to two percent \citep{pge_press2025}. Its second-quarter 2026 earnings release describes ``an overall pipeline of over 12 gigawatts'' \citep{pge_8k2026}. PG\&E has, however, filed a request for confidentiality over its project-level data center data in the IEPR docket every month since August 2025 \citep{pge_confidentiality}, so its pipeline is public only in aggregate. Southern California Edison took the opposite path. It reported 80~MW of existing data center demand in February 2025 with 200~MW of near-term and 400~MW of mid-term growth \citep{sce_iepr2025}, and it files a public project-level database. The January 2026 vintage lists 115 entries with 8,298~MW of requested peak: 76~MW under signed agreements, 3,314~MW in applications, 1,773~MW in inquiries, and 3,137~MW already canceled \citep{sce_database2026}. The CEC's own summer 2025 tally put SCE's requests at 5,828~MW and PG\&E's at 11,668~MW \citep{cec_prelim2025}. The canceled share in SCE's file, 38 percent of everything ever requested, is the first direct California evidence on attrition and is used in Chapter~\ref{ch:together}.
+
+\paragraph{CPUC large-load proceedings.} The proposal could not confirm a CPUC large-load tariff docket; the record now can. On April~9, 2026 the CPUC opened Rulemaking 26-04-009 on Advanced Electric Rate Design, which states that ``in coordination with the Senate Bill 57 assessment, this proceeding will consider rate design issues for data centers and other large load customers'' \citep[p.~1]{cpuc_oir2026}. Senate Bill 57 (Padilla), chaptered on October~11, 2025, requires the CPUC to assess whether costs of serving new data center loads shift to other customers and to report to the Legislature by January~1, 2027 \citep{sb57}. Senate Bill 886 (Padilla), the California Technology Innovation and Ratepayer Protection Act, was chaptered on September~21, 2026 and requires the CPUC, on or before January~1, 2028, to establish new tariffs or update electric rules for the interconnection and service of participating large customers, and to ensure those tariffs ``prevent the creation of stranded costs for, or cost shifts to, nonparticipating customers'' \citep{sb886,kqed2026}. Assembly Bill 222, which would have required data center energy reporting and efficiency metrics, was held in the Senate Appropriations Committee on August~29, 2025 \citep{ab222}. On the interconnection side, the CPUC approved an interim PG\&E Electric Rule~30 on July~24, 2025 to streamline transmission-level service for large customers that fund the required infrastructure up front \citep{cpuc_rule30}. The sequence is consistent: the state has moved from studying the cost question (SB~57) to mandating a tariff answer (SB~886) within a year, while the forecast that drives procurement still excludes the load the tariff is meant to price.

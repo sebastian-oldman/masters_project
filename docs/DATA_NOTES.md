@@ -131,3 +131,25 @@ Valley is a primary market in every edition; Southern California is a secondary 
 CBRE market (JLL names it as an emerging Northern California submarket; JLL's Midyear 2025 report gives Northern
 California 810 MW and Southern California 355 MW of colocation inventory). The Silicon Valley chapter history table
 (H1 2016 to H1 2026) is the longest series and should be the report's primary California construction proxy.
+
+## Chapter 1 findings that affect later chapters (2026-09-21, `scripts/run_chapter1.py`)
+
+- **EIA-930 CISO demand includes storage charging; CAISO's reported demand excludes it.** In 2025 the hourly gap
+  between the two tracks CAISO's battery charging with slope 0.91 and correlation 0.87 (14.2 TWh of charging in 2025).
+  The processed hourly table carries both `demand` (EIA) and `demand_ex_storage` (EIA minus CAISO charging). Use the
+  EIA definition for grid load, the ex-storage one for end-use load.
+- **EIA-930 artifacts.** 347 hours (325 in Jan-May 2019) have EIA demand below 85 percent of CAISO demand plus
+  charging or under 5 GW; they are nulled (`ch1_eia930_flagged_hours.csv`) and annual energy is mean x calendar hours.
+- **Net-peak timing.** The 100 highest net-load hours start at a median of 20:00 since 2023 (18:00 in 2019), 90-98
+  percent in Jul-Sep, with solar contributing 0.6-1.2 GW on average: use these hours for the capacity side of the gap.
+- **Negative day-ahead prices** at the SCE DLAP: 1,131 hours (2024), 877 (2025), 890 (2026 to Sep 22); PG&E 190-294.
+  OASIS retention starts July 2023, so the price history is 2024-2025 full years only.
+- **Carbon intensity** (load-based, incl. imports): 257 g/kWh (2019) to 195 (2025); eGRID CAMX 2023 = 198 g/kWh.
+- **Existing data center load, four ways:** EPRI 9.3 TWh (2023); CEC 1,000 MW existing peak (Dec 2025) = 7.0-8.3 TWh;
+  count-based bottom-up from 321 Kollar-Grady points 8.4-18.3 TWh (Epoch has no CA site); SVP cluster 2.4-2.8 TWh.
+  Retail sales denominator: EIA-861 2024 Parts A+C+D = 245.7 TWh (Part B duplicates C). Pipeline/existing peak = 23x.
+- **Institutional record.** Single Forecast Set Agreement (TN 269506 pp. 7-8) keeps IRP and bulk TPP on the 2024 IEPR
+  forecast and RA 2027 on the 2025 IEPR without known loads; CPUC R.26-04-009 (Apr 2026) covers large-load rate
+  design; SB 57 chaptered 2025-10-11; SB 886 chaptered 2026-09-21 (tariffs by 2028-01-01); AB 222 held 2025-08-29;
+  PG&E Rule 30 interim approved 2025-07-24; PG&E pipeline 1.5 GW (Feb 2025) -> 10 GW (Jul 2025) -> >12 GW (Q2 2026);
+  SCE public database Jan 2026: 8,298 MW requested, 3,137 MW canceled.
