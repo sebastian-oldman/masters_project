@@ -1,0 +1,107 @@
+# Data notes from the week-one lock-in (2026-09-21)
+
+Findings from opening every key raw file (`scripts/verify_raw.py`, log in `logs/verify_raw_2026-09-21.log`).
+Read these before starting the notebooks.
+
+## Confirmed contents
+
+- **CEC energization tiers.** `cec_assembly_hearing_2026_01_28` page 7 reads "5,086 MW Signed Agreements,
+  9,587 MW Active Applications, 8,604 MW Inquiries", sourced to utility data as of December 2025.
+- **CEC method parameters.** `cec_tn272026` (Aug 20 2026 workshop deck, docket 26-IEPR-03) states the 2025 IEPR
+  assumptions explicitly: confidence levels mid/high of 0%/10% (inquiries), 33%/50% (applications), 70%/100%
+  (agreements); utilization factor 67% defined as requested capacity versus actual peak; ramp rate supplied by the
+  utility or linear. The same deck charts the CEC's own weighted data center demand: Planning (mid) scenario
+  rising from 413 MW to 4,855 MW and Local Reliability (high) from 684 MW to 7,381 MW over the forecast horizon.
+  This is the forecast RQ2's central case replicates and stress-tests.
+- **Ramp assumptions.** `cec_prelim_dc_forecast_2025`: "Year 0-5: 149%, Year 6+: 113%, linear ramp over 7 years,
+  source SVP", applied to projects without ramp information.
+- **Project-level data exist for SCE only.** `cec_tn266008` (Aug 2025) and `cec_tn268459` (Jan 2026) are SCE's
+  public data center databases: about 110 rows with status, substation, requested peak MW and MW by year
+  2025-2034. PG&E filed confidentiality requests every month instead (`cec_tn265852` ... `cec_tn272858`).
+  That asymmetry is itself evidence for RQ3.
+- **New tier vintage is coming.** Docket 26-IEPR-03 (opened Feb 2026) holds the Aug 2026 workshop:
+  data center forecast (TN 272026), energization requests / known loads (TN 272043, 272023), PG&E forecasting
+  (TN 272065), SVCE, SVP, SJCE and Palo Alto filings. The monthly snapshot watches this docket.
+- **EIA-930.** BALANCE files carry CISO hourly demand, net generation and interchange; SUBREGION files split
+  CISO into PGAE, SCE, SDGE and VEA from July 2018. 2026 H1 max hourly CISO demand in the file is 38,369 MW.
+- **EIA-860M.** All 133 monthly vintages from July 2015 to July 2026 open. The header row moves between
+  vintages (row 1 in 2016, row 2 later); detect it by searching for "Plant State". California planned rows:
+  145 in Jan 2016, 230 in Jul 2026.
+- **QCEW 518210.** California statewide (area 06000, own_code 5 private) 2025 Q1: 4,446 establishments,
+  81,355 employees. County rows are present for all 06xxx counties.
+- **Epoch AI Frontier Data Centers Hub has no California site.** 87 sites, addresses in 23 states, none in CA.
+  Frontier-scale AI training campuses are not being built in California; the Kollar-Grady inventory and CEC
+  tiers are the California facility sources. Report this as a finding, not a data gap.
+- **Kollar and Grady.** Zenodo bundle has 396 members: code (preprocessing, WRI water stress, heat, risk
+  scores, Moran's I) and data. Zenodo rejects browser-like user agents; the fetcher sends `curl/8.0` for it.
+- **CEC ECDMS exports.** `AGG_CONSUMPTION_ELEC_UTILITY_TBL` is 11,459 rows of YEAR, PLANNING_AREA, AGENCY_NAME,
+  AGENCY_TYPE, SECTOR, GWh from 1990. The interactive ECDMS host was unreachable; these are the same tables
+  served from energy.ca.gov.
+- **CAISO NQC 2026** has sheets "2026 NQC List", "2026 Other", "2026 Tech Factors" (monthly QC by resource).
+- **PJM 2026 report** states the firm (ESO/CC) versus non-firm derating rule in its introduction.
+- **EPRI 2024** ranks California third among states by 2023 data center load; the state table is in the PDF.
+
+## Limits found
+
+- **CAISO OASIS retention.** OASIS returns "No data returned for the specified selection" for day-ahead LMPs
+  before roughly September 2023 (tested versions 1, 3, 12). Hourly DAM prices therefore cover Sept 2023 onward.
+  For 2015-2023 use `eia_wholesale` (EIA's daily ICE hub prices for NP15 and SP15, peak and off-peak) and
+  CAISO's annual market reports for statistics.
+- **CAISO curtailment.** The `production-and-curtailments-data` workbooks exist only for 2024 and 2025 (the
+  report was discontinued June 2025). gridstatus's curtailment parser now 404s. For June 2025 onward,
+  curtailment totals are in the daily renewables reports and the monthly Key Statistics PDFs; parse the PDFs.
+- **CAISO Today's Outlook history** covers 2018-04-10 onward for co2, fuelsource, demand and netdemand
+  (3,086 days each) and 2,118 days for renewables, which starts later.
+- **Gated documents (manual):** Sierra Club fifty-state scan (403), IEA Energy and AI (403), CRS R48646 (403),
+  CBRE and Cushman & Wakefield PDFs (form-gated). Download by hand, place under `data/raw/<group>/<date>/`,
+  and append to the manifest.
+- **Mirrors used:** Duke "Rethinking Load Growth" from the Illinois Commerce Commission docket; LBNL 2025 update
+  from RTO Insider. Compare hashes with the publisher copies before citing.
+- **ERCOT Monthly** March 2026 was not listed on ERCOT's presentations index; July and August 2026 not yet posted.
+  The snapshot script re-checks the index each month.
+- **EIA-860M August 2026** not yet published at run time (expected early October).
+
+## Audit pass (2026-09-21, second session)
+
+Resolved
+- **OASIS retention boundary pinned.** Day-ahead LMPs return data from July 2023 onward (June 2023 and earlier return
+  "No data"), about 39 months. gridstatus dropped rate-limited months silently, so `scripts/fetch_caiso_oasis.py`
+  now queries OASIS directly month by month with 429 back-off and row-count validation (5 rows per hour-node:
+  LMP, energy, congestion, loss, greenhouse gas). Earlier years: EIA's daily ICE hub prices (`eia_wholesale`, NP15 and SP15, 2015-2026).
+- **Curtailment fully covered without gridstatus.** Monthly totals CSV since 2014 (`caiso_curtailments_monthly_csv`);
+  daily PDFs June 2016 to May 2025 (3,261 files, `caiso_library/curtailment_daily_pdf`); daily renewable reports
+  June 2025 onward (479 HTML files with JS arrays `x_vals`, `tot_gen_solar_iso_rtd`, curtailment MWh and MW by hour,
+  `caiso_library/renewables_daily_html`); 106 monthly renewables performance reports; the 2024 and 2025 workbooks.
+- **Filename truncation bug** in `src/fetch.py` fixed (extension is now preserved); the four affected CED 2025 files
+  were re-fetched (hourly CAISO forecasts are 22 MB each).
+- **Selection bug** in `scripts/fetch_all.py` fixed: `--group` and `--id` now select the union.
+- **CBRE market series obtained as data.** The Silicon Valley chapter figures are Infogram embeds whose JSON carries the
+  table; `scripts/fetch_infogram.py` saves the JSON and extracts CSVs. Figure 1 gives H1 2016 to H1 2026 MW under
+  construction, preleased, new deliveries and vacancy; Figure 2 gives annual absorption and vacancy. Both the H2 2025
+  and H1 2026 editions are stored as separate vintages. The full PDFs remain form-gated (not needed for the series).
+- **SVP annual documents** (utility fact sheets 2017-2023, FY2025 financial statement, data center page) fetched from
+  Wayback captures because siliconvalleypower.com returns 403 to scripts. 2016 and 2024 fact sheets are not archived.
+- **CPUC ELCC and PRM sources** added: D.25-06-048 (18 percent PRM 2026-2027), D.24-02-047, 2025/2026 Slice-of-Day
+  guides, LOLE 2026 appendices, E3/Astrape incremental ELCC study (Wayback; CPUC moved the file).
+- **CEC adopted forecast report** (California Energy Demand Forecast 2025-2045, Jan 21 2026 item 06) and resolution added.
+- **EIA history extended** to 2010 for EIA-861, EIA-923 and EIA-860 (EIA-861 2010-2011 use two-digit-year file names).
+- **CAL region**: EIA-930 six-month files have no region rows; `eia930_reference_tables` gives BA membership.
+- **Tier transcription with page citations** written to `data/processed/cec_data_center_tiers_transcription.csv`
+  and the CEC method parameters to `data/processed/cec_data_center_forecast_parameters.csv`.
+- **Monthly snapshot scheduled** via LaunchAgent `com.katze.capstone.snapshot` (1st of month, 09:00); the snapshot
+  now also captures the monthly curtailment CSV and reads the ERCOT presentations index at its current address.
+
+Still by hand (all optional context, none blocks the analysis)
+- Sierra Club fifty-state policy scan (403), IEA Energy and AI (403), CRS R48646 (403).
+- CBRE, Cushman & Wakefield and JLL full PDFs (form-gated); the series needed from CBRE is captured as data.
+- SVP 2016 and 2024 utility fact sheets (not in Wayback); ERCOT Monthly March, July and August 2026 (not on the
+  index yet); EIA-860M August 2026 (not yet published). The monthly snapshot re-checks ERCOT and EIA-860M.
+- **SVP FY2025 financial statement is truncated** in the Wayback capture (5,242,880 of 6,046,530 bytes) and does not
+  open; download the original by hand from the SVP Utility Fact Sheet page and re-record it. The 2017-2023 fact
+  sheets are complete (one page each: accounts, peak demand, load factor, line miles).
+- **Daily renewable report HTML files do contain the data**: one inline script declares arrays such as
+  `curt_hourly_econ_system`, `curt_hourly_econ_local`, `curt_hourly_ss_local`, `curt_hourly_ss_system` (24 hourly
+  values, MWh), `curt_monthly_ytd_*` and wind/solar generation series. Parse with a regex over `name = [...]` pairs
+  (see the check in `logs/verify_raw_2026-09-21.log`); `x_vals` is built at runtime and is empty in the file.
+- **Monthly curtailment CSV** columns are `Date`, `Wind and solar curtailment` (MWh) and a third column whose header
+  is the file's as-of date; ignore the third column.

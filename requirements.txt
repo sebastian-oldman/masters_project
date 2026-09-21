@@ -1,0 +1,20 @@
+# Pinned by requirements.lock.txt (pip freeze). Top-level dependencies:
+pandas
+numpy
+scipy
+statsmodels
+lifelines
+SALib
+matplotlib
+seaborn
+gridstatus
+openpyxl
+xlrd
+pyarrow
+jupyterlab
+ipykernel
+requests
+pyyaml
+pypdf
+tabulate
+tqdm

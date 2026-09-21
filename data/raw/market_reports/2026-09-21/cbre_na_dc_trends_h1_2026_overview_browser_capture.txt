@@ -1,0 +1,64 @@
+SOURCE: https://www.cbre.com/insights/books/north-america-data-center-trends-h1-2026
+CAPTURE: 2026-09-21, page text captured with the Claude desktop built-in browser (site blocks scripted downloads; PDF is form-gated)
+TITLE: North America Data Center Trends H1 2026 | CBRE
+PUBLISHED: August 27, 2026
+NOTE: Figures 1-7 are images on the page and are not included; Silicon Valley numbers are in the Chapter 8 page captured separately.
+---
+Construction Increases While Vacancy Falls to New Low
+
+Chapters: Overview; 1 Atlanta; 2 Chicago; 3 Dallas-Ft. Worth; 4 Hillsboro, OR; 5 New York Tri-State; 6 Northern Virginia; 7 Phoenix; 8 Silicon Valley Data Center Market
+
+State of the Market
+Primary market supply surged by 33.7% year-over-year in H1 2026 to a record high of 10,903 megawatts (MW).
+Despite record supply, primary market vacancy fell to a record low of 1.4% in H1 from 1.6% in H1 2025, with new capacity absorbed as quickly as it was completed.
+Net absorption across primary markets increased by 11.7% year-over-year to 1,456.2 MW in H1. Hyperscale and AI occupiers competing for limited contiguous power blocks drove demand.
+All requirement sizes saw pricing gains as competition for limited capacity intensified. Average rental rates for 3-to-10-MW deployments rose by 8.3% in H1, followed by 500 kilowatt (kW)-to-3 MW (7.9%), 10-plus MW (6.7%) and 250-to-500 kW (4.3%).
+Total under-construction capacity across primary markets increased by 24.8% in H1 to a record high of 7,481.1 MW. This amount surpassed the previous peak of 6,350.1 MW in H2 2024, as developers raced to convert secured power positions into deliverable capacity.
+For the first time, Atlanta overtook Northern Virginia as the top market for total construction in North America. Atlanta's under-construction capacity surged by 52.3% year-over-year to 2,882 MW.
+Northern Virginia remained the largest market by inventory (4,496.5 MW) in H1 and led all primary markets in total net absorption (467.6 MW), reducing its vacancy rate to 0.2%. The market's capacity under construction rose by 16.5% to 2,420.2 MW, a slower pace than last year due to land and permitting constraints.
+Preleasing activity accelerated with commitments made on 80.4% of all under-construction capacity, compared with 74.3% a year ago. Less than 1,500 MW of future capacity across all primary markets remains available, representing approximately six months of demand at the current absorption rate.
+Power availability and infrastructure delivery timelines remain the most decisive factors influencing site selection, leasing activity and pricing. Local opposition has also become a serious obstacle, with community resistance and zoning delays stalling projects across North America. As a result, the ability to secure local approval has become as critical to site selection as power and fiber availability.
+Figure 1: H1 2026 Wholesale Primary Market Fundamentals (image). Figure 2: H1 2026 Wholesale Secondary Market Fundamentals (image). Source: CBRE Research, CBRE Data Center Solutions, H1 2026.
+
+National Pricing
+Average asking rates for 250-to-500-kW requirements across primary markets rose by 4.3% in H1, nearly double the 2.5% increase in H1 2025, reflecting growing pricing pressure across smaller deployment sizes.
+Mid-range requirements had the biggest pricing gains, with 3-to-10-MW requirements rising by 8.3% and 500-kW-to-3-MW requirements increasing by 7.9%.
+Asking rates for 10-plus-MW deployments across primary markets rose by 6.7% in H1, as pricing momentum shifted toward smaller requirement tiers with more available inventory.
+For the 10-plus-MW pricing tier, New York Tri-State asking rates increased by 19% in H1, followed by Atlanta (14.5%) and Chicago (9.7%).
+In contrast, pricing for 10-plus-MW requirements moderated in the most supply-constrained markets due to limited transaction activity. Silicon Valley and Hillsboro asking rates were unchanged in H1, while Northern Virginia rates increased by just 1.5%.
+Atlanta had the broadest pricing gains of any market, with rates rising across all four deployment tiers.
+Figure 3: Average Asking Rental Rates by Requirement Size for Primary Markets (image).
+
+Capital Markets Insights
+Data center investment sales totaled $1.7 billion in H1. Unprecedented demand and limited available capacity have driven investors to focus on construction financing and development equity, despite ongoing power and entitlement challenges.
+Debt & Financing: Issuers raised approximately $27.8 billion in financing through 12 high-yield bond issuances in H1. Meridian Arc priced $5.7 billion in high-yield bonds at a 6.25% yield in Q2 to fund a 430-MW campus in Sullivan County, Indiana, 100% leased to Fluidstack. Related Digital and Blackstone secured $16 billion in construction financing for their Oracle-leased campus in Saline Township, Michigan.
+Securitization: SASB CMBS issuance for data centers totaled $4.9 billion in H1 (9% of total SASB CMBS issuance). QTS secured a $2.1 billion note in February. Switch raised approximately $768 million in April with an ABS issuance.
+Investment Vehicles: Blackstone Digital Infrastructure Trust raised $1.75 billion with its U.S. IPO in May. KKR launched Helix Digital Infrastructure in June with over $10 billion in commitments. Funds affiliated with Blackstone acquired a 49% stake in Rowan Digital Infrastructure.
+Asset & Portfolio Transactions: Blue Owl Digital Infrastructure Trust's $860 million acquisition of a 72-MW facility in Gainesville, Virginia; Digital Realty's acquisition of Blackstone's interest in three assets totaling 288 MW (gross asset value $7.8 billion at stabilization); Realty Income's joint venture with Cloud Capital (three seed assets valued over $6 billion); H5 Data Centers and Novacap's three-property acquisition from 365 Data Centers; I Squared Capital's $225 million acquisition of a ten-facility portfolio from Cogent.
+Figure 4: Largest Annual Increases in Under-Construction Totals for Primary Markets (image). Figure 5: Primary Market Net Absorption, Preleasing & Under Construction (image).
+
+Network Insights
+Over 20,000 route miles of new fiber projects were announced in 2026 (Zayo, Lumen, BIG Fiber). Network consolidations involving Crown Castle, Everstream, Hunter Communications, Granite State Communications and others.
+Figure 6: Total Inventory vs. Under Construction by Primary Market, H1 2026 (image). Figure 7: Total Inventory vs. Under Construction by Secondary Market, H1 2026 (image).
+
+Data Center Outlook
+Local Opposition & Zoning Risk: community engagement is now a development constraint on par with power procurement.
+Tenant & Occupier Scrutiny: owners prioritizing entities with robust credit profiles as portfolios become overweighted with AI-focused tenants.
+Power Density: CPU servers once required 3-to-10 kW per rack; 100-kW GPU servers require closed-loop liquid cooling.
+Power Challenges: U.S. capacity demands are significantly outpacing utility transmission buildout; developers face energization delays from permitting, planning and zoning of last-mile projects.
+West Texas Development: projects in Armstrong, Wilbarger, Haskell, Gray, Roberts, Ector and Reeves counties reached energization milestones in H1; region expected to be a top-five colocation market by 2028.
+Pricing Trends: record-low vacancy; supply shock unlikely in 2026.
+
+Trends to Watch
+Manufacturing Growth: manufacturing leasing for 100,000+ sq. ft. facilities rose 28% year-over-year in Q1 2026.
+Cautious New-Market Growth: emerging markets driven by AI-training companies with limited operating histories; demand expected to shift toward 25-to-75-MW inference and enterprise locations.
+Triple-Net (NNN) Lease Structures emerging.
+Extended Ready-for-Service Fit-Out Dates: weeks to several months; liquid-cooling conversions can exceed six months.
+"Take or Pay" Floors: minimum power utilization floors of 60% to 85% of allocated power becoming common.
+On-Site Power & Bring Your Own Power Solutions: bridging power gaining traction where utility delays exceed contractual delivery timelines.
+Increasing Edge Demand: 2-to-20-MW urban infill sites.
+Large Load Tariffs: Virginia's $0.011/kWh consumption tax took effect July 1; New Jersey, Ohio, Oregon, Wisconsin, Florida and Delaware have approved or enacted similar frameworks.
+
+Market Buzz: Alberta (deregulated market, on-site gas generation, Meta $13 billion campus north of Edmonton, Amazon $4.3 billion near Calgary, data center levy up to 2%); Indiana (New Carlisle, Lebanon).
+
+Contacts: Gordon Dolven (Head of Data Center Research, Americas); Josh Ruttner; Pat Lynch.

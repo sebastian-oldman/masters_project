@@ -1,0 +1,13 @@
+parameter,tier,scenario,value,source_id,page,quote
+utilization_factor,all,all,0.67,cec_tn272026,5,"Utilization Factor 67%"
+utilization_factor_definition,all,all,requested capacity vs actual peak,cec_prelim_dc_forecast_2025,2,"Utilization Factor (67%)*: Requested capacity vs actual peak ... *Unchanged from CEDU 2024"
+confidence_level,Inquiry,mid,0.00,cec_tn272026,5,"Confidence Levels (mid/high) 0%/10% 33%/50% 70%/100%"
+confidence_level,Inquiry,high,0.10,cec_tn272026,5,same
+confidence_level,Application,mid,0.33,cec_tn272026,5,same
+confidence_level,Application,high,0.50,cec_tn272026,5,same
+confidence_level,Agreement,mid,0.70,cec_tn272026,5,same
+confidence_level,Agreement,high,1.00,cec_tn272026,5,same
+ramp_rate,all,all,supplied by utility or linear,cec_tn272026,5,"Ramp Rate Supplied or Linear"
+ramp_assumption_2025_iepr,all,all,"Year 0-5: 149%; Year 6+: 113%; linear ramp over 7 years",cec_prelim_dc_forecast_2025,9,"Ramping Assumptions ... Source: CEC with data from SVP; applied to projects without ramping information or with unrealistically large first-year capacity"
+scenario_mapping,all,Planning,mid confidence,cec_tn272026,6,"2025 IEPR: Planning (mid)"
+scenario_mapping,all,Local Reliability,high confidence,cec_tn272026,6,"2025 IEPR: Local Reliability (high)"

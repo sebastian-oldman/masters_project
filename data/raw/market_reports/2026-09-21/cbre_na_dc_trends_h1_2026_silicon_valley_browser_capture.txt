@@ -1,0 +1,25 @@
+SOURCE: https://www.cbre.com/insights/books/north-america-data-center-trends-h1-2026/silicon-valley-data-center-market
+CAPTURE: 2026-09-21, page text captured with the Claude desktop built-in browser (site blocks scripted downloads; PDF is form-gated)
+TITLE: Silicon Valley Data Center Market | CBRE (Chapter 8 of North America Data Center Trends H1 2026)
+NOTE: Figures 1-5 (Historical Market Information; Historical Supply and Demand; % of Total Primary Market Inventory; Market Fuel Mix (source: Silicon Valley Power); Average Asking Rates) are images; image files are saved alongside this capture where the CDN allowed it.
+---
+Colocation Insights
+Occupier demand continues to increase rental rates to record-high levels, with providers commanding premium pricing for deployments offering near-term occupancy and available power.
+Inventory remains extremely limited and vacancy rates continue to hover near historic lows.
+Preleasing has become standard practice, with a significant share of new capacity committed long before delivery.
+Expansion rights have become increasingly important as occupiers seek to secure long-term capacity in a market with dwindling supply.
+
+Market Trends
+Demand from hyperscale, cloud and AI-related occupiers continues to outpace new supply, further intensifying competition.
+Powered shell development is becoming more prevalent, reflecting the need to accelerate delivery timelines and provide greater design flexibility for large-scale users.
+Limited land availability, power constraints and lengthy development timelines continue to slow the delivery of new supply.
+
+Notable Activity
+The City of San Jose selected Prologis to develop a 159-acre site owned by the municipality, where the developer is planning a large-scale data center campus comprising four 99-MW facilities.
+Prologis is also moving forward on a 99-MW data center development in South San Jose, further expanding the region's development pipeline.
+Microsoft started construction on a new data center project in North San Jose that is expected to deliver between 49 MW and 99 MW of capacity.
+CoreSite acquired three office properties zoned for data center redevelopment from an affiliate of GI Partners.
+Equinix acquired approximately 16 acres next to its Great Oaks campus in South San Jose for future expansion.
+
+Figure 1: Historical Market Information (image). Figure 2: Historical Supply and Demand (image). Figure 3: % of Total Primary Market Inventory (image). Figure 4: Market Fuel Mix, source Silicon Valley Power (image). Figure 5: Average Asking Rates (image). Source: CBRE Research, CBRE Data Center Solutions, H1 2026.
+Report contacts: Bill Dougherty, Jennifer Karnes, Jerry Inguagiato, Dylan Plane, Kaitlyn Train.

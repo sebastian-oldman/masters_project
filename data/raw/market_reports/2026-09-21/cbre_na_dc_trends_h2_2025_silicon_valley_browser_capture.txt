@@ -1,0 +1,20 @@
+SOURCE: https://www.cbre.com/insights/books/north-america-data-center-trends-h2-2025/silicon-valley-data-center-market
+CAPTURE: 2026-09-21, page text captured with the Claude desktop built-in browser (site blocks scripted downloads; PDF is form-gated)
+TITLE: Silicon Valley Data Center Market | CBRE (Chapter 8 of North America Data Center Trends H2 2025)
+NOTE: Figures 1-5 are Infogram embeds (ids 19516a4e-2f1e-4319-ad1e-5c3afc080c41, ece2759c-ff47-43f2-a2a0-b220281a1342, b76fd5cb-ef36-4337-858e-3eda1a10082e, a6acf1d3-54d0-49d4-a7b5-9cce7044b696, 9ab3b5fb-6661-48f7-9a7f-317181a9a3ac); their JSON is saved in cbre_h2_2025_silicon_valley_infogram/.
+---
+Colocation Insights
+Colocation requirements of 10 MW or more of contiguous space are commanding a premium due to limited availability.
+Thorough planning for capacity is crucial for colocation providers and occupiers to establish fair market values.
+
+Market Trends
+Pricing continues to surpass other North American markets, driven by tight vacancy rates.
+New construction activity remained limited by power challenges.
+
+Notable Activity
+Several projects have been preleased and are slated for completion in H1 2026.
+Silicon Valley Power's 4% rate increase took effect in January 2026.
+Amazon Data Services secured approval for a 56-acre data center development in Gilroy.
+
+Figure 1: Historical Market Information. Figure 2: Historical Supply and Demand. Figure 3: % of Total Primary Market Inventory. Figure 4: Market Fuel Mix (source: Silicon Valley Power). Figure 5: Average Asking Rates. Source: CBRE Research, CBRE Data Center Solutions, H2 2025.
+Report contacts: Bill Dougherty, Jennifer Karnes, Jerry Inguagiato, Dylan Plane, Kaitlyn Train.
