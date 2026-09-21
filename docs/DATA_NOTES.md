@@ -105,3 +105,29 @@ Still by hand (all optional context, none blocks the analysis)
   (see the check in `logs/verify_raw_2026-09-21.log`); `x_vals` is built at runtime and is empty in the file.
 - **Monthly curtailment CSV** columns are `Date`, `Wind and solar curtailment` (MWh) and a third column whose header
   is the file's as-of date; ignore the third column.
+
+## Completeness check (2026-09-21, `scripts/check_coverage.py`, log in `logs/check_coverage_2026-09-21.log`)
+
+Expected-versus-actual for every periodic dataset: EIA-930 half-years (all 64 files, CISO hour counts complete for every
+finished half-year), EIA-861/923/860 years 2010 onward, all 133 EIA-860M vintages, all 45 QCEW quarters and annual files,
+all five Today's Outlook series (3,086 days each, no missing day from 2018-04-10 to 2026-09-20), all 3,259 daily
+curtailment reports from 2016-06-30 to 2025-05-31 (CAISO's own filenames are irregular; one file named
+`...report02dec_2020.pdf` contains the December 2, 2021 report, and `...july-31-2024-v2.pdf` is the July 31, 2024 report),
+all 477 daily renewable reports from 2025-06-01 (November 5, 2025 is a "-corrected" file), all 106 monthly renewables
+performance reports (HTML pages), and OASIS day-ahead LMP months July 2023 to September 2026 for both node groups
+(September 2026 is partial because the month is not over). The only registered items not on disk are ERCOT Monthly
+March, July and August 2026 (not published by ERCOT as of 2026-09-21), EIA-860M August 2026 (not yet released), and the
+optional gated documents listed above.
+
+## CBRE market series (added in the completeness pass)
+
+`scripts/fetch_infogram.py` now reads Infogram table cells (spreadsheet-style dicts) as well as chart cells. Overview
+tables were captured for seven editions (H1 2023, H2 2023, H1 2024, H2 2024, H1 2025, H2 2025, H1 2026). Table layouts:
+Figure 1/2 "state of the market" (older editions merge available MW and vacancy in one cell), the "Total Inventory /
+Under Construction" table (present in H2 2023, H1 2025, H2 2025, H1 2026), and the "% Change" table of year-over-year
+change in under-construction MW. `scripts/assemble_cbre_series.py` parses all three layouts into
+`data/processed/cbre_california_market_series.csv` (275 rows: market, period, metric, value, source file). Silicon
+Valley is a primary market in every edition; Southern California is a secondary market from H1 2024; Sacramento is not a
+CBRE market (JLL names it as an emerging Northern California submarket; JLL's Midyear 2025 report gives Northern
+California 810 MW and Southern California 355 MW of colocation inventory). The Silicon Valley chapter history table
+(H1 2016 to H1 2026) is the longest series and should be the report's primary California construction proxy.

@@ -25,11 +25,17 @@ from src.sources import UA  # noqa: E402
 
 
 def _cell(c):
-    return c.get("value") if isinstance(c, dict) and set(c) <= {"value", "style", "label", "raw"} else c
+    """Infogram chart cells are {"value": x}; table cells are spreadsheet-style dicts
+    ({"value", "ct", "ht", "mc", "im", ...}); cells with no value are merged/image cells."""
+    if isinstance(c, dict):
+        v = c.get("value", c.get("v", ""))
+        return v if not isinstance(v, (list, dict)) else json.dumps(v)
+    return c
 
 
 def _is_row(r):
-    return isinstance(r, list) and r and all(not isinstance(_cell(c), (list, dict)) for c in r)
+    return isinstance(r, list) and r and all(isinstance(c, (dict, str, int, float, type(None))) for c in r) \
+        and any(isinstance(c, dict) and ("value" in c or "v" in c) or isinstance(c, (str, int, float)) for c in r)
 
 
 def tables(obj, path="", out=None):

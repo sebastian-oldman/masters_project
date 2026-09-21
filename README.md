@@ -9,7 +9,8 @@ shared code in `src/`.
 ```
 data/raw/<group>/<access-date>/   immutable downloads; never edited, never committed (see .gitignore)
 data/raw/manifest.csv             one row per raw file: url, access date, sha256, bytes, content type
-data/processed/                   derived tables written by notebooks (rebuildable)
+data/processed/                   derived tables written by notebooks (rebuildable), plus three tracked hand-made
+                                  tables: CEC tier transcription, CEC forecast parameters, CBRE California market series
 data/snapshots/<date>/            monthly registry snapshots (ERCOT, CEC docket, PJM, Epoch, EIA-860M, Census)
 docs/DATA_CATALOG.md              rendered view of the manifest (make catalog)
 logs/                             fetch logs and logs/fetch_failures.csv
@@ -19,7 +20,8 @@ report/                           LaTeX source (tectonic) for the final report
 scripts/                          fetch_all.py (registry downloads), fetch_caiso.py (Today's Outlook 5-minute history),
                                   fetch_caiso_oasis.py (OASIS day-ahead LMPs, monthly), fetch_caiso_library.py (curtailment
                                   and renewables report archives), fetch_infogram.py (CBRE chart data), record_manual.py
-                                  (register hand-obtained files), snapshot.py (monthly), verify_raw.py, build_catalog.py
+                                  (register hand-obtained files), assemble_cbre_series.py (tidy CBRE market series), snapshot.py (monthly),
+                                  verify_raw.py (opens key files), check_coverage.py (expected-vs-actual completeness), build_catalog.py
 src/                              sources.py (registry), fetch.py (downloader), paths.py
 ```
 
@@ -80,6 +82,6 @@ The snapshot is scheduled through a user-level LaunchAgent installed on 2026-09-
 | PJM vetting | `pjm` | 2025 and 2026 Load Forecast Reports |
 | Emission factors | `egrid` | eGRID2023 rev1 |
 | Context | `context` | NERC LTRA 2025 and large-load gap assessment, Duke (mirror), LBNL Queued Up 2025, Grid Strategies 2025, JLARC 598 |
-| Market reports | `market_reports` | CBRE H1 2026 and H2 2025 Silicon Valley chapters captured through the app browser, with the Infogram chart data extracted to CSV (semiannual series H1 2016 to H1 2026: MW under construction, preleased, new deliveries, vacancy, absorption); JLL Midyear 2025 report (mirror); Cushman and JLL pages; CBRE press release |
+| Market reports | `market_reports` | CBRE North America Data Center Trends: overview chart data for seven editions (H1 2023 to H1 2026; primary and secondary market tables with inventory, available MW, vacancy, absorption, under construction) and the Silicon Valley chapters for H2 2025 and H1 2026 (semiannual history H1 2016 to H1 2026), all pulled from CBRE's Infogram embeds and assembled in `data/processed/cbre_california_market_series.csv` (Silicon Valley and Southern California; CBRE does not track Sacramento); JLL Midyear 2025 report (mirror; Northern and Southern California inventory); Cushman and JLL pages; CBRE press release |
 
 Known gaps after the first run are listed at the bottom of `docs/DATA_CATALOG.md`.

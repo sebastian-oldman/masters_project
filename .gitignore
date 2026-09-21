@@ -26,3 +26,4 @@ report/*.synctex.gz
 !data/processed/.gitkeep
 !data/processed/cec_data_center_tiers_transcription.csv
 !data/processed/cec_data_center_forecast_parameters.csv
+!data/processed/cbre_california_market_series.csv

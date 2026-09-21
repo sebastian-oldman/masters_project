@@ -1,12 +1,13 @@
 # Data catalog
 
-Generated from `data/raw/manifest.csv` (558 files, 7.32 GB) and `logs/fetch_failures.csv`.
+Generated from `data/raw/manifest.csv` (599 files, 7.46 GB) and `logs/fetch_failures.csv`.
 
 | Group | Files | Bytes | Owners |
 |---|---:|---:|---|
 | bls_qcew | 67 | 24.8 MB | BLS |
 | caiso | 11 | 48.3 MB | CAISO |
 | caiso_library | 3 | 916.6 MB | CAISO |
+| caiso_oasis | 2 | 146.5 MB | CAISO OASIS |
 | caiso_outlook | 5 | 158.1 MB | CAISO |
 | cec_almanac | 21 | 9.2 MB | CEC |
 | cec_iepr_docket | 76 | 413.7 MB | CEC |
@@ -24,7 +25,7 @@ Generated from `data/raw/manifest.csv` (558 files, 7.32 GB) and `logs/fetch_fail
 | eia_wholesale | 12 | 1.5 MB | EIA (ICE data) |
 | ercot | 27 | 21.5 MB | ERCOT, Texas Legislature |
 | facilities | 8 | 79.3 MB | Epoch AI, Kollar & Grady (Zenodo 10.5281/zenodo.17372375) |
-| market_reports | 23 | 4.3 MB | CBRE, CBRE (Infogram embed), Cushman & Wakefield, JLL, JLL (mirror: Real Estate Daily News) |
+| market_reports | 62 | 6.4 MB | CBRE, CBRE (Infogram embed), Cushman & Wakefield, JLL, JLL (mirror: Real Estate Daily News) |
 | pjm | 3 | 15.4 MB | PJM |
 | svp | 13 | 9.2 MB | CEC e-filing, Silicon Valley Power (via Wayback Machine capture 20260509223802), Silicon Valley Power (via Wayback Machine capture 20260509224600), Silicon Valley Power (via Wayback Machine capture 20260509224755), Silicon Valley Power (via Wayback Machine capture 20260509224919), Silicon Valley Power (via Wayback Machine capture 20260509225205), Silicon Valley Power (via Wayback Machine capture 20260509231536), Silicon Valley Power (via Wayback Machine capture 20260509232142), Silicon Valley Power (via Wayback Machine capture 20260509233703), Silicon Valley Power (via Wayback Machine) |
 
@@ -125,6 +126,13 @@ Generated from `data/raw/manifest.csv` (558 files, 7.32 GB) and `logs/fetch_fail
 | caiso_library_curtailment_daily_pdf | CAISO library collection curtailment_daily_pdf: 3261 documents crawled from /library/daily-wind-solar-real-tim | 2026-09-21 | 842,312,031 | 23c474a7888a | `data/raw/caiso_library/2026-09-21/curtailment_daily_pdf` |
 | caiso_library_renewables_daily_html | CAISO library collection renewables_daily_html: 479 documents crawled from /library/daily-renewable-reports | 2026-09-21 | 57,420,625 | a97b22c9eb06 | `data/raw/caiso_library/2026-09-21/renewables_daily_html` |
 | caiso_library_renewables_monthly_pdf | CAISO library collection renewables_monthly_pdf: 106 documents crawled from /library/monthly-renewables-perfor | 2026-09-21 | 16,861,410 | 1225fe50a2e4 | `data/raw/caiso_library/2026-09-21/renewables_monthly_pdf` |
+
+### caiso_oasis
+
+| id | title | access date | bytes | sha256 (12) | path |
+|---|---|---|---:|---|---|
+| caiso_dam_lmp_monthly_dlap | CAISO OASIS day-ahead hourly LMP (PRC_LMP, DAM, v12) 2023-07 to 2026-08, nodes DLAP_PGAE-APND, DLAP_SCE-APND,  | 2026-09-21 | 71,304,599 | 55e58dd29ca1 | `data/raw/caiso_oasis/2026-09-21/dam_lmp` |
+| caiso_dam_lmp_monthly_hubs | CAISO OASIS day-ahead hourly LMP (PRC_LMP, DAM, v12) 2023-07 to 2026-08, nodes TH_NP15_GEN-APND, TH_SP15_GEN-A | 2026-09-21 | 75,238,912 | 1ece080a200c | `data/raw/caiso_oasis/2026-09-21/dam_lmp` |
 
 ### caiso_outlook
 
@@ -653,12 +661,51 @@ Generated from `data/raw/manifest.csv` (558 files, 7.32 GB) and `logs/fetch_fail
 
 | id | title | access date | bytes | sha256 (12) | path |
 |---|---|---|---:|---|---|
+| cbre_h1_2023_overview_infogram_fig1 | cbre_h1_2023_overview: figure 1 'Primary Fig01 State of the Market H1_23' Infogram data (JSON + 0 extracted CS | 2026-09-21 | 51,436 | dc992936275c | `data/raw/market_reports/2026-09-21/cbre_h1_2023_overview_infogram/fig1_Primary_Fig01_State_of_the_Market_H1_23_0bf12807-e98f-428c-b61b-d61dacecec5d.json` |
+| cbre_h1_2023_overview_infogram_fig2 | cbre_h1_2023_overview: figure 2 'Secondary Fig02 State of the Market H1_23' Infogram data (JSON + 0 extracted  | 2026-09-21 | 64,883 | 2b0406f3226a | `data/raw/market_reports/2026-09-21/cbre_h1_2023_overview_infogram/fig2_Secondary_Fig02_State_of_the_Market_H1_23_c0ccc1ff-de44-4ee1-b56b-719be19b3dbb.json` |
+| cbre_h1_2023_overview_infogram_fig3 | cbre_h1_2023_overview: figure 3 'Primary Fig03  H1_23' Infogram data (JSON + 1 extracted CSV tables) | 2026-09-21 | 87,091 | 245f0cf7d0b1 | `data/raw/market_reports/2026-09-21/cbre_h1_2023_overview_infogram/fig3_Primary_Fig03_H1_23_67a9ac65-6546-4aec-8009-249399a92ef0.json` |
+| cbre_h1_2023_overview_infogram_fig4 | cbre_h1_2023_overview: figure 4 'Primary Fig04 H1_23' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 39,259 | d527909eac5a | `data/raw/market_reports/2026-09-21/cbre_h1_2023_overview_infogram/fig4_Primary_Fig04_H1_23_a0a0a9df-4e82-4c3e-8229-f7d94a706c24.json` |
+| cbre_h1_2023_overview_infogram_fig5 | cbre_h1_2023_overview: figure 5 'Primary Fig05 H1_23' Infogram data (JSON + 1 extracted CSV tables) | 2026-09-21 | 42,946 | f0899fac3468 | `data/raw/market_reports/2026-09-21/cbre_h1_2023_overview_infogram/fig5_Primary_Fig05_H1_23_33905de5-39bf-4f2c-978c-1cb4d2cf6aa0.json` |
+| cbre_h1_2024_overview_infogram_fig1 | cbre_h1_2024_overview: figure 1 'FIG01' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 50,664 | bb9d229f1a1a | `data/raw/market_reports/2026-09-21/cbre_h1_2024_overview_infogram/fig1_FIG01_bc6defdf-26e7-4fb9-8e29-781d0b9351cf.json` |
+| cbre_h1_2024_overview_infogram_fig2 | cbre_h1_2024_overview: figure 2 'FIG02' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 50,568 | 3bb9d5c7df22 | `data/raw/market_reports/2026-09-21/cbre_h1_2024_overview_infogram/fig2_FIG02_d8e6bfee-51ad-4f33-97fb-ca4c0ab359c4.json` |
+| cbre_h1_2024_overview_infogram_fig3 | cbre_h1_2024_overview: figure 3 'FIG03' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 92,058 | 3be8fc5200d7 | `data/raw/market_reports/2026-09-21/cbre_h1_2024_overview_infogram/fig3_FIG03_63615300-333c-44ac-9202-17d86dbe5dd5.json` |
+| cbre_h1_2024_overview_infogram_fig4 | cbre_h1_2024_overview: figure 4 'FIG04' Infogram data (JSON + 1 extracted CSV tables) | 2026-09-21 | 39,348 | 62b7983d3735 | `data/raw/market_reports/2026-09-21/cbre_h1_2024_overview_infogram/fig4_FIG04_24a77f81-3a4e-41fb-93a9-71eb2ce988e2.json` |
+| cbre_h1_2024_overview_infogram_fig5 | cbre_h1_2024_overview: figure 5 'FIG05' Infogram data (JSON + 1 extracted CSV tables) | 2026-09-21 | 43,234 | 9c0316ca2273 | `data/raw/market_reports/2026-09-21/cbre_h1_2024_overview_infogram/fig5_FIG05_e93558da-cb9c-4aa4-a5fe-bcddcbcad59c.json` |
+| cbre_h1_2025_overview_infogram_fig1 | cbre_h1_2025_overview: figure 1 'Fig 1' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 51,317 | 8f1e1d509f6a | `data/raw/market_reports/2026-09-21/cbre_h1_2025_overview_infogram/fig1_Fig_1_8632636a-8bc5-4fc3-bced-c47ebb5a8799.json` |
+| cbre_h1_2025_overview_infogram_fig2 | cbre_h1_2025_overview: figure 2 'Fig 2' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 51,241 | 4d256c11f2bf | `data/raw/market_reports/2026-09-21/cbre_h1_2025_overview_infogram/fig2_Fig_2_a5fd8e5b-4f1d-4f2f-b3fe-7bae19e12b42.json` |
+| cbre_h1_2025_overview_infogram_fig3 | cbre_h1_2025_overview: figure 3 'Fig 3' Infogram data (JSON + 1 extracted CSV tables) | 2026-09-21 | 91,067 | 1ab8d30fd75e | `data/raw/market_reports/2026-09-21/cbre_h1_2025_overview_infogram/fig3_Fig_3_1dd17727-08bc-4fab-a983-3ad578fba23a.json` |
+| cbre_h1_2025_overview_infogram_fig4 | cbre_h1_2025_overview: figure 4 'Fig 4' Infogram data (JSON + 1 extracted CSV tables) | 2026-09-21 | 39,482 | a5d28dcc4204 | `data/raw/market_reports/2026-09-21/cbre_h1_2025_overview_infogram/fig4_Fig_4_8ce98984-5786-4dee-91ec-ba6180f8295d.json` |
+| cbre_h1_2025_overview_infogram_fig5 | cbre_h1_2025_overview: figure 5 'Fig 5' Infogram data (JSON + 1 extracted CSV tables) | 2026-09-21 | 43,831 | 12f236156346 | `data/raw/market_reports/2026-09-21/cbre_h1_2025_overview_infogram/fig5_Fig_5_ae18c7d0-4da7-4d40-8959-2d9de03c3c82.json` |
+| cbre_h1_2025_overview_infogram_fig6 | cbre_h1_2025_overview: figure 6 'Fig 6' Infogram data (JSON + 1 extracted CSV tables) | 2026-09-21 | 43,560 | 5b6c2c4d1c47 | `data/raw/market_reports/2026-09-21/cbre_h1_2025_overview_infogram/fig6_Fig_6_4fe54d64-82bb-4e4d-9109-a9cd6ea104d6.json` |
+| cbre_h1_2026_overview_infogram_fig1 | cbre_h1_2026_overview: figure 1 'Fig 1' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 50,640 | 1e8fb2dc1d86 | `data/raw/market_reports/2026-09-21/cbre_h1_2026_overview_infogram/fig1_Fig_1_69f04b2e-aa60-4094-9cc1-caeb3cb6cf28.json` |
+| cbre_h1_2026_overview_infogram_fig2 | cbre_h1_2026_overview: figure 2 'Fig 2' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 50,304 | fcf127a5c10c | `data/raw/market_reports/2026-09-21/cbre_h1_2026_overview_infogram/fig2_Fig_2_ad25668b-d191-4467-abc2-922af4d77e17.json` |
+| cbre_h1_2026_overview_infogram_fig3 | cbre_h1_2026_overview: figure 3 'Fig 3' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 50,356 | d88b5d7def84 | `data/raw/market_reports/2026-09-21/cbre_h1_2026_overview_infogram/fig3_Fig_3_fa211983-cb50-4f54-b612-c1d9156b240d.json` |
+| cbre_h1_2026_overview_infogram_fig4 | cbre_h1_2026_overview: figure 4 'Fig 4' Infogram data (JSON + 1 extracted CSV tables) | 2026-09-21 | 78,923 | 1acd526ab803 | `data/raw/market_reports/2026-09-21/cbre_h1_2026_overview_infogram/fig4_Fig_4_9205d94f-3ebe-4e31-93a2-8dd6d476d234.json` |
+| cbre_h1_2026_overview_infogram_fig5 | cbre_h1_2026_overview: figure 5 'Fig 5' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 44,738 | 85d9fa70e36b | `data/raw/market_reports/2026-09-21/cbre_h1_2026_overview_infogram/fig5_Fig_5_8ae52b0a-8353-40bd-8637-779a10cf3f14.json` |
+| cbre_h1_2026_overview_infogram_fig6 | cbre_h1_2026_overview: figure 6 'Fig 6' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 43,851 | 61f19fcc6075 | `data/raw/market_reports/2026-09-21/cbre_h1_2026_overview_infogram/fig6_Fig_6_2eda09f7-b5ec-45e6-8ead-9c194a0c229b.json` |
 | cbre_h1_2026_silicon_valley_infogram_fig1 | cbre_h1_2026_silicon_valley: figure 1 'Silicon Valley Stats' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 93,625 | e55e5a3a50af | `data/raw/market_reports/2026-09-21/cbre_h1_2026_silicon_valley_infogram/fig1_Silicon_Valley_Stats_340ed5ef-3a7d-4504-95e0-cca6fd1e1b31.json` |
 | cbre_h1_2026_silicon_valley_infogram_fig2 | cbre_h1_2026_silicon_valley: figure 2 'Silicon Valley Fig 1' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 53,591 | 6fedde11ef6a | `data/raw/market_reports/2026-09-21/cbre_h1_2026_silicon_valley_infogram/fig2_Silicon_Valley_Fig_1_24055fdc-ac59-4de3-a70e-0be1bfb25cf9.json` |
 | cbre_h1_2026_silicon_valley_infogram_fig3 | cbre_h1_2026_silicon_valley: figure 3 'Silicon Valley Fig 2' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 49,268 | ef164e8ce18a | `data/raw/market_reports/2026-09-21/cbre_h1_2026_silicon_valley_infogram/fig3_Silicon_Valley_Fig_2_16d35c5f-1b5a-4a88-8f1e-a275e7c205ad.json` |
 | cbre_h1_2026_silicon_valley_infogram_fig4 | cbre_h1_2026_silicon_valley: figure 4 'Silicon Valley Fig 3' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 43,943 | 97696112862f | `data/raw/market_reports/2026-09-21/cbre_h1_2026_silicon_valley_infogram/fig4_Silicon_Valley_Fig_3_8efce6f6-ca04-4659-baea-ca3c28c39e31.json` |
 | cbre_h1_2026_silicon_valley_infogram_fig5 | cbre_h1_2026_silicon_valley: figure 5 'Silicon Valley Fig 4' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 38,659 | 0106b841ca78 | `data/raw/market_reports/2026-09-21/cbre_h1_2026_silicon_valley_infogram/fig5_Silicon_Valley_Fig_4_d4e4c9c2-7454-408d-ab4c-d59cee8d7500.json` |
 | cbre_h1_2026_silicon_valley_infogram_fig6 | cbre_h1_2026_silicon_valley: figure 6 'Silicon Valley Fig 5' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 41,120 | 7a2e1b318a80 | `data/raw/market_reports/2026-09-21/cbre_h1_2026_silicon_valley_infogram/fig6_Silicon_Valley_Fig_5_b73fa5d8-dc38-413d-a948-f2f2116c49b2.json` |
+| cbre_h2_2023_overview_infogram_fig1 | cbre_h2_2023_overview: figure 1 'Fig01' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 51,344 | 56c258539eff | `data/raw/market_reports/2026-09-21/cbre_h2_2023_overview_infogram/fig1_Fig01_ee5b50d9-abcb-4bba-848c-7769aab3b260.json` |
+| cbre_h2_2023_overview_infogram_fig2 | cbre_h2_2023_overview: figure 2 'Fig 02' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 62,427 | b393e3f3433b | `data/raw/market_reports/2026-09-21/cbre_h2_2023_overview_infogram/fig2_Fig_02_f161ed5d-45a5-40ff-b1c8-90b19c1c32b6.json` |
+| cbre_h2_2023_overview_infogram_fig3 | cbre_h2_2023_overview: figure 3 'Fig03' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 88,152 | 546a86a8b6c2 | `data/raw/market_reports/2026-09-21/cbre_h2_2023_overview_infogram/fig3_Fig03_3951e79d-6e45-451e-abaa-04187c1dc092.json` |
+| cbre_h2_2023_overview_infogram_fig4 | cbre_h2_2023_overview: figure 4 'Fig 04' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 39,245 | 5373e0039753 | `data/raw/market_reports/2026-09-21/cbre_h2_2023_overview_infogram/fig4_Fig_04_6d853d01-4a68-419e-8f29-61ffbc4d91ff.json` |
+| cbre_h2_2023_overview_infogram_fig5 | cbre_h2_2023_overview: figure 5 'Fig 05' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 43,640 | fa7b783c6edf | `data/raw/market_reports/2026-09-21/cbre_h2_2023_overview_infogram/fig5_Fig_05_4d96c291-93ce-4d01-b823-a6fb7a99c32e.json` |
+| cbre_h2_2023_overview_infogram_fig6 | cbre_h2_2023_overview: figure 6 'Fig 06' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 43,760 | 05a39dae196a | `data/raw/market_reports/2026-09-21/cbre_h2_2023_overview_infogram/fig6_Fig_06_736a09da-0e2b-4505-8e98-e44b885b7d38.json` |
+| cbre_h2_2024_overview_infogram_fig1 | cbre_h2_2024_overview: figure 1 'FIG 01' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 50,305 | bc7a82ee7015 | `data/raw/market_reports/2026-09-21/cbre_h2_2024_overview_infogram/fig1_FIG_01_dc45d87f-b681-49f0-8de7-b35b2ff4a4bf.json` |
+| cbre_h2_2024_overview_infogram_fig2 | cbre_h2_2024_overview: figure 2 'FIG 02' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 60,792 | a30022a67c37 | `data/raw/market_reports/2026-09-21/cbre_h2_2024_overview_infogram/fig2_FIG_02_4426a286-50ff-4df0-b034-3f0999511582.json` |
+| cbre_h2_2024_overview_infogram_fig3 | cbre_h2_2024_overview: figure 3 'FIG 03' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 93,733 | a27153d97d50 | `data/raw/market_reports/2026-09-21/cbre_h2_2024_overview_infogram/fig3_FIG_03_8cff7e69-d3dd-460d-8c19-0f0a8a5dfc6e.json` |
+| cbre_h2_2024_overview_infogram_fig4 | cbre_h2_2024_overview: figure 4 'FIG 04' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 39,437 | ba5c47b8a9c0 | `data/raw/market_reports/2026-09-21/cbre_h2_2024_overview_infogram/fig4_FIG_04_3aae2487-5ed2-4456-9df5-3498a86f5067.json` |
+| cbre_h2_2024_overview_infogram_fig5 | cbre_h2_2024_overview: figure 5 'FIG 05' Infogram data (JSON + 1 extracted CSV tables) | 2026-09-21 | 43,228 | 886e2aeab696 | `data/raw/market_reports/2026-09-21/cbre_h2_2024_overview_infogram/fig5_FIG_05_8ad0273d-93d3-475d-85cf-cc8dfae51e05.json` |
+| cbre_h2_2025_overview_infogram_fig1 | cbre_h2_2025_overview: figure 1 'Fig 1' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 51,499 | ca2f7f120128 | `data/raw/market_reports/2026-09-21/cbre_h2_2025_overview_infogram/fig1_Fig_1_16ca76e0-c5cc-4ffc-89c2-7d514de0a415.json` |
+| cbre_h2_2025_overview_infogram_fig2 | cbre_h2_2025_overview: figure 2 'Fig 2' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 51,266 | 1f7aae611631 | `data/raw/market_reports/2026-09-21/cbre_h2_2025_overview_infogram/fig2_Fig_2_84bd77f5-8a8d-4921-b001-056ece8e451d.json` |
+| cbre_h2_2025_overview_infogram_fig3 | cbre_h2_2025_overview: figure 3 'Fig 3' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 93,578 | c4ca29665c40 | `data/raw/market_reports/2026-09-21/cbre_h2_2025_overview_infogram/fig3_Fig_3_d63484c6-ca83-420a-bc54-ba616f2fea4e.json` |
+| cbre_h2_2025_overview_infogram_fig4 | cbre_h2_2025_overview: figure 4 'Fig 4' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 39,570 | aa784d2b9adf | `data/raw/market_reports/2026-09-21/cbre_h2_2025_overview_infogram/fig4_Fig_4_cbd7c3b5-fc6a-401d-821f-3113b9a480c5.json` |
+| cbre_h2_2025_overview_infogram_fig5 | cbre_h2_2025_overview: figure 5 'Fig 5' Infogram data (JSON + 1 extracted CSV tables) | 2026-09-21 | 43,828 | eb003fb2be4b | `data/raw/market_reports/2026-09-21/cbre_h2_2025_overview_infogram/fig5_Fig_5_fe3b5286-1b5c-46a8-82af-1bf4a65df9be.json` |
+| cbre_h2_2025_overview_infogram_fig6 | cbre_h2_2025_overview: figure 6 'Fig 6' Infogram data (JSON + 1 extracted CSV tables) | 2026-09-21 | 43,614 | 6963412f4029 | `data/raw/market_reports/2026-09-21/cbre_h2_2025_overview_infogram/fig6_Fig_6_ea142ee8-b0f1-4ca0-9aa1-d28b3454e6a6.json` |
 | cbre_h2_2025_silicon_valley_infogram_fig1 | cbre_h2_2025_silicon_valley: figure 1 'Silicon Valley Stats' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 93,961 | 79096e49f501 | `data/raw/market_reports/2026-09-21/cbre_h2_2025_silicon_valley_infogram/fig1_Silicon_Valley_Stats_19516a4e-2f1e-4319-ad1e-5c3afc080c41.json` |
 | cbre_h2_2025_silicon_valley_infogram_fig2 | cbre_h2_2025_silicon_valley: figure 2 'Silicon Valley-FIG01' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 52,936 | 4dbba692a806 | `data/raw/market_reports/2026-09-21/cbre_h2_2025_silicon_valley_infogram/fig2_Silicon_Valley_FIG01_ece2759c-ff47-43f2-a2a0-b220281a1342.json` |
 | cbre_h2_2025_silicon_valley_infogram_fig3 | cbre_h2_2025_silicon_valley: figure 3 'Silicon Valley-FIG02' Infogram data (JSON + 0 extracted CSV tables) | 2026-09-21 | 49,100 | 647f7e2f8178 | `data/raw/market_reports/2026-09-21/cbre_h2_2025_silicon_valley_infogram/fig3_Silicon_Valley_FIG02_b76fd5cb-ef36-4337-858e-3eda1a10082e.json` |
