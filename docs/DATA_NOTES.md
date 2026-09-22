@@ -29,7 +29,7 @@ Read these before starting the notebooks.
   145 in Jan 2016, 230 in Jul 2026.
 - **QCEW 518210.** California statewide (area 06000, own_code 5 private) 2025 Q1: 4,446 establishments,
   81,355 employees. County rows are present for all 06xxx counties.
-- **Epoch AI Frontier Data Centers Hub has no California site.** 87 sites, addresses in 23 states, none in CA.
+- **Epoch AI Frontier Data Centers Hub has no California site.** 87 sites in the 2026-09-21 snapshot (89 in the 2026-09-22 snapshot), addresses in 23 states, none in CA.
   Frontier-scale AI training campuses are not being built in California; the Kollar-Grady inventory and CEC
   tiers are the California facility sources. Report this as a finding, not a data gap.
 - **Kollar and Grady.** Zenodo bundle has 396 members: code (preprocessing, WRI water stress, heat, risk
@@ -287,4 +287,61 @@ California 810 MW and Southern California 355 MW of colocation inventory). The S
   | median delay 3.0 months; 26 % on time; 24 % > 12 months; CIF 53/62/70 %; cancel 23 % | `ch3_logit_summary.json` (delay), `ch3_delay_cif.csv` | ch3_delay | fig3_04 bottom-right (markers and box) |
   | planned 20.1 GW / 229 units; weighted 13.2 GW; shares 71/78/31/13 %; 88 vs 36 % by status | `ch3_planned_current_weighted.csv`, `ch3_cases_2030_summary.json` | ch3_cases_2030 | fig3_05 (box) |
   | cases 128/121/114 GW, 236/231/204 TWh, 78/74/68 GW; Diablo continuing 117/222/71 | `ch3_cases_2030.csv`, `ch3_cases_2030_summary.json` | ch3_cases_2030 | fig3_05 (bar labels) |
+
+## Chapters 1 and 2 audit (2026-09-22): newest data, annotated figures, and where each reported number lives
+
+- **Newest inputs re-checked.** Epoch hub re-fetched: snapshot now 89 sites (was 87), 75 in the US, still none in California; US cumulative
+  power 15.2 GW at Sep 2026 (was 15.3). EIA-930 2026 Jul-Dec refreshed (server file of 2026-09-22). Census C30 file on disk already
+  carries the Sep 1 2026 release (July 2026 preliminary); next release Oct 1. QCEW 2026 Q2 not yet published (404). EIA-861 2025 and
+  EIA-860M Aug 2026 not yet published (server 503/HTML). OASIS prices run to Sep 22, 2026 in the repository. The chapter 1 hourly
+  series intentionally end at 2025 (complete years); 2026 appears where a matched window is possible (negative-price hours).
+- **Integer years.** Notebooks 01 and 02 show no float-formatted years (scanned); all year columns are integers.
+- **Figures now print the quoted numbers.** fig1_01 (annual demand range, peak record, load factor), fig1_02 (minimum net load, hours
+  below zero with and without battery charging), fig1_03 (12-14h and 20h means per season, 2019 vs 2025), fig1_04 (median start hour,
+  Jul-Sep share, 17-21h share per year), fig1_05 (price extremes; 11-14h and 18-20h mean price ranges), fig1_06 (negative-hour counts
+  and shares; share of negative hours in 10-16h), fig1_07 (2019 and 2025 intensities, 2025 percentiles, floored variant, seasonal
+  midday and night means), fig1_08 (all four estimates with shares), fig2_01 (Jan 2014, Nov 2022 and Jul 2026 values, shares of
+  nonresidential construction, mean month-over-month growth), fig2_02 (segment growth, supF and sequential test; forecast medians,
+  bands and backtest), fig2_03 (QCEW, CBRE and Epoch end values), fig2_04 (California-only total and its three ratios).
+- **Provenance of the numbers quoted in chapters 1 and 2 and in the summaries to the user:**
+  | number | file (field) | table | figure |
+  |---|---|---|---|
+  | annual demand 216-224 TWh; peak 51.1 GW Sep 6 2022; load factor 0.50-0.58 | `ch1_ciso_annual_summary.csv` (energy_TWh, peak_demand_MW, load_factor) | ch1_annual_summary | fig1_01 |
+  | min net load -3.3 GW (2025); 80 / 205 hours below zero excl. charging (2024 / 2025) | `ch1_ciso_annual_summary.csv` (min_net_load_MW); `ciso_hourly_2019_2025_clean.parquet` (net_load_ex_storage) | ch1_annual_summary | fig1_02 |
+  | spring 12-14h net load 10.6 -> 6.4 GW; 20h ~22 GW; summer 18.2 -> 9.8 GW | `ch1_seasonal_profiles.csv` | -- | fig1_03 |
+  | top-100 hours: median 18:00 -> 20:00; Jul-Sep >= 90%; 17-21h >= 78%; solar 0.6-1.2 GW; gas 17-23 GW; imports 4-9 GW | `ch1_top100_net_load_timing.csv` | ch1_top100_timing | fig1_04 |
+  | SCE negative hours 1,131 / 877 / 890; matched window 1,045 / 775 / 890; 77-94% in 10-16h; midday USD 8-29, evening 51-65 | `ch1_price_stats.csv`, `ch1_negative_price_hours_windows.csv`, `ch1_price_by_hour_of_day.csv` | ch1_price_stats | fig1_05, fig1_06 |
+  | price extremes 2024 max 649/628/637 | `caiso_dam_lmp_hourly.parquet` | ch1_price_stats (max) | fig1_05 |
+  | carbon 257 -> 186 g/kWh (floored 188); P5 1, P95 319; spring midday 10, summer 46; night 237-315; eGRID 198 | `ch1_carbon_intensity_annual.csv`, `ch1_carbon_intensity_diurnal.csv`, `ch1_egrid_camx_2023.json` | ch1_carbon | fig1_07 |
+  | existing use: EPRI 9.3 TWh = 3.9% (2023); CEC 7.0-8.3 TWh; sensitivity 6.8-13.6; SVP 2.4-2.7 | `ch1_dc_load_estimates.csv`, `ch1_ca_retail_sales_eia861.csv`, `ch1_svp_fact_sheets.csv` | ch1_dc_estimates | fig1_08 |
+  | Census $1.6B -> $13.9B -> $75.2B; shares 0.5 / 2.1 / 10.0%; MoM 1.2% vs 4.1% | `ch2_census_c30_data_center.csv` | -- | fig2_01 |
+  | Chow F 63; 26% -> 53%; BP breaks Oct 2016, Dec 2018, Mar 2022, Jun 2024; segments 53/42/9/61/36; supF 125 p 0.02 | `ch2_census_break_summary.json`, `ch2_census_bai_perron.csv`, `ch2_census_segment_growth.csv` | ch2_bai_perron, ch2_segment_growth, ch2_break_comparison | fig2_02 |
+  | forecasts $95-100B (Jul 2027), $115-135B (Jul 2028), bands $51-259B; backtest MAPE 14 / 19 / 13 | `ch2_census_forecast_arima.csv`, `ch2_census_forecast_ets.csv`, `ch2_census_forecast_backtest.csv` | ch2_forecast, ch2_forecast_backtest | fig2_02 |
+  | QCEW 25k -> 74k -> 84k; establishments 1,327 -> 4,494; CBRE 44 -> 142 -> 125-168 MW, inventory 411 -> 509; Epoch US 15.2 GW, 0 CA | `ch2_qcew_518210_california.csv`, `ch2_cbre_california.csv`, `ch2_epoch_timeline.csv`, `ch2_break_test_comparison.csv` | ch2_break_comparison | fig2_03 |
+  | tiers 6,771 / 21,756 / 23,277 (20,677 in CA); SCE 6,201 -> 5,162 active, 709 -> 3,137 canceled; PG&E 5,090 / 12,710 | `ch2_tier_vintages.csv` | ch2_tier_vintages | fig2_04 |
+  | RQ1 ratios 39.7% of record peak, 20.7x existing peak, 19-26x average load, 5.1x IEPR peak growth (3.4x at 67%), 107 TWh = 3.1x | `ch2_rq1_table.csv`, `ch2_rq1_denominators.json` | ch2_rq1 | fig2_04 (box; IEPR ratios in the table only) |
+
+## Chapters 1 and 2: numbers that appear only in the text (second pass, 2026-09-22)
+
+A machine check compared every quantified number in the two chapter texts with the text embedded in the figure PDFs and the
+LaTeX tables. Numbers not printed on a figure are listed here with their source; three new tables (`ch1_svp`,
+`ch1_gas_comparability`, `ch2_tier_vintages_detail`) and two RQ1 columns now carry most of them.
+  | number in the text | where it comes from |
+  |---|---|
+  | EPRI 9,331,619 MWh, 3.70% (2023) | EPRI Powering Intelligence 2024, state table pp. 13 and 28 (`dc_share/EPRI_3002028905_Powering_Intelligence_2024.pdf`); `ch1_dc_load_estimates.csv` basis column |
+  | SVP 669.2 MW peak, 78.3% load factor, 4.48 / 4.59 TWh, 55% / 53% / 60% shares, 64-67% utilization | `ch1_svp_fact_sheets.csv` (Table ch1_svp); SVP Assembly deck Jan 2026 slides 2 and 4; SVP data center page; SVP IRP 2025 |
+  | gas comparability: 0.1 TWh/month match, +0.7 to +1.8 TWh/month after Dec 2023, +20 / +25 TWh in 2024 / 2025; 432-452 kg/MWh; CAISO gas share 48.8 / 47.8 / 47.9% | `ch1_gas_series_comparability_monthly.csv` (Table ch1_gas_comparability); `ch1_carbon_intensity_annual.csv` (implied_gas_kg_per_MWh) |
+  | 2023 accounting intensity 242 g/kWh; eGRID 198 | `ch1_carbon_intensity_annual.csv` (241.9), `ch1_egrid_camx_2023.json` (198.06) |
+  | 1.5 GW PG&E final engineering (Feb 2025), 80 / 200 / 400 MW SCE (Feb 2025), 8,298 / 76 / 3,314 / 1,773 / 3,137 MW SCE database, 5,828 MW summer 2025 | docket TN 261964 p.3, TN 261975 p.3, TN 268459 (`ch2_tier_vintages.csv`), CEC preliminary deck p.6 (Table ch2_tier_vintages_detail) |
+  | institutional context: 20,677 / 23,277 / 2,600 MW | chapter 2, `ch2_rq1_denominators.json` |
+  | Census forecast medians 95 / 98 (Jul 2027), 115 / 133 (Jul 2028), bands 51-259 | `ch2_census_forecast_ets.csv`, `ch2_census_forecast_arima.csv` (Table ch2_forecast, fig2_02 box) |
+  | vintage detail: 5,808 / 963 (Dec 2024); 11,668 / 1,375 / 85 / 5,828 / 100 / 100 / 2,600 (summer 2025), 10,080 / 143 split, workshop-copy labels 1,382 and 2,492; 14,747 / 4,624 (Dec 2025 by utility); PG&E 1,700 / 3,110 / 140 / 140 and 8,200 / 3,880 / 490 / 140; Cal Advocates 650 MW | `ch2_tier_vintages.csv` (Table ch2_tier_vintages_detail), CEC preliminary deck pp. 6-7, TN 267165 pp. 7-8, memo Table 1, TN 272065 p.9, TN 272807 p.3 |
+  | IEPR denominators 46,479 / 50,498 MW, 263 / 298 TWh, 12.1 TWh deliveries, 96 / 1,743 / 4,377 MW data center at peak | `ch2_rq1_denominators.json`, `ch2_ced2025_planning_totals.csv` (RQ1 note) |
+  | RQ1 energy equivalent 107 TWh = 3.1x; 3.4x at 67% | `ch2_rq1_table.csv` (RQ1 table columns) |
+  | Epoch 89 sites / 75 US / 15.2 GW; QCEW breaks; CBRE latest 144 MW | `ch2_epoch_timeline.csv`, `ch2_break_test_comparison.csv`, `ch2_cbre_california.csv` (fig2_03 boxes) |
+  | hourly EIA-930 peak 51,104 MW | `ch1_ciso_annual_summary.csv` (fig1_01 as 51.1 GW) |
+- **Manifest duplicates.** Re-fetching a source appends a new manifest row with the new access date (immutable downloads by date).
+  `src/ch1_baseline.manifest()` and `scripts/verify_raw.py` resolve to the newest row; `scripts/check_coverage.py` uses a set of ids.
+  Ad-hoc code must do the same (the `TypeError: argument of type 'method' is not iterable` in a check on 2026-09-22 was a throwaway
+  snippet indexing a duplicated id, not the pipeline).
 

@@ -97,6 +97,9 @@ def main() -> int:
     for y in YEARS:
         ax.plot(ldc.index, ldc[y] / 1000, color=YCOL[y], label=f"{y} ({vh[y]:,} valid h)", lw=1.3)
     ax.set_xlabel("Percent of valid hours in year (hours flagged as reporting artifacts excluded)"); ax.set_ylabel("CAISO demand (GW)"); ax.set_title("Load duration curves, CAISO balancing authority, 2019-2025 (EIA-930 Adjusted demand)")
+    pk = summ["peak_demand_MW"].idxmax(); pkt = pd.Timestamp(summ.loc[pk, "peak_demand_time"])
+    ax.annotate(f"record hourly demand {summ.loc[pk, 'peak_demand_MW']/1000:.1f} GW\n{pkt:%b %-d, %Y} (hour ending {pkt:%H:%M})", xy=(0, summ.loc[pk, "peak_demand_MW"] / 1000), xytext=(14, 47), fontsize=7, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5), arrowprops=dict(arrowstyle="-", color="grey", lw=0.6))
+    ax.text(0.98, 0.55, f"annual demand {summ.energy_TWh.min():.0f}-{summ.energy_TWh.max():.0f} TWh (2019-2025)\npeak {summ.peak_demand_MW.min()/1000:.1f}-{summ.peak_demand_MW.max()/1000:.1f} GW; load factor {summ.load_factor.min():.2f}-{summ.load_factor.max():.2f}", transform=ax.transAxes, ha="right", fontsize=7, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
     ax.legend(ncol=3, fontsize=7.5); save(fig, "fig1_01_load_duration_curves")
 
     # Fig 1.2 net-load duration curves
@@ -107,7 +110,9 @@ def main() -> int:
     ax.plot(nl_ex.index, nl_ex[2025] / 1000, color=YCOL[2025], ls="--", lw=1.1, label="2025 minus estimated net battery charging\n(CAISO fleet net; pumped storage not removed)")
     ax.axhline(0, color="k", lw=0.6)
     ax.set_xlabel("Percent of valid hours in year"); ax.set_ylabel("Net load = demand - utility solar - wind (GW)")
-    ax.set_title("Net-load duration curves, CAISO, 2019-2025"); ax.legend(ncol=3, fontsize=7); save(fig, "fig1_02_net_load_duration_curves")
+    neg_ex = {y: int((h[h.year == y]["net_load_ex_storage"] < 0).sum()) for y in (2024, 2025)}; neg_raw = {y: int((h[h.year == y]["net_load"] < 0).sum()) for y in (2024, 2025)}
+    ax.text(0.98, 0.62, f"minimum net load: {summ.loc[2019, 'min_net_load_MW']/1000:.1f} GW (2019), {summ.loc[2025, 'min_net_load_MW']/1000:.1f} GW (2025)\nhours with net load below zero: {neg_raw[2024]} (2024), {neg_raw[2025]} (2025)\nexcluding estimated battery charging: {neg_ex[2024]} (2024), {neg_ex[2025]} (2025)", transform=ax.transAxes, ha="right", fontsize=7, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
+    ax.set_title("Net-load duration curves, CAISO, 2019-2025"); ax.legend(ncol=3, fontsize=7, loc="lower left"); save(fig, "fig1_02_net_load_duration_curves")
 
     # Fig 1.3 seasonal average daily profiles: demand and net load, 2019 vs 2025
     fig, axes = plt.subplots(2, 4, figsize=(11, 5.2), sharex=True, sharey="row")
@@ -118,6 +123,8 @@ def main() -> int:
             axes[1, j].plot(g.hour, g.net_load / 1000, ls, color=YCOL[y], label=f"{y}", lw=1.4)
         axes[0, j].set_title(s); axes[1, j].set_xlabel("Hour of day (local, interval start)")
         axes[1, j].axhline(0, color="k", lw=0.5)
+        mid = {y: prof[(prof.year == y) & (prof.season == s) & prof.hour.between(12, 14)].net_load.mean() / 1000 for y in (2019, 2025)}; ev = {y: prof[(prof.year == y) & (prof.season == s) & (prof.hour == 20)].net_load.mean() / 1000 for y in (2019, 2025)}
+        axes[1, j].text(0.03, 0.05, f"12-14h mean: {mid[2019]:.1f} GW (2019), {mid[2025]:.1f} GW (2025)\n20h: {ev[2019]:.1f} GW (2019), {ev[2025]:.1f} GW (2025)", transform=axes[1, j].transAxes, fontsize=6.3, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
     axes[0, 0].set_ylabel("Demand (GW)"); axes[1, 0].set_ylabel("Net load (GW)"); axes[0, 0].legend(fontsize=8)
     fig.suptitle("Average daily profiles by season, CAISO: demand (top) and net load (bottom), 2019 / 2022 / 2025", y=1.0)
     save(fig, "fig1_03_seasonal_daily_profiles")
@@ -128,10 +135,10 @@ def main() -> int:
     vmax = max(int(m.values.max()) for m in mats.values())  # one colour scale for every panel
     for ax, y in zip(axes, YEARS):
         im = ax.imshow(mats[y].values, aspect="auto", cmap="magma_r", origin="lower", extent=[4.5, 10.5, 11.5, 23.5], vmin=0, vmax=vmax)
-        ax.set_title(f"{y}\nmedian {int(timing.loc[y, 'median_hour'])}:00", fontsize=9); ax.set_xlabel("Month"); ax.set_xticks(range(5, 11))
+        ax.set_title(f"{y}\nmedian {int(timing.loc[y, 'median_hour'])}:00\nJul-Sep {100*timing.loc[y, 'share_Jul_Sep']:.0f}%\n17-21h {100*timing.loc[y, 'share_hours_17_21']:.0f}%", fontsize=7.5); ax.set_xlabel("Month"); ax.set_xticks(range(5, 11))
     axes[0].set_ylabel("Hour of day (local, interval start)")
     fig.colorbar(im, ax=axes, shrink=0.8, label=f"count of top-100 net-load hours (common scale, 0-{vmax})")
-    fig.suptitle("When the 100 highest net-load hours occur, CAISO, by year", y=1.02)
+    fig.suptitle("When the 100 highest net-load hours occur, CAISO, by year (panel titles: median start hour, share in July-September, share between 17:00 and 21:00)", y=1.12, fontsize=9.5)
     fig.savefig(FIGURES / "fig1_04_top100_net_load_timing.png", bbox_inches="tight"); fig.savefig(FIGURES / "fig1_04_top100_net_load_timing.pdf", bbox_inches="tight"); plt.close(fig); print("  figure fig1_04_top100_net_load_timing")
 
     # ------------------------------------------------------------------ 2. prices
@@ -162,6 +169,8 @@ def main() -> int:
         axes[1].plot(g.index, g.values, color=DCOL[node], label=f"{lab} 2025")
         g = pbh.xs(2024, level="year")[node]
         axes[1].plot(g.index, g.values, "--", color=DCOL[node], label=f"{lab} 2024", alpha=0.7)
+    mids = [pbh.xs(yy, level="year")[n].loc[11:14].mean() for yy in (2024, 2025) for n in c1.DLAPS]; eves = [pbh.xs(yy, level="year")[n].loc[18:20].mean() for yy in (2024, 2025) for n in c1.DLAPS]
+    axes[1].text(0.03, 0.05, f"mean price 11-14h: USD {min(mids):.0f}-{max(mids):.0f} per MWh; 18-20h: USD {min(eves):.0f}-{max(eves):.0f} per MWh\n(three DLAPs, 2024 and 2025)", transform=axes[1].transAxes, fontsize=6.8, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
     axes[1].axhline(0, color="k", lw=0.6); axes[1].set_xlabel("Hour of day (local)"); axes[1].set_ylabel("Mean day-ahead LMP ($/MWh)"); axes[1].set_title("Average day-ahead price by hour of day"); axes[1].legend(fontsize=7, ncol=2)
     save(fig, "fig1_05_price_duration_and_diurnal")
 
@@ -184,8 +193,8 @@ def main() -> int:
         vals = [float(ytd[(ytd.window == w_) & (ytd.year == y_) & (ytd.node == node)].hours_negative.iloc[0]) for w_, y_ in cats]
         shares = [float(ytd[(ytd.window == w_) & (ytd.year == y_) & (ytd.node == node)].share_negative_pct.iloc[0]) for w_, y_ in cats]
         bars = axes[0].bar(xs + (k - 1) * wdt, vals, wdt, color=DCOL[node], label=lab)
-        for b_, sh in zip(bars, shares):
-            axes[0].text(b_.get_x() + b_.get_width() / 2, b_.get_height() + 12, f"{sh:.0f}%", ha="center", fontsize=6.5)
+        for b_, v_, sh in zip(bars, vals, shares):
+            axes[0].text(b_.get_x() + b_.get_width() / 2, b_.get_height() + 12, f"{v_:,.0f}\n{sh:.0f}%", ha="center", fontsize=5.8)
     axes[0].set_xticks(xs); axes[0].set_xticklabels([f"{y_}\n{w_}" for w_, y_ in cats], fontsize=8); axes[0].set_ylim(0, 1350)
     axes[0].legend(fontsize=8, loc="upper right"); axes[0].set_ylabel("Hours with day-ahead LMP < $0"); axes[0].set_title(f"Negative-price hours by DLAP: complete years and matched Jan 1-{md} windows\n(labels: share of hours in the window; OASIS retention starts July 2023)")
     for node, lab in c1.DLAPS.items():
@@ -193,6 +202,8 @@ def main() -> int:
         for y in (2024, 2025, 2026):
             if y in g.columns:
                 axes[1].plot(g.index, g[y], marker="o", ms=3, label=f"{lab} {y}", alpha=0.85 if y != 2026 else 0.6)
+    mid_share = pst[pst.node.isin(c1.DLAPS) & pst.year.isin([2024, 2025])].neg_hours_10_16_share
+    axes[1].text(0.98, 0.55, f"{100*mid_share.min():.0f}-{100*mid_share.max():.0f}% of negative hours fall\nbetween 10:00 and 16:00 (2024-2025, three DLAPs)", transform=axes[1].transAxes, ha="right", fontsize=6.8, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
     axes[1].set_xlabel("Month"); axes[1].set_ylabel("Negative-price hours"); axes[1].set_title("Negative-price hours by month"); axes[1].set_ylim(0, 430); axes[1].legend(fontsize=6.5, ncol=3, loc="upper right")
     save(fig, "fig1_06_negative_price_hours")
 
@@ -223,6 +234,9 @@ def main() -> int:
     axes[0].fill_between(csum.index, csum.p5_g_per_kWh, csum.p95_g_per_kWh, alpha=0.2, label="hourly 5th-95th percentile (variability, not a confidence interval)")
     axes[0].axhline(eg["co2_output_rate_g_per_kWh"], color="C3", ls="--", label=f"eGRID 2023 CAMX generation output rate ({eg['co2_output_rate_g_per_kWh']:.0f}): different boundary")
     axes[0].axvline(2023.92, color="grey", ls=":", lw=1, label="Dec 2023: CAISO gas data method change (affects the EIA-930 gas series, not this accounting series)")
+    for yy in (2019, 2025):
+        axes[0].annotate(f"{csum.loc[yy, 'energy_weighted_g_per_kWh']:.0f} g/kWh ({yy})", xy=(yy, csum.loc[yy, "energy_weighted_g_per_kWh"]), xytext=(0, 9), textcoords="offset points", ha="center", fontsize=7, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
+    axes[0].text(0.03, 0.06, f"2025 hourly 5th / 95th percentile: {csum.loc[2025, 'p5_g_per_kWh']:.0f} / {csum.loc[2025, 'p95_g_per_kWh']:.0f} g/kWh\nfloored variant 2025: {csum.loc[2025, 'energy_weighted_floored_g_per_kWh']:.0f} g/kWh", transform=axes[0].transAxes, fontsize=6.5, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
     axes[0].set_ylabel("g CO2 per kWh"); axes[0].set_title("Annual CO2 accounting intensity of CAISO demand"); axes[0].legend(fontsize=6, loc="upper center", bbox_to_anchor=(0.5, -0.14), frameon=False); axes[0].set_ylim(0, None)
     for y in YEARS:
         axes[1].plot(cdc.index, cdc[y], color=YCOL[y], label=str(y), lw=1.2)
@@ -234,6 +248,8 @@ def main() -> int:
         g = diurnal[(diurnal.year == 2025) & (diurnal.season == s)]
         axes[2].plot(g.hour, g.intensity_g_per_kWh, ls, label=f"2025 {s}")
     g = diurnal[(diurnal.year == 2019)].groupby("hour")["intensity_g_per_kWh"].mean(); axes[2].plot(g.index, g.values, color="grey", lw=2, alpha=0.6, label="2019 all seasons")
+    d25 = diurnal[diurnal.year == 2025]; midv = {s_: d25[(d25.season == s_) & d25.hour.between(12, 14)].intensity_g_per_kWh.mean() for s_ in ("MAM", "JJA")}; night = d25[d25.hour.between(0, 4)].groupby("season").intensity_g_per_kWh.mean()
+    axes[2].text(0.5, 0.42, f"2025 12-14h mean: spring {midv['MAM']:.0f}, summer {midv['JJA']:.0f} g/kWh\n2025 0-4h mean by season: {night.min():.0f}-{night.max():.0f} g/kWh", transform=axes[2].transAxes, ha="center", fontsize=6.5, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
     axes[2].set_xlabel("Hour of day (local)"); axes[2].set_title("Average diurnal accounting intensity"); axes[2].set_ylim(-20, 430); axes[2].axhline(0, color="k", lw=0.5); axes[2].legend(fontsize=7, ncol=3, loc="upper center")
     save(fig, "fig1_07_carbon_intensity")
 

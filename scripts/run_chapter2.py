@@ -48,11 +48,17 @@ def main() -> int:
     ax.legend(loc="upper left", fontsize=8)
     last = s.index[-1]
     ax.text(last, s.iloc[-1] / 1000, f" ${s.iloc[-1]/1000:.1f}B\n {last:%b %Y} (prelim.)", fontsize=8, va="center")
+    ax.annotate(f"${s.iloc[0]/1000:.1f}B (Jan 2014)", xy=(s.index[0], s.iloc[0] / 1000), xytext=(10, 12), textcoords="offset points", fontsize=7.5)
+    ax.annotate(f"${s.loc['2022-11-30']/1000:.1f}B (Nov 2022)", xy=(pd.Timestamp("2022-11-30"), s.loc["2022-11-30"] / 1000), xytext=(-70, -22), textcoords="offset points", fontsize=7.5)
+    sh = c["dc_share_of_nonres_pct"]
+    ax.text(0.03, 0.62, f"share of private nonresidential construction:\n{sh.iloc[0]:.1f}% (Jan 2014), {sh.loc['2022-11-30']:.1f}% (Nov 2022), {sh.iloc[-1]:.1f}% (Jul 2026)", transform=ax.transAxes, fontsize=7.5, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
     ax2 = axes[1]
     mom = c["mom_growth_pct"].dropna()
     ax2.bar(mom.index, mom.values, width=20, color=np.where(mom.values >= 0, "#4a7bb7", "#c44e52"))
     ax2.plot(mom.index, mom.rolling(12).mean(), color="k", lw=1, label="12-month mean")
     ax2.axvline(c2.CHATGPT, color="grey", ls="--", lw=1); ax2.axhline(0, color="k", lw=0.6)
+    m1 = mom.loc["2019-01-01":"2021-12-31"].mean(); m2 = mom.loc["2023-01-01":].mean()
+    ax2.text(0.98, 0.9, f"mean month-over-month growth: {m1:.1f}% (2019-2021), {m2:.1f}% (2023-Jul 2026)", transform=ax2.transAxes, ha="right", va="top", fontsize=7.5, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
     ax2.set_ylabel("Month-over-month\ngrowth (%)"); ax2.legend(fontsize=8, loc="upper left")
     ax2.xaxis.set_major_locator(mdates.YearLocator()); ax2.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     fig.text(0.99, 0.005, "Source: U.S. Census Bureau, Value of Construction Put in Place (privsatime.xlsx), accessed 2026-09-21; p = preliminary", ha="right", fontsize=7, color="grey")
@@ -97,6 +103,8 @@ def main() -> int:
     for k, b in enumerate(bp["breaks_bic"]):
         ax.axvline(s.index[b], color="C2", ls=":", lw=1.2, label=("BP breaks (BIC): " + ", ".join(s.index[bb].strftime("%b %Y") for bb in bp["breaks_bic"])) if k == 0 else None)
     ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1, label="ChatGPT launch, Nov 30 2022 (December 2022 is the first post-launch month)")
+    segtxt = "BIC segments, %/yr: " + " / ".join(f"{100*r_.cagr:.0f}" for r_ in seg.itertuples()) + f"\nlast segment {seg.iloc[-1].segment_start} to {seg.iloc[-1].segment_end}: {100*seg.iloc[-1].cagr:.0f}% [{100*seg.iloc[-1].cagr_lo95:.0f}, {100*seg.iloc[-1].cagr_hi95:.0f}]\nsupF(1|0) = {res['bp_supF_1']:.0f}, bootstrap p = {sq['levels'][1]['boot_p']:.2f}; sequential test keeps {sq['m_seq']} break"
+    ax.text(0.03, 0.97, segtxt, transform=ax.transAxes, va="top", fontsize=6.8, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
     ax.set_yscale("log"); ax.set_ylabel("Billion dollars per year (log scale)"); ax.set_title(f"Log-linear trends and breaks (Chow F = {res['chow_F']:.0f}, p < 0.001)"); ax.legend(fontsize=7.5, loc="upper center", bbox_to_anchor=(0.5, -0.10), ncol=2, frameon=False)
     ax = axes[1]
     ax.plot(s.index[-60:], s.iloc[-60:] / 1000, color="k", lw=1.2, label="observed")
@@ -104,6 +112,10 @@ def main() -> int:
         ax.plot(f.index, f["mean"] / 1000, color=col, lw=1.6, label=lab)
         ax.fill_between(f.index, f["lo80"] / 1000, f["hi80"] / 1000, color=col, alpha=0.25)
         ax.fill_between(f.index, f["lo95"] / 1000, f["hi95"] / 1000, color=col, alpha=0.12)
+    b12 = bt[bt.horizon == 12].set_index("model")
+    fc_txt = (f"medians, USD billion: Jul 2027 {fa.loc['2027-07-31', 'mean']/1000:.0f} (ARIMA), {fe.loc['2027-07-31', 'mean']/1000:.0f} (ETS)\nJul 2028 {fa.loc['2028-07-31', 'mean']/1000:.0f} (ARIMA), {fe.loc['2028-07-31', 'mean']/1000:.0f} (ETS); 95% bands {min(fa.loc['2028-07-31', 'lo95'], fe.loc['2028-07-31', 'lo95'])/1000:.0f}-{max(fa.loc['2028-07-31', 'hi95'], fe.loc['2028-07-31', 'hi95'])/1000:.0f}"
+              f"\nbacktest, 12-month MAPE: ARIMA {b12.loc['ARIMA (log, drift)', 'mape_pct']:.0f}%, ETS {b12.loc['ETS(A,Ad,N) (log)', 'mape_pct']:.0f}%, drift benchmark {b12.loc['drift benchmark (log random walk)', 'mape_pct']:.0f}%")
+    ax.text(0.03, 0.66, fc_txt, transform=ax.transAxes, va="top", fontsize=6.6, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
     ax.set_ylabel("Billion nominal dollars per year"); ax.set_title("24-month forecasts (back-transformed log medians) with 80% and 95% bands"); ax.legend(fontsize=7.5, loc="upper left")
     ax.xaxis.set_major_locator(mdates.YearLocator()); ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     fig.subplots_adjust(bottom=0.27, wspace=0.22)
@@ -137,10 +149,14 @@ def main() -> int:
     fig.subplots_adjust(wspace=0.36, hspace=0.30)  # room for the twin-axis label between the top panels
     ax = axes[0, 0]; ax.plot(st.index, st["employment"] / 1000, color="C0", label="employment (thousands, left)"); ax.set_ylabel("Employment (thousands)")
     ax2 = ax.twinx(); ax2.plot(st.index, st["qtrly_estabs"], color="C1", label="establishments (right)"); ax2.set_ylabel("Establishments"); ax2.grid(False)
+    ax.text(0.03, 0.72, f"employment: {st.employment.iloc[0]/1000:.0f}k ({st.index[0]:%Y} Q{st.index[0].quarter}), {st.loc['2022-12-31', 'employment']/1000:.0f}k (2022 Q4), {st.employment.iloc[-1]/1000:.0f}k ({st.index[-1]:%Y} Q{st.index[-1].quarter})\nestablishments: {st.qtrly_estabs.iloc[0]:,.0f} to {st.qtrly_estabs.iloc[-1]:,.0f}", transform=ax.transAxes, va="top", fontsize=6.8, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
     ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1); ax.set_title("California NAICS 518210 (data processing, hosting), BLS QCEW, private"); ax.legend(loc="upper left", fontsize=8); ax2.legend(loc="lower right", fontsize=8)
     ax = axes[0, 1]; ax.bar(sv_uc.index, sv_uc.values.astype(float), width=150, color="C2", label="under construction (MW)"); ax.plot(sv_inv.index, sv_inv.values.astype(float), "k.-", label="inventory (MW, CBRE overview tables)")
+    ax.text(0.03, 0.70, f"under construction: {sv_uc.iloc[0]:.0f} MW (H1 2016), {sv_uc.loc['2022-12-31']:.0f} MW (H2 2022),\n{sv_uc.loc['2023-06-30':].min():.0f}-{sv_uc.loc['2023-06-30':].max():.0f} MW since; latest {sv_uc.iloc[-1]:.0f} MW\ninventory: {sv_inv.iloc[0]:.0f} MW (H1 2023) to {sv_inv.iloc[-1]:.0f} MW (H1 2026)", transform=ax.transAxes, va="top", fontsize=6.8, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
     ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1); ax.set_title("CBRE Silicon Valley colocation market, semiannual"); ax.set_ylabel("MW"); ax.legend(fontsize=8, loc="upper left")
-    ax = axes[1, 0]; ax.plot(ep.index, ep["power_MW_us"] / 1000, color="C3", label="United States: 75 sites in the Epoch snapshot")
+    n_us = int(pd.read_csv(c2.raw_path("epoch_data_centers"))["Country"].astype(str).str.contains("United States").sum())
+    ax = axes[1, 0]; ax.plot(ep.index, ep["power_MW_us"] / 1000, color="C3", label=f"United States: {n_us} sites in the Epoch snapshot")
+    ax.annotate(f"{ep['power_MW_us'].iloc[-1]/1000:.1f} GW ({ep.index[-1]:%b %Y})", xy=(ep.index[-1], ep["power_MW_us"].iloc[-1] / 1000), xytext=(-118, -34), textcoords="offset points", fontsize=7.5, arrowprops=dict(arrowstyle="-", color="grey", lw=0.6))
     ax.text(0.03, 0.78, "California: no observations in\nthis Epoch snapshot (a coverage\nlimit of the hub, not evidence of\nzero activity; no CA series drawn)", transform=ax.transAxes, fontsize=7, color="C4", va="top")
     ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1); ax.set_title("Epoch AI Frontier Data Centers Hub, cumulative facility power"); ax.set_ylabel("GW"); ax.legend(fontsize=8, loc="upper left")
     ax = axes[1, 1]; ax.axis("off")
@@ -233,6 +249,7 @@ def main() -> int:
     ax.text(1.0, 59300, "CEC statewide vintages (7 utilities, CEC tiers)", ha="center", fontsize=7.5, color="grey", va="top"); ax.text(3.75, 59300, "SCE public database\n(one utility)", ha="center", fontsize=7.5, color="grey", va="top"); ax.text(5.7, 59300, "PG&E earnings pipeline\n(one utility, PG&E stages)", ha="center", fontsize=7.5, color="grey", va="top")
     ax.axhline(caiso_record_mw, color="k", ls="--", lw=1); ax.text(-0.4, caiso_record_mw + 600, f"CAISO record instantaneous peak 52,061 MW (Sep 6, 2022): scale reference only", ha="left", fontsize=7.5, va="bottom")
     ax.text(1.5, 30200, "* utility rows sum to 23,278; CEC marginal totals 23,277 (20,677 in CA)", ha="center", fontsize=6.5, color="grey")
+    ax.text(4.6, 44500, f"December 2025 requests located in California: 20,677 MW\n= {100*20677/caiso_record_mw:.1f}% of the CAISO record peak ({caiso_record_mw:,.0f} MW)\n= {20677/ex_cec_peak:.1f}x existing data center peak demand (~1,000 MW)\n= {20677/ex_high:.0f}-{20677/ex_low:.0f}x existing average load ({ex_low:,.0f}-{ex_high:,.0f} MW)\n(IEPR comparison in the RQ1 table)", ha="center", va="center", fontsize=7, bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="grey", lw=0.5))
     ax.axhspan(ex_low, ex_high, color="C1", alpha=0.18, label=f"existing data center average load, chapter 1 statewide estimate and conversion: {ex_low:,.0f}-{ex_high:,.0f} MW")
     ax.axhline(ex_cec_peak, color="C1", lw=1.2, label="existing data center peak demand, CEC: ~1,000 MW (Dec 2025)")
     ax.set_xticks(list(xs) + [3.2, 4.1, 5.3, 6.15]); ax.set_xticklabels([l for _, l in vint], fontsize=7.5); ax.set_ylabel("MW requested"); ax.set_ylim(0, 60000); ax.set_xlim(-0.5, 6.55)

@@ -76,6 +76,16 @@ def main() -> int:
     b = pd.read_csv(PROCESSED / "ch1_battery_summary.csv", index_col=0)
     rows = [f"{y} & {r.discharge_TWh:.2f} & {-r.charge_TWh:.2f} & {r.peak_discharge_MW/1000:.1f} & {-r.peak_charge_MW/1000:.1f} \\\\" for y, r in b.iterrows()]
     write("ch1_battery", "\n".join([r"\begin{tabular}{lrrrr}", r"\toprule", r"Year & Discharge (TWh) & Charge (TWh) & Peak discharge (GW) & Peak charge (GW) \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"]))
+    svp = pd.read_csv(PROCESSED / "ch1_svp_fact_sheets.csv")
+    rows = [f"{int(r.fact_sheet_year)} & {r.peak_MW:.1f} & {100*r.load_factor:.1f} & {('--' if pd.isna(r.retail_sales_GWh) else f'{r.retail_sales_GWh/1000:.2f}')} & {r.supply_GWh/1000:.2f} & {r.energy_GWh_est/1000:.2f} \\\\" for r in svp.itertuples()]
+    write("ch1_svp", "\n".join([r"\begin{tabular}{lrrrrr}", r"\toprule", r"Fact sheet year & Peak demand (MW) & System load factor (\%) & Retail sales (TWh) & Purchased and generated supply (TWh) & Peak $\times$ load factor $\times$ 8760 (TWh) \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"]))
+    write("ch1_svp_note", r"\footnotesize Silicon Valley Power utility fact sheets; retail sales are reported from 2020. Data center shares applied to 2023 retail sales: 53 percent (SVP data center page), 55 percent (SVP Assembly deck, January 2026), about 60 percent (Santa Clara officials, 2025); SVP reports 64 to 67 percent utilization of requested capacity for its data center customers.")
+
+    g = pd.read_csv(PROCESSED / "ch1_gas_series_comparability_monthly.csv", index_col=0).loc["2023-09-01":"2024-04-01"]
+    rows = [f"{pd.Timestamp(i):%b %Y} & {r.eia930_gas_TWh:.2f} & {r.caiso_fuelmix_gas_TWh:.2f} & {r.eia_minus_caiso_gas_TWh:+.2f} & {100*r.caiso_fuelmix_gas_TWh/r.caiso_demand_TWh:.1f} & {r.implied_gas_kg_per_MWh:.0f} \\\\" for i, r in g.iterrows()]
+    ann = pd.read_csv(PROCESSED / "ch1_gas_series_comparability_monthly.csv", index_col=0); ann.index = pd.to_datetime(ann.index); ay = ann.groupby(ann.index.year)[["eia930_gas_TWh", "caiso_fuelmix_gas_TWh", "eia_minus_caiso_gas_TWh"]].sum()
+    rows.append(r"\midrule"); rows += [f"{int(y)} total & {r.eia930_gas_TWh:.1f} & {r.caiso_fuelmix_gas_TWh:.1f} & {r.eia_minus_caiso_gas_TWh:+.1f} & -- & -- \\\\" for y, r in ay.loc[2023:2025].iterrows()]
+    write("ch1_gas_comparability", "\n".join([r"\begin{tabular}{lrrrrr}", r"\toprule", r"Month & EIA-930 CISO gas (TWh) & CAISO fuel-mix gas (TWh) & EIA minus CAISO (TWh) & CAISO gas share of demand (\%) & Implied gas CO$_2$ factor, CAISO accounting (kg/MWh) \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"]))
     return 0
 
 
