@@ -722,3 +722,30 @@ if __name__ == "__main__":
     for g, ss in by_group().items():
         print(f"{g:20s} {len(ss):4d}")
     print("total", len(all_sources()))
+
+# ---- Chapter 4 additions (2026-09-22): ERCOT operational overviews, PJM 2026 adjustment records, FERC docket RM26-4 filings ----
+STATIC += [
+    Source("ercot_ops_overview_2026_06", "ercot", "ERCOT", "ERCOT Monthly Operational Overview, June 2026 (large load queue by status and in-service year 2022-2033; 8,926 MW approved to energize, 3,966 MW observed)",
+           "https://www.ercot.com/files/docs/2026/07/17/ERCOT-Monthly-Operational-Overview-June-2026.pdf"),
+    Source("ercot_ops_overview_2026_08", "ercot", "ERCOT", "ERCOT Monthly Operational Overview, August 2026 (9,456 MW approved to energize, 4,316 MW observed in August 2026)",
+           "https://www.ercot.com/files/docs/2026/09/16/ERCOT-Monthly-Operational-Overview-August-2026.pdf"),
+    Source("pjm_lar_summary_2025_11_24", "pjm", "PJM", "Load Adjustment Requests Summary for the 2026 Load Forecast, preliminary (Load Analysis Subcommittee, Nov 24 2025): firm = ESO/CC, non-firm derated, 70% utilization, 36-month ramp",
+           "https://www.pjm.com/-/media/DotCom/committees-groups/subcommittees/las/2025/20251124/20251124-item-03---large-load-adjustment-requests-summary.pdf"),
+    Source("pjm_2026_load_report_tables", "pjm", "PJM", "2026 PJM Load Forecast Report tables (xlsx; Tables B-9 and B-9b, large load adjustments by zone, 2026-2046)",
+           "https://www.pjm.com/-/media/DotCom/planning/res-adeq/load-forecast/2026-load-report-tables.xlsx"),
+    Source("pjm_2026_load_adjustment_breakdown", "pjm", "PJM", "2026 load adjustment breakdown for capacity obligations (xlsx; Table B-9 adjustments above embedded by zone)",
+           "https://www.pjm.com/-/media/DotCom/planning/res-adeq/load-forecast/2026-load-adjustment-breakdown-for-capacity-obligations.xlsx"),
+    Source("caiso_comments_ferc_rm26_4_2025_11", "ferc", "CAISO", "CAISO comments on the FERC ANOPR Interconnection of Large Loads to the Interstate Transmission System, Docket RM26-4-000 (Nov 21 2025; describes the 20 MW threshold and CAISO's process)",
+           "https://www.caiso.com/documents/nov-21-2025-comments-on-the-advanced-notice-of-proposed-rulemaking-interconnection-of-large-loads-to-the-interstate-transmission-system-rm26-4.pdf"),
+    Source("nerc_rm26_4_accelerated_plan_2026_03", "ferc", "NERC", "NERC accelerated large load action plan, supplemental filing in Docket RM26-4-000 (Mar 20 2026)",
+           "https://www.nerc.com/globalassets/who-we-are/legal--regulatory/filings--orders/nerc-filings-to-ferc/2026/nerc_accelerated-ll-action-plan_rm26-4_signed.pdf"),
+    Source("ferc_rm26_4_docket_page", "ferc", "FERC", "FERC docket page RM26-4-000 (HTML; ferc.gov serves a JavaScript challenge to non-browser clients, so the stored file may be the challenge page; the page was read in a browser on 2026-09-22)",
+           "https://www.ferc.gov/rm26-4", filename="ferc_rm26_4.html", tags=["html"], optional=True),
+    Source("ferc_news_2026_04_16_large_load", "ferc", "FERC", "FERC news release, Apr 16 2026: FERC to act on the large load interconnection docket by June 2026 (HTML; same caveat)",
+           "https://www.ferc.gov/news-events/news/ferc-act-large-load-interconnection-docket-june-2026", filename="ferc_news_2026_04_16.html", tags=["html"], optional=True),
+]
+
+STATIC += [
+    Source("ferc_news_2026_06_18_show_cause", "ferc", "FERC", "FERC news release, Jun 18 2026: show cause orders to the six RTOs/ISOs on large load interconnection (E-7 to E-12; CAISO is Docket EL26-71-000) (HTML)",
+           "https://ferc.gov/news-events/news/ferc-launches-aggressive-targeted-action-speed-large-load-integration", filename="ferc_news_2026_06_18.html", tags=["html"], optional=True),
+]

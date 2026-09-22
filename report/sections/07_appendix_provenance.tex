@@ -2,7 +2,7 @@
 \chapter{Provenance of Figures and Quoted Numbers}
 \label{app:provenance}
 
-Every figure in this report is drawn by a script from files in \texttt{data/processed/}, which are themselves produced from raw downloads recorded in \texttt{data/raw/manifest.csv} with their URL, access date and SHA-256. The tables below list, for each figure, the processed files it is drawn from, the raw sources behind them and the code that produces them. Headline values quoted in the text are printed on the figures or appear in the chapter tables; the few numbers that appear only in prose (source-document figures such as EPRI's state total, and ratios derived from tabulated values) are listed with their sources in \texttt{docs/DATA\_NOTES.md}, which also records every data limit found during the audits. Rebuilding is one command per chapter (\texttt{make ch1}, \texttt{make ch2}, \texttt{make ch3}); the standalone bundle reproduces every output byte for byte.
+Every figure in this report is drawn by a script from files in \texttt{data/processed/}, which are themselves produced from raw downloads recorded in \texttt{data/raw/manifest.csv} with their URL, access date and SHA-256. The tables below list, for each figure, the processed files it is drawn from, the raw sources behind them and the code that produces them. Headline values quoted in the text are printed on the figures or appear in the chapter tables; the few numbers that appear only in prose (source-document figures such as EPRI's state total, and ratios derived from tabulated values) are listed with their sources in \texttt{docs/DATA\_NOTES.md}, which also records every data limit found during the audits. Rebuilding is one command per chapter (\texttt{make ch1}, \texttt{make ch2}, \texttt{make ch3}, \texttt{make ch4}); the standalone bundle reproduces every output byte for byte.
 
 \begin{table}[H]
 \centering\scriptsize
@@ -20,4 +20,10 @@ Every figure in this report is drawn by a script from files in \texttt{data/proc
 \centering\scriptsize
 \caption{Chapter~\ref{ch:supply} figures: processed files, raw sources and code.}
 \resizebox{\textwidth}{!}{\input{tables/provenance_ch3}}
+\end{table}
+
+\begin{table}[H]
+\centering\scriptsize
+\caption{Chapter~\ref{ch:together} figures: processed files, raw sources and code.}
+\resizebox{\textwidth}{!}{\input{tables/provenance_ch4}}
 \end{table}
