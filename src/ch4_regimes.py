@@ -132,3 +132,26 @@ def pjm_adjustment_tables() -> pd.DataFrame:
                     rows.append({"table": label, "zone": str(z).strip(), "year": y, "mw": float(v)})
     out = pd.DataFrame(rows); out["year"] = out["year"].astype("Int64"); out["source"] = "pjm_2026_load_report_tables"
     return out
+
+RUBRIC = {
+    "granularity": "0 no data product; 1 aggregates by utility, zone or tier; 2 aggregates by phase, zone, size class and year; 3 project or facility level",
+    "stage_taxonomy": "0 operating facilities only; 1 one split (firm/non-firm or agreement/no agreement); 2 three groups; 3 five or more phases",
+    "verification": "0 none or voluntary self-report; 1 utility or staff review without money at risk; 2 study or agreement gating; 3 fees, financial security, disclosure duties and curtailment obligations",
+    "timeliness": "0 none or one-off pilot; 1 annual; 2 twice a year or quarterly; 3 monthly",
+    "coverage": "0 none; 1 partial (three regions or submitted adjustments only); 2 all loads above a threshold in the jurisdiction; 3 all requests regardless of size",
+    "public_access": "0 not published or confidential; 1 aggregates only; 2 aggregates plus some project-level or docket detail; 3 full project-level detail",
+}
+SCORES = {
+    "CEC energization tiers (California)": {"granularity": 1, "stage_taxonomy": 2, "verification": 1, "timeliness": 1, "coverage": 3, "public_access": 2},
+    "ERCOT large load interconnection (Texas)": {"granularity": 2, "stage_taxonomy": 3, "verification": 2, "timeliness": 3, "coverage": 2, "public_access": 1},
+    "PJM load forecast adjustments": {"granularity": 2, "stage_taxonomy": 1, "verification": 2, "timeliness": 1, "coverage": 1, "public_access": 1},
+    "EIA pilot data center surveys (federal)": {"granularity": 3, "stage_taxonomy": 0, "verification": 0, "timeliness": 0, "coverage": 1, "public_access": 0},
+    "Texas SB 6 (2025)": {"granularity": 0, "stage_taxonomy": 1, "verification": 3, "timeliness": 1, "coverage": 2, "public_access": 0},
+    "FERC Docket RM26-4 (federal)": {"granularity": 0, "stage_taxonomy": 1, "verification": 1, "timeliness": 1, "coverage": 2, "public_access": 2},
+}
+
+
+def regime_scores() -> pd.DataFrame:
+    """Scores 0-3 per criterion under RUBRIC; the descriptive cells of crosswalk_matrix() are the evidence for each score."""
+    rows = [{"regime": r, **sc, "total": sum(sc.values())} for r, sc in SCORES.items()]
+    return pd.DataFrame(rows)

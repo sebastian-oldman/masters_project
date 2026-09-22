@@ -53,6 +53,24 @@ def main() -> int:
         return "--" if pd.isna(v) else format(v, fmt)
     rows = [f"{esc(r.case)} & {f(r.p_agreement, '.2f')} & {f(r.p_application, '.2f')} & {f(r.p_inquiry, '.2f')} & {f(r.utilization, '.2f')} & {f(r.ramp_agreement, '.2f')} & {f(r.ramp_application, '.2f')} & {f(r.load_factor, '.2f')} & {r.dc_peak_mw_2030:,.0f} & {r.dc_energy_twh_2030:.1f} \\\\" for r in d.itertuples()]
     tab("lrrrrrrrrr", "Case & P(agreement) & P(application) & P(inquiry) & Utilization & Ramp agr. & Ramp app./inq. & Load factor & Peak 2030 (MW) & Energy 2030 (TWh)", rows, "ch4_demand_cases")
+    rp = pd.read_csv(PROCESSED / "ch4_cec_replication.csv")
+    rows = [f"{esc(r.scenario)} & {r.full_ramp_statewide_mw:,.0f} & {r.memo_endpoint_2040_mw:,.0f} & {r.full_ramp_california_mw:,.0f} & {r.effective_p_agreement:.2f} / {r.effective_p_application:.2f} / {r.effective_p_inquiry:.2f} & {100*r.ramp_share_2030:.0f} & {r.replicated_2030_california_mw:,.0f} & {r.published_2030_caiso_mw:,.0f} & {r.published_2030_vea_mw:,.0f} & {r.published_2030_california_mw:,.0f} \\\\" for r in rp.itertuples()]
+    tab("lrrrrrrrrr", "Scenario & Full-ramp statewide (MW) & Memo 2040 endpoint & Full-ramp California & Effective P (agr. / app. / inq.) & CEC ramp share 2030 (\\%) & Replicated 2030 California (MW) & Published CAISO 2030 & of which VEA & Published California 2030", rows, "ch4_cec_replication")
+    pr = pd.read_csv(PROCESSED / "ch4_cec_ramp_profile.csv"); yrs_p = [2025, 2026, 2027, 2028, 2029, 2030, 2032, 2035, 2040]
+    rows = []
+    for scen in ("Planning", "Local Reliability"):
+        sub = pr[pr.scenario == scen].set_index("year")
+        rows.append(f"{scen}: CAISO data center component (MW) & " + " & ".join(f"{sub.loc[y, 'caiso_data_center_mw']:,.0f}" for y in yrs_p) + r" \\")
+        rows.append(f"{scen}: share of 2040 (\\%) & " + " & ".join(f"{100*sub.loc[y, 'share_of_2040']:.0f}" for y in yrs_p) + r" \\")
+    tab("l" + "r" * len(yrs_p), "CEC ramp profile & " + " & ".join(str(y) for y in yrs_p), rows, "ch4_cec_ramp")
+    tt = pd.read_csv(PROCESSED / "ch4_demand_totals_2030.csv")
+    keep = ["Upper bound: every MW builds, flat load", "Upper bound at CEC utilization", "CEC central (Planning forecast, published)", "CEC high (Local Reliability, published)", "ERCOT-calibrated stock-flow", "PJM-style: firm only (signed agreements)"]
+    rows = []
+    for c in keep:
+        for r in tt[tt.demand_case == c].itertuples():
+            rows.append(f"{esc(c)} & {esc(r.iepr_case)} & {r.non_dc_peak_2030_MW:,.0f} & {r.dc_peak_MW:,.0f} & {r.total_peak_2030_MW:,.0f} & {r.peak_growth_2025_2030_MW:,.0f} & {r.non_dc_energy_2030_TWh:.1f} & {r.dc_energy_TWh:.1f} & {r.total_energy_2030_TWh:.1f} & {r.energy_growth_2025_2030_TWh:.1f} \\\\")
+        rows.append(r"\addlinespace")
+    tab("llrrrrrrrr", "Demand case & IEPR case & Non-DC peak 2030 (MW) & DC peak & Total peak & Growth from 2025 & Non-DC energy 2030 (TWh) & DC energy & Total energy & Growth from 2025", rows[:-1], "ch4_demand_totals")
     # 4. Monte Carlo inputs and summary
     i = pd.read_csv(PROCESSED / "ch4_mc_inputs.csv")
     rows = [f"{esc(r.input)} & {esc(r.distribution)} & {f(r.low, '.2f')} & {f(r.mode, '.2f')} & {f(r.high, '.2f')} & {esc(r.basis)} \\\\" for r in i.itertuples()]
@@ -74,6 +92,7 @@ def main() -> int:
     t_ = pd.read_csv(PROCESSED / "ch4_tornado.csv")
     rows = [f"{esc(r.input)} & {r.low_value:.3g} & {r.high_value:.3g} & {r.gap_energy_low:.0f} & {r.gap_energy_high:.0f} & {r.swing_energy:.0f} & {r.gap_peak_low:,.0f} & {r.gap_peak_high:,.0f} & {r.swing_peak:,.0f} \\\\" for r in t_.itertuples()]
     rows.append(r"\midrule" + f"\nbase (all inputs at their medians) & & & {t_.base_gap_energy.iloc[0]:.0f} & & & {t_.base_gap_peak.iloc[0]:,.0f} & & \\\\")
+    rows.append(f"upper bound (every MW builds, flat; deterministic) & & & {ub.gap_energy_twh.min():.0f} & {ub.gap_energy_twh.max():.0f} & & {ub.gap_peak_mw.min():,.0f} & {ub.gap_peak_mw.max():,.0f} & \\\\")
     tab("lrrrrrrrr", "Input & Low & High & Energy gap at low (TWh) & at high & Swing & Peak gap at low (MW) & at high & Swing", rows, "ch4_tornado")
     so = pd.read_csv(PROCESSED / "ch4_sobol.csv"); pv = so.pivot(index="input", columns="metric", values=["S1", "S1_conf", "ST", "ST_conf"]).sort_values(("ST", "gap_energy_twh"), ascending=False)
     rows = [f"{esc(i)} & {pv.loc[i, ('S1', 'gap_energy_twh')]:.3f} & {pv.loc[i, ('S1_conf', 'gap_energy_twh')]:.3f} & {pv.loc[i, ('ST', 'gap_energy_twh')]:.3f} & {pv.loc[i, ('S1', 'gap_peak_mw')]:.3f} & {pv.loc[i, ('S1_conf', 'gap_peak_mw')]:.3f} & {pv.loc[i, ('ST', 'gap_peak_mw')]:.3f} \\\\" for i in pv.index]
@@ -88,17 +107,33 @@ def main() -> int:
     m = hd[hd.variant == order[0]].groupby("limit")[["hours_curtailed", "share_winter", "hours_below_90pct", "hours_below_75pct", "hours_below_50pct", "max_curtailment_mw"]].mean()
     rows = [f"{100*l:g} & {hs[(hs.variant == order[0]) & (hs.limit == l)].headroom_mw.iloc[0]:,.0f} & {r.hours_curtailed:.0f} & {100*r.share_winter:.0f} & {r.hours_below_90pct:.0f} & {r.hours_below_75pct:.0f} & {r.hours_below_50pct:.0f} & {r.max_curtailment_mw:,.0f} \\\\" for l, r in m.iterrows()]
     tab("rrrrrrrr", "Limit (\\%) & Headroom (MW) & Hours curtailed per year & Share in Nov-Feb (\\%) & Hours below 90\\% available & below 75\\% & below 50\\% & Largest hourly cut (MW)", rows, "ch4_headroom_detail")
+    hy = pd.read_csv(PROCESSED / "ch4_headroom_by_year.csv")
+    for variant, name in (("Duke seasons (Nov-Feb winter)", "ch4_headroom_by_year"), ("single historical peak", "ch4_headroom_by_year_single")):
+        sub = hy[hy.variant == variant]
+        lims = [0.0025, 0.005, 0.01, 0.05]
+        rows = []
+        for y in sorted(sub.year.unique()):
+            r = sub[sub.year == y].set_index("limit")
+            rows.append(f"{int(y)} & " + " & ".join(f"{r.loc[l, 'headroom_hours_criterion_mw']:,.0f}" for l in lims) + " & " + " & ".join(f"{r.loc[l, 'headroom_energy_criterion_mw']:,.0f}" for l in lims) + r" \\")
+        mn = sub.groupby("limit")[["headroom_hours_criterion_mw", "headroom_energy_criterion_mw"]].agg(["min", "max"])
+        rows.append(r"\midrule" + "\nrange & " + " & ".join(f"{mn.loc[l, ('headroom_hours_criterion_mw', 'min')]:,.0f}--{mn.loc[l, ('headroom_hours_criterion_mw', 'max')]:,.0f}" for l in lims) + " & " + " & ".join(f"{mn.loc[l, ('headroom_energy_criterion_mw', 'min')]:,.0f}--{mn.loc[l, ('headroom_energy_criterion_mw', 'max')]:,.0f}" for l in lims) + r" \\")
+        tab("lrrrrrrrr", "Year & \\multicolumn{4}{c}{Hours above the peak under 0.25 / 0.5 / 1 / 5\\% of the year (MW)} & \\multicolumn{4}{c}{Curtailed energy under 0.25 / 0.5 / 1 / 5\\% (Duke, MW)}", rows, name)
     hv = pd.read_csv(PROCESSED / "ch4_headroom_vs_gap.csv")
     rows = [f"{100*r.limit:g} & {r.headroom_mw:,.0f} & {100*r.share_of_dc_cec_central:.0f} & {100*r.share_of_dc_ercot:.0f} & {100*r.share_of_dc_pjm_firm:.0f} & {100*r.share_of_dc_cec_high:.0f} & {100*r.share_of_dc_upper_bound:.0f} & {100*r.share_of_peak_gap_p50:.0f} & {100*r.share_of_peak_gap_p95:.0f} & {100*r.share_of_upper_bound_peak_gap:.0f} \\\\" for r in hv.itertuples()]
     tab("rrrrrrrrrr", "Limit (\\%) & Headroom (MW) & of CEC central DC (\\%) & of ERCOT-calibrated & of PJM firm & of CEC high & of upper-bound DC & of peak gap P50 & of peak gap P95 & of upper-bound peak gap", rows, "ch4_headroom_vs_gap")
     es = pd.read_csv(PROCESSED / "ch4_energy_side.csv")
-    rows = [f"{esc(r.item)} & {r.value:,.0f} & {esc(r.unit)} & {'--' if pd.isna(r.flexible_1gw_energy_gwh) else format(r.flexible_1gw_energy_gwh, ',.0f')} & {esc(r.source)} \\\\" for r in es.itertuples()]
-    tab("lrrrl", "Item & Value & Unit & Energy a 1 GW flexible load could absorb (GWh) & Source", rows, "ch4_energy_side")
+    rows = [f"{esc(r.item)} & {r.value:,.0f} & {esc(r.unit)} & {'--' if pd.isna(r.midday_share_pct) else format(r.midday_share_pct, '.0f')} & {'--' if pd.isna(r.flexible_1gw_energy_gwh) else format(r.flexible_1gw_energy_gwh, ',.0f')} & {esc(r.source)} \\\\" for r in es.itertuples()]
+    tab("lrrrrl", "Item & Value & Unit & Share in 10--16 h (\\%) & Energy a 1 GW flexible load could absorb (GWh) & Source", rows, "ch4_energy_side")
     # 7. regimes
     cw = pd.read_csv(PROCESSED / "ch4_regime_crosswalk.csv")
     cols = ["granularity", "stage_taxonomy", "verification", "timeliness", "coverage", "public_access"]
     rows = [f"\\textbf{{{esc(r.regime)}}} & " + " & ".join(esc(getattr(r, c_)) for c_ in cols) + r" \\" + "\n" + r"\addlinespace" for r in cw.itertuples()]
     write("ch4_crosswalk", [r"\begin{tabular}{p{2.4cm}p{3.1cm}p{3.4cm}p{3.6cm}p{2.6cm}p{2.6cm}p{2.6cm}}", r"\toprule", "Regime & Granularity & Stage taxonomy & Verification & Timeliness & Coverage & Public access \\\\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+    sc = pd.read_csv(PROCESSED / "ch4_regime_scores.csv"); rb = pd.read_csv(PROCESSED / "ch4_regime_rubric.csv")
+    cols_s = ["granularity", "stage_taxonomy", "verification", "timeliness", "coverage", "public_access"]
+    rows = [f"{esc(r.regime)} & " + " & ".join(str(int(getattr(r, c_))) for c_ in cols_s) + f" & {int(r.total)} \\\\" for r in sc.itertuples()]
+    tab("lrrrrrrr", "Regime & Granularity & Stage taxonomy & Verification & Timeliness & Coverage & Public access & Total (of 18)", rows, "ch4_scores")
+    write("ch4_scores_note", [r"\begin{minipage}{\textwidth}\scriptsize Rubric: " + "; ".join(f"\\textit{{{esc(r.criterion.replace('_', ' '))}}}: {esc(r.rubric)}" for r in rb.itertuples()) + r".\end{minipage}"])
     tx = pd.read_csv(PROCESSED / "ch4_common_taxonomy.csv")
     rows = [" & ".join(esc(v) for v in r) + r" \\" + "\n" + r"\addlinespace" for r in tx.itertuples(index=False)]
     write("ch4_taxonomy", [r"\begin{tabular}{p{2.3cm}p{2.6cm}p{2.8cm}p{2.7cm}p{2.3cm}p{3.0cm}p{2.7cm}}", r"\toprule", " & ".join(esc(c_) for c_ in tx.columns) + r" \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])

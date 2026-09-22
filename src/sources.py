@@ -749,3 +749,14 @@ STATIC += [
     Source("ferc_news_2026_06_18_show_cause", "ferc", "FERC", "FERC news release, Jun 18 2026: show cause orders to the six RTOs/ISOs on large load interconnection (E-7 to E-12; CAISO is Docket EL26-71-000) (HTML)",
            "https://ferc.gov/news-events/news/ferc-launches-aggressive-targeted-action-speed-large-load-integration", filename="ferc_news_2026_06_18.html", tags=["html"], optional=True),
 ]
+
+STATIC += [
+    Source("ercot_ops_overview_2026_04", "ercot", "ERCOT", "ERCOT Monthly Operational Overview, April 2026 (large load queue by status; approved to energize and observed load)",
+           "https://www.ercot.com/files/docs/2026/05/19/ERCOT-Monthly-Operational-Overview-April-2026.pdf"),
+    Source("ercot_ops_overview_2026_07", "ercot", "ERCOT", "ERCOT Monthly Operational Overview, July 2026 (large load queue by status; approved to energize and observed load)",
+           "https://www.ercot.com/files/docs/2026/08/17/ERCOT-Monthly-Operational-Overview-July-2026.pdf"),
+    Source("nrc_diablo_canyon_rod_2026", "context", "U.S. Nuclear Regulatory Commission", "Diablo Canyon license renewal application: Record of Decision (ML26022A077; renewed licences issued April 2 2026)",
+           "https://www.nrc.gov/docs/ML2602/ML26022A077.pdf", filename="NRC_Diablo_Canyon_LRA_Record_of_Decision_ML26022A077.pdf", optional=True),
+    Source("gov_ca_diablo_license_2026_04_02", "context", "Office of the Governor of California", "Governor Newsom welcomes approval of Diablo Canyon license renewals (Apr 2 2026; SB 846 limits operation to 2030 absent legislative action) (HTML)",
+           "https://www.gov.ca.gov/2026/04/02/governor-newsom-welcomes-approval-of-diablo-canyon-license-renewals-delivering-on-californias-commitment-to-a-clean-and-reliable-grid/", filename="gov_ca_diablo_license_2026_04_02.html", tags=["html"], optional=True),
+]

@@ -44,6 +44,9 @@ The December 2025 tiers are the CEC's published statewide totals minus VEA's req
     code("""g = table("ch4_iepr_growth_cases"); g.round(0)"""),
     code("""table("ch4_iepr_growth_summary").round(0)"""),
     code("""dc = table("ch4_ced2025_data_center_component"); dc[(dc.tac.isin(["CAISO", "VEA"])) & (dc.year.isin([2025, 2028, 2030]))].pivot_table(index=["scenario", "tac"], columns="year", values="data_center_mw")"""),
+    md("""**The CEC case rebuilt from its parameters.** Confidence by tier times 67 percent utilization, with SVP's requests exempt from the confidence levels (memo p. 9), reproduces the memo's 2040 endpoints exactly (4,855 MW Planning, 7,381 MW Local Reliability). The CEC's own ramp profile, the share of the 2040 CAISO component reached in each year, puts 36 and 60 percent of that demand on line by 2030; the replicated 2030 values are within 2 and 6 percent of the published components once VEA is removed."""),
+    code("""table("ch4_cec_replication").round(3).T"""),
+    code("""pr = table("ch4_cec_ramp_profile"); pr.pivot(index="year", columns="scenario", values="share_of_2040").round(3).T"""),
     md("""## 2. ERCOT phase-transition rates and the stock-flow chain
 
 Monthly stocks by phase were transcribed from ERCOT's monthly newsletters, the March 2026 TAC report, the April and June 2026 board decks, the April 2026 legislative hearing decks and the June and August 2026 operational overviews (every value carries its manifest id). Four monthly hazards are estimated from the flows between phases, and a Markov chain gives the probability that a project starting in each phase is energized within 60 months, the horizon from the December 2025 tier vintage to December 2030. California tiers map to ERCOT phases as inquiry = no studies submitted, application = under ERCOT review, signed agreement = planning studies approved."""),
@@ -59,6 +62,8 @@ Monthly stocks by phase were transcribed from ERCOT's monthly newsletters, the M
 
 Each row applies a counting rule to the same 20,677 MW: the proposal's upper bound (every MW builds, flat), the CEC's published Planning and Local Reliability values (and a literal replication of the CEC parameters: confidence 70/33/0 or 100/50/10, 67 percent utilization, a 7-year linear ramp with applications and inquiries starting in 2028), the ERCOT-calibrated chain, and the PJM rules (only signed agreements count before 2030, at 70 percent utilization with a ramp of at least 36 months; from 2030 half of non-firm requests). Energy uses a 0.88 load factor except where the CEC's own deliveries are used."""),
     code("""table("ch4_demand_cases_2030").round(3)"""),
+    md("""Each demand case on top of each IEPR non-data-center case (statewide peak and energy in 2030 and the growth from 2025):"""),
+    code("""tt = table("ch4_demand_totals_2030"); tt[tt.demand_case.isin(["Upper bound: every MW builds, flat load", "CEC central (Planning forecast, published)", "CEC high (Local Reliability, published)", "ERCOT-calibrated stock-flow", "PJM-style: firm only (signed agreements)"])].round(1)"""),
     code("""show("fig4_01_demand_scenarios_2030")"""),
     md("""## 4. Monte Carlo gap model
 
@@ -100,12 +105,17 @@ Duke's method: add a constant load L to every hour, count as curtailment any exc
     code("""table("ch4_headroom_summary").round(0)"""),
     code("""h = table("ch4_headroom_detail"); h[h.variant.str.startswith("Duke seasons (Nov")].groupby("limit")[["curtailment_rate", "hours_curtailed", "curtailed_mwh", "share_winter", "hours_below_90pct", "hours_below_75pct", "hours_below_50pct", "max_curtailment_mw"]].mean().round(3)"""),
     code("""h[(h.variant.str.startswith("Duke seasons (Nov")) & (h.limit == 0.005)].round(3)"""),
+    md("""**Year by year.** The phase plan asks for the largest flat addition such that the hours above the historical peak stay under 0.25, 0.5 and 1 percent of each year. That hours criterion is solved in closed form from the sorted margins to the threshold, next to Duke's energy criterion solved year by year, for the Duke seasonal thresholds and for a single all-years peak."""),
+    code("""hy = table("ch4_headroom_by_year"); hy.pivot_table(index=["variant", "year"], columns="limit", values=["headroom_hours_criterion_mw", "headroom_energy_criterion_mw"]).round(0)"""),
     code("""table("ch4_headroom_vs_gap").round(3)"""),
     code("""table("ch4_energy_side").round(0)"""),
     code("""show("fig4_04_headroom")"""),
-    md("""**Reading.** On 2019-2025 CAISO demand the headroom is 3.1 GW at 0.25 percent curtailment, 3.8 GW at 0.5 percent, 4.6 GW at 1 percent and 8.0 GW at 5 percent, against Duke's 4.2, 5.0 and 5.9 GW on 2016-2024 data; the difference comes from the sample of years (the 2022-2025 subsample gives 2.7 to 4.1 GW) and the winter threshold, since 97 to 99 percent of the curtailment falls in November to February when winter evening loads sit close to the winter peak. At the 0.5 percent headroom the new load is curtailed in about 197 hours a year, in 18 of which less than half of it is available, and the largest single-hour cut is 3.8 GW. That headroom is 2.4 times the CEC's central data center addition, about equal to the PJM firm-only case, 53 percent of the median probability-weighted peak gap and 13 percent of the upper-bound peak gap. On the energy side, the SCE load-aggregation point had 877 negative-price day-ahead hours in 2025 (1,131 in 2024) and CAISO curtailed 3.8 TWh of wind and solar in 2025 and 4.9 TWh in January to August 2026, the equivalent of a 430 MW flat load running all year."""),
+    md("""**Reading.** On 2019-2025 CAISO demand the pooled headroom is 3.1 GW at 0.25 percent curtailment, 3.8 GW at 0.5 percent, 4.6 GW at 1 percent and 8.0 GW at 5 percent, against Duke's 4.2, 5.0 and 5.9 GW on 2016-2024 data; solved year by year, the energy criterion gives 3.3 to 4.2 GW at 0.5 percent and the stricter hours criterion 2.0 to 2.9 GW; the difference comes from the sample of years (the 2022-2025 subsample gives 2.7 to 4.1 GW) and the winter threshold, since 97 to 99 percent of the curtailment falls in November to February when winter evening loads sit close to the winter peak. At the 0.5 percent headroom the new load is curtailed in about 197 hours a year, in 18 of which less than half of it is available, and the largest single-hour cut is 3.8 GW. That headroom is 2.4 times the CEC's central data center addition, about equal to the PJM firm-only case, 53 percent of the median probability-weighted peak gap and 13 percent of the upper-bound peak gap. On the energy side, the SCE load-aggregation point had 877 negative-price day-ahead hours in 2025 (1,131 in 2024) and CAISO curtailed 3.8 TWh of wind and solar in 2025 and 4.9 TWh in January to August 2026, the equivalent of a 430 MW flat load running all year."""),
     md("""## 2. Regime crosswalk (RQ3)"""),
     code("""table("ch4_regime_crosswalk")"""),
+    code("""table("ch4_regime_scores")"""),
+    code("""table("ch4_regime_rubric")"""),
+    code("""show("fig4_07_regime_scores")"""),
     code("""table("ch4_common_taxonomy")"""),
     code("""table("ch4_headline_by_regime").round(0)"""),
     code("""table("ch4_sce_size_classes").round(3)"""),

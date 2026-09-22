@@ -38,6 +38,46 @@ def ca_tiers(vintage: str = "2025-12", exclude_utilities=("VEA",)) -> pd.DataFra
     return pd.DataFrame(rows)
 
 
+def tiers_by_utility(vintage: str = "2025-12") -> pd.DataFrame:
+    """Requested MW by utility and tier at the vintage (memo Table 1 rows)."""
+    t = pd.read_csv(PROCESSED / "ch2_tier_vintages.csv"); t = t[t.vintage == vintage]
+    return t.pivot(index="utility", columns="tier", values="mw").fillna(0.0)[TIERS]
+
+
+CEC_ENDPOINTS_2040 = {"Planning": 4855.0, "Local Reliability": 7381.0}  # cec_dc_methodology_memo_2026 Figures 4 and 5 (statewide incremental demand in 2040)
+
+
+def cec_forecast_replication(params: dict, dc_comp: pd.DataFrame, exclude_utilities=("VEA",)) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    """Rebuild the CEC forecast from its published parameters: confidence by tier x 67% utilization, with SVP's requests exempt from the
+    confidence levels (memo p. 9), which reproduces the memo's 2040 endpoints; then apply the CEC's own ramp profile, the share of the
+    2040 CAISO data center component reached in each year, to obtain 2030. Returns (summary by scenario, ramp profile, effective tier probabilities)."""
+    by_u = tiers_by_utility(); util = params["utilization"]; conf = params["confidence"]
+    caiso = dc_comp[(dc_comp.tac == "CAISO")].set_index(["scenario", "year"]).data_center_mw
+    rows, eff = [], {}
+    for scen, key in (("Planning", "mid"), ("Local Reliability", "high")):
+        full_all, full_ca, weighted = 0.0, 0.0, {t: 0.0 for t in TIERS}
+        for u, r in by_u.iterrows():
+            for t in TIERS:
+                c = 1.0 if u == "SVP" else conf[(TIER_KEY[t], key)]
+                full_all += r[t] * c * util
+                if u not in exclude_utilities:
+                    full_ca += r[t] * c * util; weighted[t] += r[t] * c
+        ca_tot = by_u.drop(index=[u for u in exclude_utilities if u in by_u.index])[TIERS].sum()
+        eff[scen] = {t: weighted[t] / ca_tot[t] for t in TIERS}
+        ramp30 = float(caiso[(scen, HORIZON)] / caiso[(scen, 2040)])
+        vea = dc_comp[(dc_comp.tac == "VEA") & (dc_comp.scenario == scen) & (dc_comp.year == HORIZON)].data_center_mw.iloc[0]
+        rows.append({"scenario": scen, "full_ramp_statewide_mw": full_all, "memo_endpoint_2040_mw": CEC_ENDPOINTS_2040[scen], "difference_mw": full_all - CEC_ENDPOINTS_2040[scen],
+                     "full_ramp_california_mw": full_ca, "ramp_share_2030": ramp30, "replicated_2030_california_mw": full_ca * ramp30,
+                     "published_2030_caiso_mw": float(caiso[(scen, HORIZON)]), "published_2030_vea_mw": float(vea), "published_2030_california_mw": float(caiso[(scen, HORIZON)] - vea),
+                     **{f"effective_p_{TIER_KEY[t].lower()}": eff[scen][t] for t in TIERS}})
+    prof = []
+    for scen in ("Planning", "Local Reliability"):
+        for y in range(2025, 2041):
+            prof.append({"scenario": scen, "year": y, "caiso_data_center_mw": float(caiso[(scen, y)]), "share_of_2040": float(caiso[(scen, y)] / caiso[(scen, 2040)])})
+    pr = pd.DataFrame(prof); pr["year"] = pr["year"].astype("Int64")
+    return pd.DataFrame(rows), pr, eff
+
+
 def cec_parameters() -> dict:
     p = pd.read_csv(PROCESSED / "cec_data_center_forecast_parameters.csv")
     conf = {(r.tier, r.scenario): float(r.value) for _, r in p[p.parameter == "confidence_level"].iterrows()}
@@ -174,12 +214,12 @@ ERCOT_STATUS_SNAPSHOTS = {  # cumulative MW by in-service year (the 'Actual and 
         "years": [2025, 2026, 2027, 2028, 2029, 2030],
         _S[0]: [0, 25253, 101702, 177879, 238188, 293651], _S[1]: [0, 6478, 30539, 51315, 61966, 86605], _S[2]: [30, 3181, 10739, 15923, 19040, 21343],
         _S[3]: [935, 2748, 2941, 2941, 3241, 3241], _S[4]: [5778] * 6},
-    ("ERCOT Monthly", "2026-04-30", "ercot_monthly_2026_04", "p. 4 table (GW, 'Section 9.5 Requirements Met' mapped to planning studies approved)"): {
+    ("ERCOT Monthly", "2026-05-13", "ercot_monthly_2026_04", "p. 4 table (GW, 'Section 9.5 Requirements Met' mapped to planning studies approved); newsletter posted May 13 2026"): {
         "years": list(range(2022, 2034)),
         _S[0]: [0, 0, 0, 0, 24900, 99700, 184400, 251300, 291600, 309200, 316600, 321000], _S[1]: [0, 0, 0, 0, 6400, 29300, 50600, 65600, 87300, 91300, 92600, 93700],
         _S[2]: [0, 0, 0, 0, 3300, 10600, 16100, 18400, 21500, 21700, 21900, 22000], _S[3]: [0, 0, 0, 900, 2700, 2900, 2900, 3200, 3200, 3200, 3200, 3200],
         _S[4]: [2600, 4300, 4800, 5900, 5900, 5900, 5900, 5900, 5900, 5900, 5900, 5900]},
-    ("Board", "2026-06-01", "ercot_board_2026_05_interconnection_update", "slide 2 table (GW; 'Section 9.4 only' plus 'Section 9.4/9.5 met' mapped to planning studies approved)"): {
+    ("Operational overview", "2026-04-30", "ercot_ops_overview_2026_04", "slide 9 table (GW; 'Section 9.4 only' plus 'Section 9.4/9.5 met' mapped to planning studies approved); the same chart is slide 2 of the June 1 2026 board deck (ercot_board_2026_05_interconnection_update)"): {
         "years": list(range(2022, 2034)),
         _S[0]: [0, 0, 0, 0, 26900, 122600, 232300, 282900, 311100, 321100, 321400, 321400], _S[1]: [0, 0, 0, 0, 8900, 43300, 60100, 70000, 80200, 80200, 80200, 80200],
         _S[2]: [0, 0, 0, 0, 8700, 19900, 25100, 27500, 27500, 27500, 27500, 27500], _S[3]: [0, 300, 1400, 3000, 3100, 3100, 3100, 3100, 3100, 3100, 3100, 3100],
@@ -188,6 +228,11 @@ ERCOT_STATUS_SNAPSHOTS = {  # cumulative MW by in-service year (the 'Actual and 
         "years": list(range(2022, 2034)),
         _S[0]: [0, 0, 0, 4100, 32300, 102400, 186200, 228800, 242200, 253700, 254000, 254000], _S[1]: [0, 0, 0, 3000, 11000, 48500, 104100, 124500, 135600, 144000, 144000, 144000],
         _S[2]: [0, 0, 0, 0, 12600, 41400, 50400, 54200, 58100, 58100, 58500, 58500], _S[3]: [0, 400, 1800, 3100, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200],
+        _S[4]: [3300, 4300, 4800, 5700, 5700, 5700, 5700, 5700, 5700, 5700, 5700, 5700]},
+    ("Operational overview", "2026-07-31", "ercot_ops_overview_2026_07", "slide 9 table (GW; same mapping)"): {
+        "years": list(range(2022, 2034)),
+        _S[0]: [0, 0, 0, 4100, 32300, 101000, 180600, 221100, 233100, 244600, 244900, 244900], _S[1]: [0, 0, 0, 3000, 9900, 44500, 94000, 114100, 126500, 132000, 132000, 132000],
+        _S[2]: [0, 0, 0, 0, 15300, 48600, 67100, 73700, 77600, 80600, 81000, 81000], _S[3]: [0, 400, 1800, 3200, 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700],
         _S[4]: [3300, 4300, 4800, 5700, 5700, 5700, 5700, 5700, 5700, 5700, 5700, 5700]},
 }
 ERCOT_NARRATIVE = [  # (as of, metric, MW, source id, quote)
@@ -213,6 +258,11 @@ ERCOT_NARRATIVE = [  # (as of, metric, MW, source id, quote)
     ("2026-06-30", "approved to energize", 8926, "ercot_ops_overview_2026_06", "Of the 8,926 MW that have received Approval to Energize ... 3,966 MW in June 2026"),
     ("2026-06-30", "observed monthly non-simultaneous peak", 3966, "ercot_ops_overview_2026_06", "same"),
     ("2026-06-30", "batch zero requested load", 450000, "ercot_monthly_2026_06", "roughly 450+ gigawatts (GW) of requested load ... roughly 100+ GW to qualify as Base or Studied Load"),
+    ("2026-04-30", "approved to energize", 9012, "ercot_ops_overview_2026_04", "Of the 9,012 MW that have received Approval to Energize ... 4,006 MW in April 2026"),
+    ("2026-04-30", "observed monthly non-simultaneous peak", 4006, "ercot_ops_overview_2026_04", "same"),
+    ("2026-07-31", "tracked large load requests", 467400, "ercot_ops_overview_2026_07", "slide 9 chart total by 2033"),
+    ("2026-07-31", "approved to energize", 9456, "ercot_ops_overview_2026_07", "Of the 9,456 MW that have received Approval to Energize ... 4,370 MW in July 2026"),
+    ("2026-07-31", "observed monthly non-simultaneous peak", 4370, "ercot_ops_overview_2026_07", "same"),
     ("2026-08-31", "approved to energize", 9456, "ercot_ops_overview_2026_08", "Of the 9,456 MW that have received Approval to Energize ... 4,316 MW in August 2026"),
     ("2026-08-31", "observed monthly non-simultaneous peak", 4316, "ercot_ops_overview_2026_08", "same"),
 ]
@@ -288,7 +338,7 @@ TIER_TO_ERCOT = {"Inquiry": "No studies submitted", "Active application": "Under
 
 
 # =============================================================================== 3. Demand cases for 2030
-def demand_cases_2030(tiers: pd.DataFrame, params: dict, chain: pd.DataFrame, growth: pd.DataFrame, load_factor: float = 0.88) -> pd.DataFrame:
+def demand_cases_2030(tiers: pd.DataFrame, params: dict, chain: pd.DataFrame, growth: pd.DataFrame, rep: pd.DataFrame | None = None, eff: dict | None = None, load_factor: float = 0.88) -> pd.DataFrame:
     """Data center peak (MW) and energy (TWh) added by 2030 under each counting rule, California-only tiers of December 2025."""
     mw = tiers.set_index("tier").mw_california
     conf = params["confidence"]; util = params["utilization"]; ramp_years = params["ramp_years"]
@@ -312,13 +362,21 @@ def demand_cases_2030(tiers: pd.DataFrame, params: dict, chain: pd.DataFrame, gr
     add("CEC central (Planning forecast, published)", "CEC", {t: conf[(TIER_KEY[t], "mid")] for t in TIERS}, util, {"Signed agreement": np.nan, "Active application": np.nan, "Inquiry": np.nan}, np.nan,
         "CEC 2025 IEPR Planning forecast: CAISO data center peak component 2030 minus VEA (cec_tn268124); energy from TN 268824 data center deliveries",
         dc_mw=g30.loc["low", "cec_dc_peak_2030_MW"] - _vea_2030("Planning"), dc_twh=g30.loc["low", "cec_dc_energy_2030_GWh"] / 1000)
-    add("CEC central, literal replication", "CEC", {t: conf[(TIER_KEY[t], "mid")] for t in TIERS}, util, {"Signed agreement": r1, "Active application": r23, "Inquiry": r23}, load_factor,
-        f"confidence 70/33/0 x 67% x linear 7-year ramp (agreements from 2026: {r1:.2f} by 2030; applications and inquiries from 2028: {r23:.2f}); load factor 0.88")
+    rp = rep.set_index("scenario") if rep is not None else None
+    if rp is not None:
+        add("CEC central, replicated from parameters", "CEC", eff["Planning"], util, {t: float(rp.loc["Planning", "ramp_share_2030"]) for t in TIERS}, load_factor,
+            f"confidence 70/33/0 with SVP exempt (effective {eff['Planning']['Signed agreement']:.2f}/{eff['Planning']['Active application']:.2f}/{eff['Planning']['Inquiry']:.2f}) x 67%, which reproduces the memo's 2040 endpoint of {CEC_ENDPOINTS_2040['Planning']:,.0f} MW; the CEC's own ramp profile puts {100*rp.loc['Planning', 'ramp_share_2030']:.0f}% of it on line by 2030")
+    else:
+        add("CEC central, literal replication", "CEC", {t: conf[(TIER_KEY[t], "mid")] for t in TIERS}, util, {"Signed agreement": r1, "Active application": r23, "Inquiry": r23}, load_factor,
+            f"confidence 70/33/0 x 67% x linear 7-year ramp (agreements from 2026: {r1:.2f}; applications and inquiries from 2028: {r23:.2f})")
     add("CEC high (Local Reliability, published)", "CEC", {t: conf[(TIER_KEY[t], "high")] for t in TIERS}, util, {t: np.nan for t in TIERS}, np.nan,
         "CEC 2025 IEPR Local Reliability scenario: CAISO data center peak component 2030 minus VEA; energy scaled from the Planning deliveries",
         dc_mw=g30.loc["high", "cec_dc_peak_2030_MW"] - _vea_2030("Local Reliability"), dc_twh=g30.loc["high", "cec_dc_energy_2030_GWh"] / 1000)
-    add("CEC high, literal replication", "CEC", {t: conf[(TIER_KEY[t], "high")] for t in TIERS}, util, {"Signed agreement": r1, "Active application": r23, "Inquiry": r23}, load_factor,
-        "confidence 100/50/10 x 67% x the same ramps")
+    if rp is not None:
+        add("CEC high, replicated from parameters", "CEC", eff["Local Reliability"], util, {t: float(rp.loc["Local Reliability", "ramp_share_2030"]) for t in TIERS}, load_factor,
+            f"confidence 100/50/10 with SVP exempt (effective {eff['Local Reliability']['Signed agreement']:.2f}/{eff['Local Reliability']['Active application']:.2f}/{eff['Local Reliability']['Inquiry']:.2f}) x 67%, reproducing the memo's {CEC_ENDPOINTS_2040['Local Reliability']:,.0f} MW; ramp share {100*rp.loc['Local Reliability', 'ramp_share_2030']:.0f}% by 2030")
+    else:
+        add("CEC high, literal replication", "CEC", {t: conf[(TIER_KEY[t], "high")] for t in TIERS}, util, {"Signed agreement": r1, "Active application": r23, "Inquiry": r23}, load_factor, "confidence 100/50/10 x 67% x the same ramps")
     add("ERCOT-calibrated stock-flow", "ERCOT", {t: float(pe[TIER_TO_ERCOT[t]]) for t in TIERS}, util, {t: 1.0 for t in TIERS}, load_factor,
         "probability of energization within 60 months from the ERCOT monthly hazards (inquiry = no studies submitted, application = under review, agreement = studies approved); 67% utilization; timing inside the chain")
     add("ERCOT-calibrated, ERCOT observed utilization", "ERCOT", {t: float(pe[TIER_TO_ERCOT[t]]) for t in TIERS}, ERCOT_OBSERVED_UTILIZATION, {t: 1.0 for t in TIERS}, load_factor,
@@ -327,6 +385,18 @@ def demand_cases_2030(tiers: pd.DataFrame, params: dict, chain: pd.DataFrame, gr
         "PJM 2026 rule: only projects with an ESO/construction commitment count before 2030, at 70% utilization and a ramp of at least 36 months (complete by 2030)")
     add("PJM-style: firm plus half of non-firm from 2030", "PJM", {"Signed agreement": 1.0, "Active application": 0.5, "Inquiry": 0.5}, PJM_UTILIZATION, {t: 1.0 for t in TIERS}, load_factor,
         "PJM's 2030-and-later treatment of non-firm requests (50% before national scaling), applied to applications and inquiries")
+    return pd.DataFrame(rows)
+
+
+def demand_totals_2030(cases: pd.DataFrame, growth: pd.DataFrame, load_factor: float = 0.88) -> pd.DataFrame:
+    """Every demand case on top of each IEPR non-data-center case: 2030 statewide peak and energy and their growth from 2025."""
+    g = growth.set_index("case"); rows = []
+    for c in cases.itertuples():
+        for case in ("low", "mid", "high"):
+            r = g.loc[case]
+            rows.append({"demand_case": c.case, "iepr_case": case, "scenario": r.scenario, "non_dc_peak_2030_MW": r.peak_non_dc_2030_MW, "dc_peak_MW": c.dc_peak_mw_2030, "total_peak_2030_MW": r.peak_non_dc_2030_MW + c.dc_peak_mw_2030,
+                         "peak_growth_2025_2030_MW": r.peak_non_dc_growth_MW + c.dc_peak_mw_2030, "non_dc_energy_2030_TWh": r.energy_non_dc_2030_GWh / 1000, "dc_energy_TWh": c.dc_energy_twh_2030,
+                         "total_energy_2030_TWh": r.energy_non_dc_2030_GWh / 1000 + c.dc_energy_twh_2030, "energy_growth_2025_2030_TWh": r.energy_non_dc_growth_GWh / 1000 + c.dc_energy_twh_2030})
     return pd.DataFrame(rows)
 
 
@@ -401,16 +471,16 @@ def mc_inputs(rates_chain: pd.DataFrame, supply: SupplyModel, cec: dict) -> pd.D
     rows = [
         ("p_agreement", "triangular", 0.50, cec["confidence"][("Agreement", "mid")], cec["confidence"][("Agreement", "high")], f"CEC 70% (Planning) to 100% (Local Reliability); lower bound above the ERCOT chain value for studies-approved projects ({pe['Planning studies approved']:.2f})"),
         ("p_application", "triangular", 0.10, cec["confidence"][("Application", "mid")], cec["confidence"][("Application", "high")], f"CEC 33% to 50%; lower bound above the ERCOT chain value for projects under review ({pe['Under ERCOT review']:.2f})"),
-        ("p_inquiry", "triangular", 0.00, 0.03, cec["confidence"][("Inquiry", "high")], f"CEC 0% to 10%; mode above the ERCOT chain value for projects without studies ({pe['No studies submitted']:.2f})"),
+        ("p_inquiry", "triangular", 0.00, 0.03, cec["confidence"][("Inquiry", "high")], f"CEC 0% to 10% (0.02 effective in the Planning forecast with SVP exempt); mode above the ERCOT chain value for projects without studies ({pe['No studies submitted']:.2f})"),
         ("utilization", "triangular", 0.46, cec["utilization"], PJM_UTILIZATION, "ERCOT monthly observed peak over approved (4,316 of 9,456 MW, Aug 2026) to PJM's 70%; mode CEC 67%"),
-        ("ramp_2030", "triangular", 0.30, 0.55, 1.00, "share of realized capacity on line by end-2030: CEC literal ramps 0.43-0.71, PJM 36-month ramp 1.0"),
+        ("ramp_2030", "triangular", 0.30, 0.55, 1.00, "share of realized capacity on line by end-2030: the CEC's own ramp profile reaches 36% (Planning) and 60% (Local Reliability) of full demand by 2030; PJM's 36-month ramp gives 1.0"),
         ("load_factor", "triangular", 0.80, 0.88, 0.95, "chapter 1 assumption range; CEC observed 85-90% (memo p. 11)"),
         ("gen_realization", "per-unit Bernoulli", np.nan, np.nan, np.nan, "each planned unit completes with its chapter 3 logit probability p_2030 (229 units, 20.1 GW)"),
         ("hydro_cf", "triangular", float(hy.min()), float(hy.loc[2023:2025].mean()), float(hy.max()), f"hydro capacity factor 2010-2025 range {hy.min():.2f}-{hy.max():.2f}, mode 2023-2025 mean"),
         ("vre_scale", "triangular", 0.90, 1.00, 1.10, "solar and wind capacity factors within 10% of their 2023-2025 means"),
         ("imports_twh", "triangular", float(im.loc[2019:].min()), float(im.iloc[-1]), float(im.max()), f"CEC statewide net imports: 2019-2024 minimum {im.loc[2019:].min():.0f}, 2024 value {im.iloc[-1]:.0f}, 2012-2024 maximum {im.max():.0f} TWh"),
         ("iepr_case", "categorical", 0, 1, 2, "low = Planning, mid = Baseline, high = Local Reliability, equal weights"),
-        ("diablo_continues", "Bernoulli(0.5)", 0, np.nan, 1, "Diablo Canyon operating in 2030 (SB 846 extension to Oct 2030 plus federal licence renewal) or retired as in chapter 3 case C"),
+        ("diablo_continues", "Bernoulli(0.5)", 0, np.nan, 1, "Diablo Canyon operating in 2030 or retired as in chapter 3 case C: the NRC renewed both licences on April 2 2026, but SB 846 authorises operation only through 2030 and any extension needs legislative action (gov_ca_diablo_license_2026_04_02, nrc_diablo_canyon_rod_2026)"),
         ("prm", "uniform", 0.15, 0.16, 0.17, "planning reserve margin applied to the peak: CPUC resource adequacy range 15-17%"),
     ]
     return pd.DataFrame(rows, columns=["input", "distribution", "low", "mode", "high", "basis"])
@@ -605,6 +675,32 @@ def headroom(demand: pd.Series, limits=(0.0025, 0.005, 0.01, 0.05), winter_month
     if len(det):
         det["year"] = det["year"].astype("Int64")
     return curve, pd.DataFrame(rows), det
+
+
+def headroom_by_year(demand: pd.Series, limits=(0.0025, 0.005, 0.01, 0.05), winter_months=(11, 12, 1, 2), l_max: float = 40000, step: float = 25) -> pd.DataFrame:
+    """Per-year headroom, 2019-2025, under two criteria and two threshold definitions. Hours criterion: the largest constant addition L such
+    that the hours in which demand plus L exceeds the historical peak threshold stay below the limit as a share of the year's hours (closed
+    form from the sorted margins). Energy criterion: Duke's curtailed energy over the load's potential energy, solved year by year. Thresholds:
+    Duke seasons (Nov-Feb winter peak and the peak of the other months, across all years) or the single all-years peak."""
+    d = demand.copy().interpolate(limit_direction="both")
+    full = d.groupby(d.index.year).size(); d = d[d.index.year.isin(full[full >= 8000].index)]
+    idx = d.index; rows = []
+    for variant, wm in (("Duke seasons (Nov-Feb winter)", winter_months), ("single historical peak", (99,))):
+        is_w = np.isin(idx.month, wm)
+        thr = np.where(is_w, d[is_w].max() if is_w.any() else d.max(), d[~is_w].max())
+        margin = thr - d.values
+        L = np.arange(step, l_max + step, step)
+        for y in sorted(set(idx.year)):
+            m = idx.year == y; mg = np.sort(margin[m]); n = m.sum()
+            excess = np.clip(d.values[m][:, None] + L[None, :] - thr[m][:, None], 0, None); rate = excess.sum(axis=0) / (L * n)
+            for lim in limits:
+                k = int(np.floor(lim * n))
+                l_hours = float(mg[k]) if k < n else np.nan
+                l_energy = float(np.interp(lim, rate, L)) if rate[-1] >= lim else np.nan
+                rows.append({"variant": variant, "year": int(y), "limit": lim, "headroom_hours_criterion_mw": l_hours, "headroom_energy_criterion_mw": l_energy, "hours_in_year": int(n),
+                             "winter_threshold_mw": float(d[is_w].max()) if is_w.any() else np.nan, "other_threshold_mw": float(d[~is_w].max())})
+    out = pd.DataFrame(rows); out["year"] = out["year"].astype("Int64")
+    return out
 
 
 # =============================================================================== 6. Flat versus flexible load emissions

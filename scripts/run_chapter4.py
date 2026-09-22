@@ -42,6 +42,9 @@ def main() -> int:
     dce = g.ced2025_data_center_energy(dc); dce.to_csv(PROCESSED / "ch4_ced2025_data_center_energy.csv", index=False)
     growth = g.iepr_growth_cases(scen, dc, dce); growth.to_csv(PROCESSED / "ch4_iepr_growth_cases.csv", index=False)
     gs = g.growth_summary(growth); gs.to_csv(PROCESSED / "ch4_iepr_growth_summary.csv", index=False)
+    rep, prof, eff = g.cec_forecast_replication(params, dc); rep.to_csv(PROCESSED / "ch4_cec_replication.csv", index=False); prof.to_csv(PROCESSED / "ch4_cec_ramp_profile.csv", index=False)
+    assert (rep.difference_mw.abs() < 1).all(), "CEC parameters with the SVP exemption should reproduce the memo's 2040 endpoints"
+    print(f"   CEC parameters reproduce the memo endpoints: " + "; ".join(f"{r.scenario} {r.full_ramp_statewide_mw:,.0f} vs {r.memo_endpoint_2040_mw:,.0f} MW; 2030 replicated {r.replicated_2030_california_mw:,.0f} vs published {r.published_2030_california_mw:,.0f} MW (California-only)" for r in rep.itertuples()))
     chk = dc[(dc.tac == "CAISO") & (dc.scenario == "Baseline") & (dc.year.between(2025, 2030))].set_index("year").baseline_net_load_mw
     base_peak = scen[(scen.scenario == "Baseline") & (scen.metric == "peak_caiso_coincident_MW")].set_index("year").value.reindex(chk.index)
     assert (chk.values == base_peak.values).all(), "Baseline workbook peak should equal the Planning baseline net load"
@@ -63,7 +66,8 @@ def main() -> int:
 
     # ------------------------------------------------------------ 3. demand cases for 2030
     print("3. Demand cases for 2030")
-    cases = g.demand_cases_2030(tiers, params, chain, gs); cases.to_csv(PROCESSED / "ch4_demand_cases_2030.csv", index=False)
+    cases = g.demand_cases_2030(tiers, params, chain, gs, rep, eff); cases.to_csv(PROCESSED / "ch4_demand_cases_2030.csv", index=False)
+    totals = g.demand_totals_2030(cases, gs); totals.to_csv(PROCESSED / "ch4_demand_totals_2030.csv", index=False)
     sup = g.SupplyModel(); base = sup.base()
     c3 = json.loads((PROCESSED / "ch3_cases_2030_summary.json").read_text())
     fig, axes = plt.subplots(1, 2, figsize=(13.5, 5.2), gridspec_kw={"width_ratios": [1.25, 1]})
@@ -167,6 +171,9 @@ def main() -> int:
     hs = pd.concat(summs, ignore_index=True); hs.to_csv(PROCESSED / "ch4_headroom_summary.csv", index=False)
     hd = pd.concat(dets, ignore_index=True); hd.to_csv(PROCESSED / "ch4_headroom_detail.csv", index=False)
     cv = pd.concat([c.assign(variant=k) for k, c in curves.items()], ignore_index=True); cv.to_csv(PROCESSED / "ch4_headroom_curve.csv", index=False)
+    hby = g.headroom_by_year(dem); hby.to_csv(PROCESSED / "ch4_headroom_by_year.csv", index=False)
+    hb = hby[(hby.variant.str.startswith("Duke")) & (hby.limit == 0.005)]
+    print(f"   per-year headroom at 0.5% (Duke seasons): hours criterion {hb.headroom_hours_criterion_mw.min()/1000:.1f}-{hb.headroom_hours_criterion_mw.max()/1000:.1f} GW, energy criterion {hb.headroom_energy_criterion_mw.min()/1000:.1f}-{hb.headroom_energy_criterion_mw.max()/1000:.1f} GW")
     main_var = "Duke seasons (Nov-Feb winter), 2019-2025"; hm = hs[hs.variant == main_var].set_index("limit").headroom_mw
     # headroom against the gap
     pk = summ[(summ.metric == "gap_peak_mw")].set_index("iepr_case")
@@ -180,14 +187,14 @@ def main() -> int:
     ps = pd.read_csv(PROCESSED / "ch1_price_stats.csv"); cur = pd.read_csv(PROCESSED / "ch3_caiso_curtailment_annual.csv").set_index("year")
     es = []
     for _, r in ps[(ps.full_year) & (ps.year.isin([2024, 2025]))].iterrows():
-        es.append({"item": f"{r.label} hours with negative day-ahead price, {int(r.year)}", "value": float(r.hours_negative), "unit": "hours", "flexible_1gw_energy_gwh": float(r.hours_negative) * 1.0, "source": "ch1_price_stats"})
+        es.append({"item": f"{r.label} hours with negative day-ahead price, {int(r.year)}", "value": float(r.hours_negative), "unit": "hours", "midday_share_pct": 100 * float(r.neg_hours_10_16_share), "flexible_1gw_energy_gwh": float(r.hours_negative) * 1.0, "source": "ch1_price_stats"})
     for y in (2024, 2025):
         es.append({"item": f"CAISO wind and solar curtailment, {y}", "value": float(cur.loc[y, "curtailed_gwh"]), "unit": "GWh", "flexible_1gw_energy_gwh": np.nan, "source": "ch3_caiso_curtailment_annual"})
     es.append({"item": "CAISO wind and solar curtailment, Jan-Aug 2026", "value": float(cur.loc[2026, "curtailed_gwh"]), "unit": "GWh", "flexible_1gw_energy_gwh": np.nan, "source": "ch3_caiso_curtailment_annual"})
     es.append({"item": "flat load equivalent of 2025 curtailment (GWh / 8,760 h)", "value": float(cur.loc[2025, "curtailed_gwh"] / 8.76), "unit": "MW", "flexible_1gw_energy_gwh": np.nan, "source": "derived"})
     esd = pd.DataFrame(es); esd.to_csv(PROCESSED / "ch4_energy_side.csv", index=False)
     print("   headroom (Duke seasons) at 0.25/0.5/1/5%: " + ", ".join(f"{v/1000:.1f}" for v in hm.values) + " GW vs Duke CAISO 4.2/5.0/5.9 GW")
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.9), gridspec_kw={"width_ratios": [1.3, 1, 1.1]})
+    fig, axes = plt.subplots(2, 2, figsize=(13.5, 10), constrained_layout=True); axes = axes.ravel()
     ax = axes[0]
     for (name, c), col, ls in zip(curves.items(), ("#d7191c", "#2c7bb6", "#7b3294", "#fdae61"), ("-", "--", "-.", ":")):
         cc_ = c[c.avg_curtailment_rate <= 0.2]; ax.plot(cc_.load_addition_mw / 1000, 100 * cc_.avg_curtailment_rate, color=col, ls=ls, lw=1.4, label=name)
@@ -197,8 +204,21 @@ def main() -> int:
         ax.plot(gw, 100 * lim, "k*", ms=9, label="Duke CAISO value" if lim == 0.0025 else None)
     ax.set_yscale("log"); ax.set_ylim(0.05, 80); ax.set_xlim(0, 20); ax.set_xlabel("constant load addition (GW)"); ax.set_ylabel("average annual curtailment of the new load (%)")
     ax.text(0.02, 0.97, "headroom, Duke seasons 2019-2025:\n" + ", ".join(f"{100*l:g}% -> {v/1000:.1f} GW" for l, v in hm.items()) + f"\nDuke (2016-2024): 0.25% 4.2, 0.5% 5.0, 1% 5.9 GW\nthresholds: winter {hs.winter_threshold_mw.iloc[0]:,.0f} MW, other months {hs.summer_threshold_mw.iloc[0]:,.0f} MW", transform=ax.transAxes, va="top", fontsize=6.6, bbox=BOX)
-    ax.set_title("Curtailment-enabled headroom on CAISO hourly demand", fontsize=9); ax.legend(fontsize=6.3, loc="upper center", bbox_to_anchor=(0.5, -0.14), ncol=2, frameon=False)
+    ax.set_title("Curtailment-enabled headroom on CAISO hourly demand (all years pooled)", fontsize=9); ax.legend(fontsize=6.3, loc="lower right")
     ax = axes[1]
+    hbd = hby[hby.variant.str.startswith("Duke")]
+    for lim, col in ((0.0025, "#a6d96a"), (0.005, "#fdae61"), (0.01, "#d7191c")):
+        sub = hbd[hbd.limit == lim]
+        ax.plot(sub.year.astype(int), sub.headroom_energy_criterion_mw / 1000, "-o", ms=4, color=col, label=f"{100*lim:g}% of energy (Duke criterion)")
+        ax.plot(sub.year.astype(int), sub.headroom_hours_criterion_mw / 1000, "--s", ms=4, color=col, label=f"{100*lim:g}% of hours above the peak")
+        for yv, v in zip(sub.year.astype(int), sub.headroom_energy_criterion_mw / 1000):
+            ax.text(yv, v + 0.15, f"{v:.1f}", ha="center", fontsize=5.8, color=col)
+    ax.set_xticks(sorted(hbd.year.astype(int).unique())); ax.set_ylabel("headroom (GW)"); ax.set_xlabel("year")
+    ax.set_title("Headroom solved year by year, Duke seasonal thresholds", fontsize=9); ax.legend(fontsize=6, ncol=2, loc="upper left")
+    ax.set_ylim(0, ax.get_ylim()[1] * 1.3)
+    h05 = hbd[hbd.limit == 0.005]
+    ax.text(0.98, 0.04, f"0.5%: energy criterion {h05.headroom_energy_criterion_mw.min()/1000:.1f} to {h05.headroom_energy_criterion_mw.max()/1000:.1f} GW by year (pooled {hm[0.005]/1000:.1f});\nhours criterion {h05.headroom_hours_criterion_mw.min()/1000:.1f} to {h05.headroom_hours_criterion_mw.max()/1000:.1f} GW", transform=ax.transAxes, ha="right", va="bottom", fontsize=6.6, bbox=BOX)
+    ax = axes[2]
     d05 = hd[(hd.variant == main_var) & (hd.limit == 0.005)]
     ax.bar(d05.year.astype(int), d05.hours_curtailed, color="#2c7bb6")
     for yv, hv in zip(d05.year.astype(int), d05.hours_curtailed):
@@ -206,7 +226,7 @@ def main() -> int:
     ax.set_xticks(d05.year.astype(int).tolist()); ax.set_ylim(0, d05.hours_curtailed.max() * 1.45); ax.set_ylabel("hours with any curtailment"); ax.set_xlabel("year")
     ax.set_title(f"Hours curtailed at the 0.5% headroom ({hm[0.005]/1000:.1f} GW)", fontsize=9)
     ax.text(0.02, 0.97, f"mean {d05.hours_curtailed.mean():.0f} h/yr; {100*d05.share_winter.min():.0f} to {100*d05.share_winter.max():.0f}% of curtailed energy in Nov-Feb;\nhours with less than half of the load available: {d05.hours_below_50pct.mean():.0f}/yr;\nlargest single-hour cut {d05.max_curtailment_mw.max()/1000:.1f} GW of {hm[0.005]/1000:.1f} GW", transform=ax.transAxes, va="top", fontsize=6.6, bbox=BOX)
-    ax = axes[2]
+    ax = axes[3]
     items = [(f"headroom {100*l:g}%", v / 1000, "#2c7bb6") for l, v in hm.items()] + [("CEC central DC", cases.set_index("case").loc["CEC central (Planning forecast, published)", "dc_peak_mw_2030"] / 1000, "#bdbdbd"),
              ("ERCOT-calibrated DC", cases.set_index("case").loc["ERCOT-calibrated stock-flow", "dc_peak_mw_2030"] / 1000, "#bdbdbd"), ("PJM firm DC", cases.set_index("case").loc["PJM-style: firm only (signed agreements)", "dc_peak_mw_2030"] / 1000, "#bdbdbd"),
              ("CEC high DC", cases.set_index("case").loc["CEC high (Local Reliability, published)", "dc_peak_mw_2030"] / 1000, "#bdbdbd"), ("peak gap P50", pk.loc["all cases", "p50"] / 1000, "#fdae61"), ("peak gap P95", pk.loc["all cases", "p95"] / 1000, "#fdae61"),
@@ -225,7 +245,20 @@ def main() -> int:
     tax = rg.common_taxonomy(); tax.to_csv(PROCESSED / "ch4_common_taxonomy.csv", index=False)
     sz = rg.sce_size_classes(); sz.to_csv(PROCESSED / "ch4_sce_size_classes.csv", index=False)
     hl = rg.headline_by_regime(tiers, cases, sz, chain); hl.to_csv(PROCESSED / "ch4_headline_by_regime.csv", index=False)
-    fig, axes = plt.subplots(1, 3, figsize=(15.5, 5.0), gridspec_kw={"width_ratios": [1.3, 1, 1.1]})
+    scores = rg.regime_scores(); scores.to_csv(PROCESSED / "ch4_regime_scores.csv", index=False)
+    pd.DataFrame([{"criterion": k, "rubric": v} for k, v in rg.RUBRIC.items()]).to_csv(PROCESSED / "ch4_regime_rubric.csv", index=False)
+    fig, ax = plt.subplots(figsize=(10, 4.2))
+    M = scores.set_index("regime")[rg.CRITERIA]
+    im = ax.imshow(M.values, cmap="YlGnBu", vmin=0, vmax=3, aspect="auto")
+    ax.set_xticks(range(len(rg.CRITERIA))); ax.set_xticklabels([c.replace("_", " ") for c in rg.CRITERIA], fontsize=8)
+    ax.set_yticks(range(len(M))); ax.set_yticklabels([f"{r}  (total {t})" for r, t in zip(M.index, scores.total)], fontsize=8); ax.grid(False)
+    for i in range(M.shape[0]):
+        for j in range(M.shape[1]):
+            ax.text(j, i, str(int(M.values[i, j])), ha="center", va="center", fontsize=9, color="white" if M.values[i, j] >= 2 else "black")
+    cb = fig.colorbar(im, ax=ax, ticks=[0, 1, 2, 3], fraction=0.03); cb.set_label("score (0 none to 3 strongest)", fontsize=8)
+    ax.set_title("Scored crosswalk of six large-load data and measurement regimes (rubric in the table note)", fontsize=9)
+    save(fig, "fig4_07_regime_scores")
+    fig, axes = plt.subplots(1, 3, figsize=(16.5, 5.0), gridspec_kw={"width_ratios": [1.25, 0.95, 1.3]})
     ax = axes[0]
     qq = q.drop_duplicates("month", keep="last").copy(); qq["t"] = pd.to_datetime(qq.month)
     ax.bar(qq.t, qq.standalone_mw / 1000, width=20, color="#5f6b73", label="standalone")
@@ -239,7 +272,8 @@ def main() -> int:
     dec24 = n[(n.as_of == "2024-12-31")].mw.iloc[0]; ax.plot(pd.Timestamp("2024-12-31"), dec24 / 1000, "o", color="#d7191c"); ax.text(pd.Timestamp("2024-12-31"), dec24 / 1000 - 22, f"{dec24/1000:.0f}", ha="center", fontsize=6, color="#d7191c")
     ax.set_ylabel("GW"); ax.set_title("ERCOT tracked large-load requests by month (GW)", fontsize=9); ax.legend(fontsize=6.5, loc="upper left")
     ax.xaxis.set_major_locator(mdates.MonthLocator(bymonth=(1, 4, 7, 10))); ax.xaxis.set_major_formatter(mdates.DateFormatter("%b\n%Y"))
-    ax.text(0.98, 0.04, f"Dec 2024 {dec24/1000:.0f} GW -> Mar 2026 {qq.total_mw.iloc[-1]/1000:.0f} GW before the\nMarch 2026 submissions -> {nn.mw.max()/1000:.0f} GW by June 2026", transform=ax.transAxes, ha="right", va="bottom", fontsize=6.6, bbox=BOX)
+    nmax = nn.loc[nn.mw.idxmax()]
+    ax.text(0.98, 0.04, f"Dec 2024 {dec24/1000:.0f} GW -> Mar 2026 {qq.total_mw.iloc[-1]/1000:.0f} GW before the\nMarch 2026 submissions -> {nmax.mw/1000:.0f} GW by {pd.Timestamp(nmax.as_of):%b %Y}", transform=ax.transAxes, ha="right", va="bottom", fontsize=6.6, bbox=BOX)
     ax = axes[1]
     aa = a.copy(); aa["t"] = pd.to_datetime(aa.month)
     ax.plot(aa.t, aa.planning_studies_approved_mw / 1000, "-o", ms=3, color="#5f6b73", label="planning studies approved")
@@ -253,15 +287,15 @@ def main() -> int:
     ax.set_ylim(0, aa.planning_studies_approved_mw.max() / 1000 * 1.35)
     ax = axes[2]
     snaps = s.groupby(["snapshot", "as_of"]).in_service_year_through.max().reset_index().sort_values("as_of").reset_index(drop=True)
-    short = {"TAC report": "TAC report", "House hearing": "House hearing", "ERCOT Monthly": "ERCOT Monthly", "Board": "Board deck", "Operational overview": "Ops. overview"}
+    short = {"TAC report": "TAC report", "House hearing": "House hearing", "ERCOT Monthly": "Monthly", "Board": "Board deck", "Operational overview": "Ops. overview"}
     labels, bottoms = [], np.zeros(len(snaps))
     xs = np.arange(len(snaps))
     for st in g.ERCOT_STATUSES:
-        vals = np.array([s[(s.snapshot == r.snapshot) & (s.status == st) & (s.in_service_year_through == r.in_service_year_through)].mw.iloc[0] for r in snaps.itertuples()]) / 1000
+        vals = np.array([s[(s.snapshot == r.snapshot) & (s.as_of == r.as_of) & (s.status == st) & (s.in_service_year_through == r.in_service_year_through)].mw.iloc[0] for r in snaps.itertuples()]) / 1000
         ax.bar(xs, vals, bottom=bottoms, color=STATUS_COL[st], label=st, edgecolor="white", lw=0.4); bottoms += vals
     for xi, tot in zip(xs, bottoms):
         ax.text(xi, tot + 5, f"{tot:.0f}", ha="center", fontsize=6.5)
-    ax.set_xticks(xs); ax.set_xticklabels([f"{short[r.snapshot]}\n{pd.Timestamp(r.as_of):%b %d, %Y}\n(through {r.in_service_year_through})" for r in snaps.itertuples()], fontsize=6.2)
+    ax.set_xticks(xs); ax.set_xticklabels([f"{short[r.snapshot]}\n{pd.Timestamp(r.as_of):%b %d}\n{pd.Timestamp(r.as_of):%Y}\nto {r.in_service_year_through}" for r in snaps.itertuples()], fontsize=6)
     ax.set_ylim(0, bottoms.max() * 1.12); ax.set_ylabel("GW"); ax.set_title("ERCOT queue by status at each snapshot (GW)", fontsize=9); ax.legend(fontsize=6, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2, frameon=False)
     save(fig, "fig4_05_ercot_queue")
 

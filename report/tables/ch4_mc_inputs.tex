@@ -4,16 +4,16 @@ Input & Distribution & Low & Mode & High & Basis \\
 \midrule
 p\_agreement & triangular & 0.50 & 0.70 & 1.00 & CEC 70\% (Planning) to 100\% (Local Reliability); lower bound above the ERCOT chain value for studies-approved projects (0.37) \\
 p\_application & triangular & 0.10 & 0.33 & 0.50 & CEC 33\% to 50\%; lower bound above the ERCOT chain value for projects under review (0.06) \\
-p\_inquiry & triangular & 0.00 & 0.03 & 0.10 & CEC 0\% to 10\%; mode above the ERCOT chain value for projects without studies (0.02) \\
+p\_inquiry & triangular & 0.00 & 0.03 & 0.10 & CEC 0\% to 10\% (0.02 effective in the Planning forecast with SVP exempt); mode above the ERCOT chain value for projects without studies (0.02) \\
 utilization & triangular & 0.46 & 0.67 & 0.70 & ERCOT monthly observed peak over approved (4,316 of 9,456 MW, Aug 2026) to PJM's 70\%; mode CEC 67\% \\
-ramp\_2030 & triangular & 0.30 & 0.55 & 1.00 & share of realized capacity on line by end-2030: CEC literal ramps 0.43-0.71, PJM 36-month ramp 1.0 \\
+ramp\_2030 & triangular & 0.30 & 0.55 & 1.00 & share of realized capacity on line by end-2030: the CEC's own ramp profile reaches 36\% (Planning) and 60\% (Local Reliability) of full demand by 2030; PJM's 36-month ramp gives 1.0 \\
 load\_factor & triangular & 0.80 & 0.88 & 0.95 & chapter 1 assumption range; CEC observed 85-90\% (memo p. 11) \\
 gen\_realization & per-unit Bernoulli & -- & -- & -- & each planned unit completes with its chapter 3 logit probability p\_2030 (229 units, 20.1 GW) \\
 hydro\_cf & triangular & 0.16 & 0.34 & 0.48 & hydro capacity factor 2010-2025 range 0.16-0.48, mode 2023-2025 mean \\
 vre\_scale & triangular & 0.90 & 1.00 & 1.10 & solar and wind capacity factors within 10\% of their 2023-2025 means \\
 imports\_twh & triangular & 62.16 & 62.16 & 99.21 & CEC statewide net imports: 2019-2024 minimum 62, 2024 value 62, 2012-2024 maximum 99 TWh \\
 iepr\_case & categorical & 0.00 & 1.00 & 2.00 & low = Planning, mid = Baseline, high = Local Reliability, equal weights \\
-diablo\_continues & Bernoulli(0.5) & 0.00 & -- & 1.00 & Diablo Canyon operating in 2030 (SB 846 extension to Oct 2030 plus federal licence renewal) or retired as in chapter 3 case C \\
+diablo\_continues & Bernoulli(0.5) & 0.00 & -- & 1.00 & Diablo Canyon operating in 2030 or retired as in chapter 3 case C: the NRC renewed both licences on April 2 2026, but SB 846 authorises operation only through 2030 and any extension needs legislative action (gov\_ca\_diablo\_license\_2026\_04\_02, nrc\_diablo\_canyon\_rod\_2026) \\
 prm & uniform & 0.15 & 0.16 & 0.17 & planning reserve margin applied to the peak: CPUC resource adequacy range 15-17\% \\
 \bottomrule
 \end{tabular}
