@@ -177,16 +177,28 @@ California 810 MW and Southern California 355 MW of colocation inventory). The S
 
 - **Census C30 data center line (SAAR):** $1.64B (Jan 2014) -> $13.9B (Nov 2022) -> $75.2B (Jul 2026 prelim.); 10.0% of private
   nonresidential construction. Chow at Dec 2022: F = 63, p < 0.001; growth 26%/yr [22, 31] before, 54%/yr [47, 61] after.
-  Bai-Perron (15% trimming, BIC and LWZ): breaks Oct 2016, Dec 2018, Mar 2022; last segment 55%/yr [50, 61]; supF(0|1) = 125,
-  bootstrap p = 0.01; ruptures agrees within a month. ARIMA(1,1,1)+drift and ETS(A,Ad,N): ~$95-100B by Jul 2027,
+  Bai-Perron (15% trimming, up to five breaks so the choice is uncensored): BIC and LWZ choose four breaks, Oct 2016, Dec 2018,
+  Mar 2022, Jun 2024; segments 53% / 42% / 9% / 61% / 36% per year, the last (Jun 2024-Jul 2026) 36% [31, 41]. Sequential
+  supF(l+1|l) with bootstrap p: 1|0 p = 0.02, 2|1 p = 0.085 (stops at one break at 5%), 3|2 p = 0.02, 4|3 p = 0.005.
+  supF(0|1) = 125, bootstrap p = 0.01; ruptures agrees within a month for m = 4. (Audit note: with the search capped at three
+  breaks the first pass reported three; the cap was binding.) ARIMA(1,1,1)+drift and ETS(A,Ad,N): ~$95-100B by Jul 2027,
   $115-135B by Jul 2028, 95% bands ~$50-260B. The SA history is `census_c30_privsatime` (privtime.xlsx is NSA only).
-- **California proxies decelerated after 2022:** QCEW 518210 CA employment 31k (2015Q1) -> 74k (2022Q4) -> 84k (2026Q1) with
-  growth 10%/yr -> -0.3%/yr after 2023Q1 (Chow p < 0.001); establishments 1,619 -> 4,494, 10% -> 0.5%; CBRE Silicon Valley
-  under construction 44 MW (H1 2016) -> 142 MW (H2 2022) -> 125-168 MW since, no break at H1 2023 (p = 0.61), BP break H2 2020;
-  Epoch frontier sites: US 0 -> 15.3 GW, California 0 of 87 sites. Cushman tables gated; JLL single period only.
-- **Tier vintages** (`ch2_tier_vintages.csv`): Dec 2024 PG&E+SCE agr.+appl. 6,771 MW; summer 2025 seven utilities 21,756 MW
-  (tiers graphical); Dec 2025 5,086 / 9,587 / 8,604 = 23,277 MW (memo Table 1 by utility sums to 23,278); Aug 2026 workshop
-  restates Dec 2025. SCE database: Aug 2025 51/216/5,934 active + 709 canceled; Jan 2026 76/3,314/1,772 + 3,137 canceled.
+- **California proxies decelerated after 2022:** QCEW 518210 CA (now from 2014Q1; the BLS API has no 518210 slice before 2014)
+  employment 24.5k (2014Q1) -> 74k (2022Q4) -> 84k (2026Q1), growth 12%/yr -> -0.3%/yr after 2023Q1 (Chow F = 15, p < 0.001;
+  single-break bootstrap p = 0.035; BIC 4 breaks, last 2023Q3; sequential 0); establishments 1,327 -> 4,494, 11% -> 0.5%
+  (F = 11; bootstrap p = 0.285; sequential 0); wages 22% -> 11% (p = 0.007), breaks 2019Q1, 2021Q4. CBRE Silicon Valley under
+  construction 44 MW (H1 2016) -> 142 MW (H2 2022) -> 125-168 MW since, no break at H1 2023 (p = 0.61), BIC break H2 2020, LWZ
+  and sequential none (p = 0.14); Epoch frontier sites: US 0 -> 15.3 GW (no site in California by country/address fields and
+  none of the 87 sites has a California address), California 0 of 87. Cushman tables gated; JLL single period only.
+- **Tier vintages** (`ch2_tier_vintages.csv`): Dec 2024 PG&E+SCE agr.+appl. 6,771 MW; summer 2025 seven utilities 21,756 MW,
+  with PG&E 10,080 agr.+appl. / 1,588 inquiries and SCE 143 / 5,685 from the published deck p.7 (the Nov 12 2025 workshop copy
+  TN267165 labelled SCE 2,492 and SVP 1,382; published deck: 143 and 1,375, used here); Dec 2025 5,086 / 9,587 / 8,604 =
+  23,277 MW (memo Table 1 by utility sums to 23,278); Aug 2026 workshop restates Dec 2025. SCE database: Aug 2025
+  51/216/5,934 active + 709 canceled; Jan 2026 76/3,314/1,772 + 3,137 canceled. PG&E earnings pipeline (PG&E stages, no
+  inquiries; TN272065 p.9, Q2 2026 earnings): Mar 2026 1,700 appl.+prelim. eng. / 3,110 final eng. / 140 ICA / 140 construction
+  = 5,090; Jun 2026 8,200 / 3,880 / 490 / 140 = 12,710. Cal Advocates (TN272807): only ~650 MW of WPAs filed at the CPUC.
+  Docket sweep (25-IEPR-03 and 26-IEPR-03 logs, 2026-09-21): no further public tier vintage; PG&E's monthly data center data
+  requests are confidential (TN268048, TN272858 etc.).
 - **RQ1 denominators** (`ch2_rq1_denominators.json`): CAISO record 52,061 MW (2022-09-06 16:57) and hourly 51,104 MW; 2025 peak
   43,860 MW; existing DC peak ~1,000 MW; existing avg load 795-2,362 MW (statewide estimates only, SVP excluded); CED 2025
   planning-scenario CAISO managed net peak 46,479 -> 50,498 MW (2025-2030, +4,019); baseline consumption peak 50,502 -> 56,180;

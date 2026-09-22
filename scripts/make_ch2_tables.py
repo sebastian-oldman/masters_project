@@ -32,8 +32,9 @@ def pct(x, d=0):
 def main() -> int:
     # Bai-Perron on Census
     bp = pd.read_csv(PROCESSED / "ch2_census_bai_perron.csv")
-    rows = [f"{int(r.m)} & {esc(r.breaks) if isinstance(r.breaks, str) else '--'} & {r.ssr:.3f} & {r.bic:.3f} & {r.lwz:.3f} & {('--' if pd.isna(r.supF_0_m) else f'{r.supF_0_m:.1f}')} \\\\" for _, r in bp.iterrows()]
-    write("ch2_bai_perron", [r"\begin{tabular}{lllrrr}", r"\toprule", r"Breaks $m$ & Break dates (first month of new regime) & SSR & BIC & LWZ & supF(0$|m$) \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+    f1 = lambda x, d=1: "--" if pd.isna(x) else f"{x:.{d}f}"  # noqa: E731
+    rows = [f"{int(r.m)} & {esc(r.breaks) if isinstance(r.breaks, str) else '--'} & {r.ssr:.3f} & {r.bic:.3f} & {r.lwz:.3f} & {f1(r.supF_0_m)} & {f1(r.supF_seq)} & {f1(r.supF_seq_boot_p, 3)} \\\\" for _, r in bp.iterrows()]
+    write("ch2_bai_perron", [r"\begin{tabular}{lp{5.2cm}rrrrrr}", r"\toprule", r"Breaks $m$ & Break dates (first month of new regime) & SSR & BIC & LWZ & supF(0$|m$) & supF($m|m-1$) & boot.\ $p$ \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
 
     seg = pd.read_csv(PROCESSED / "ch2_census_segment_growth.csv")
     rows = [f"{r.segment_start} to {r.segment_end} & {int(r.months)} & {pct(r.cagr)} & [{pct(r.cagr_lo95)}, {pct(r.cagr_hi95)}] \\\\" for _, r in seg.iterrows()]
@@ -50,11 +51,13 @@ def main() -> int:
             except Exception:
                 ci_t = None
             ci_s = f"{str(ci_t[0])[:7]} to {str(ci_t[1])[:7]}" if ci_t else "--"
-            rows.append(f"{esc(r.series)} & {int(r.n)} & {r.chow_F:.1f} & {r.chow_p:.3f} & {r.wald_hac_p:.3f} & {pct(r.cagr_pre)} [{pct(r.cagr_pre_lo)}, {pct(r.cagr_pre_hi)}] & {pct(r.cagr_post)} [{pct(r.cagr_post_lo)}, {pct(r.cagr_post_hi)}] & {str(r.bp_break1)[:7]} & {ci_s} & {esc(str(r.bp_breaks_bic))[:40]} & {r.bp_supF_1_boot_p:.3f} \\\\")
+            ci = r.get("bp_break1_ci90", ""); ci_s = esc(ci) if isinstance(ci, str) and " to " in ci else ci_s
+            ms = f"{int(r.bp_m_bic)}/{int(r.bp_m_lwz)}/{int(r.bp_m_seq) if pd.notna(r.get('bp_m_seq', float('nan'))) else '--'}"
+            rows.append(f"{esc(r.series)} & {int(r.n)} & {r.chow_F:.1f} & {r.chow_p:.3f} & {r.wald_hac_p:.3f} & {pct(r.cagr_pre)} [{pct(r.cagr_pre_lo)}, {pct(r.cagr_pre_hi)}] & {pct(r.cagr_post)} [{pct(r.cagr_post_lo)}, {pct(r.cagr_post_hi)}] & {str(r.bp_break1)[:7]} & {ci_s} & {ms} & {esc(str(r.bp_breaks_bic))} & {r.bp_supF_1_boot_p:.3f} \\\\")
         else:
-            rows.append(f"{esc(r.series)} & {int(r.n) if pd.notna(r.get('n', float('nan'))) else 0} & \\multicolumn{{9}}{{l}}{{{esc(str(r.get('note', r.get('error', ''))))[:90]}}} \\\\")
-    write("ch2_break_comparison", [r"\begin{tabular}{p{5.6cm}rrrrllllp{3cm}r}", r"\toprule",
-                                    r"Series & $n$ & Chow $F$ & $p$ & HAC $p$ & Growth before (\%/yr) & Growth after (\%/yr) & BP break (1) & 90\% interval & BP breaks (BIC) & boot.\ $p$ \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+            rows.append(f"{esc(r.series)} & {int(r.n) if pd.notna(r.get('n', float('nan'))) else 0} & \\multicolumn{{10}}{{l}}{{{esc(str(r.get('note', r.get('error', ''))))[:90]}}} \\\\")
+    write("ch2_break_comparison", [r"\begin{tabular}{p{5.6cm}rrrrllllcp{3.6cm}r}", r"\toprule",
+                                    r"Series & $n$ & Chow $F$ & $p$ & HAC $p$ & Growth before (\%/yr) & Growth after (\%/yr) & BP break (1) & 90\% interval & $m$: BIC/LWZ/seq. & BP breaks (BIC) & boot.\ $p$ \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
 
     # forecasts
     fa = pd.read_csv(PROCESSED / "ch2_census_forecast_arima.csv", index_col=0, parse_dates=True)
@@ -69,14 +72,18 @@ def main() -> int:
 
     # tier vintages
     tv = pd.read_csv(PROCESSED / "ch2_tier_vintages.csv")
-    piv = tv[~tv.label.str.contains("SCE database")].groupby(["vintage", "label", "tier"]).mw.sum().unstack("tier").fillna(0)
+    piv = tv[~tv.label.str.contains("SCE database|PG&E earnings")].groupby(["vintage", "label", "tier"]).mw.sum().unstack("tier").fillna(0)
     rows = []
     for (v, lab), r in piv.iterrows():
         rows.append(f"{esc(lab)} & {r.get('Signed agreement', 0):,.0f} & {r.get('Active application', 0):,.0f} & {r.get('Inquiry', 0):,.0f} & {r.get('Agreements + applications (no inquiries)', 0):,.0f} & {r.get('All tiers', 0) + r.get('Total restated', 0):,.0f} & {r.sum():,.0f} \\\\")
     sce = tv[tv.label.str.contains("SCE database")].groupby(["label", "tier"]).mw.sum().unstack("tier").fillna(0)
     for lab, r in sce.iterrows():
         rows.append(f"{esc(lab)} (SCE only) & {r.get('Signed agreement', 0):,.0f} & {r.get('Active application', 0):,.0f} & {r.get('Inquiry', 0):,.0f} & -- & canceled {r.get('Canceled', 0):,.0f} & {r.get('Signed agreement', 0)+r.get('Active application', 0)+r.get('Inquiry', 0):,.0f} \\\\")
-    write("ch2_tier_vintages", [r"\begin{tabular}{p{5.2cm}rrrrrr}", r"\toprule", r"Vintage & Signed & Applications & Inquiries & Agr.+appl. only & Unsplit total & Total active (MW) \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+    pge = tv[tv.label.str.contains("PG&E earnings")].groupby(["label", "tier"]).mw.sum().unstack("tier").fillna(0)
+    for lab, r in pge.iterrows():
+        wpa = r.get("PG&E: final engineering (WPA signed)", 0) + r.get("PG&E: interconnection construction agreement", 0) + r.get("PG&E: construction", 0)
+        rows.append(f"{esc(lab)} (PG\\&E only, PG\\&E stages) & WPA+ {wpa:,.0f} & {r.get('PG&E: application + preliminary engineering', 0):,.0f} & n/a & {r.sum():,.0f} & -- & {r.sum():,.0f} \\\\")
+    write("ch2_tier_vintages", [r"\begin{tabular}{p{5.6cm}rrrrrr}", r"\toprule", r"Vintage & Signed & Applications & Inquiries & Agr.+appl. only & Unsplit total & Total active (MW) \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
 
     # RQ1
     rq = pd.read_csv(PROCESSED / "ch2_rq1_table.csv"); den = json.loads((PROCESSED / "ch2_rq1_denominators.json").read_text())

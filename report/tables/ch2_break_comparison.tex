@@ -1,13 +1,13 @@
-\begin{tabular}{p{5.6cm}rrrrllllp{3cm}r}
+\begin{tabular}{p{5.6cm}rrrrllllcp{3.6cm}r}
 \toprule
-Series & $n$ & Chow $F$ & $p$ & HAC $p$ & Growth before (\%/yr) & Growth after (\%/yr) & BP break (1) & 90\% interval & BP breaks (BIC) & boot.\ $p$ \\
+Series & $n$ & Chow $F$ & $p$ & HAC $p$ & Growth before (\%/yr) & Growth after (\%/yr) & BP break (1) & 90\% interval & $m$: BIC/LWZ/seq. & BP breaks (BIC) & boot.\ $p$ \\
 \midrule
-Census data center construction (monthly, SAAR) & 151 & 63.0 & 0.000 & 0.000 & 26 [22, 31] & 54 [47, 61] & 2020-11 & -- & 2016-10, 2018-12, 2022-03 & 0.010 \\
-QCEW 518210 California employment (quarterly) & 45 & 23.9 & 0.000 & 0.000 & 10 [8, 11] & -0 [-2, 2] & 2023-03 & -- & 2020-12, 2023-03 & 0.065 \\
-QCEW 518210 California establishments (quarterly) & 45 & 13.8 & 0.000 & 0.000 & 10 [8, 12] & 1 [-1, 2] & 2022-09 & -- & 2020-03, 2023-09 & 0.095 \\
-QCEW 518210 California wages (quarterly) & 45 & 3.2 & 0.050 & 0.000 & 20 [18, 23] & 11 [9, 13] & 2019-03 & -- & 2019-03, 2021-12 & 0.005 \\
-CBRE Silicon Valley MW under construction (semiannual) & 21 & 0.5 & 0.614 & 0.000 & 35 [10, 66] & 4 [-2, 10] & 2020-12 & -- & 2020-12 & 0.140 \\
-Epoch frontier sites, United States cumulative MW (monthly) & 69 & 176.1 & 0.000 & 0.000 & 0 [-0, 0] & 288 [250, 331] & 2023-01 & -- & 2023-01, 2024-04 & 0.005 \\
-Epoch frontier sites, California cumulative MW & 0 & \multicolumn{9}{l}{no California site in the Epoch hub (0 of 87); series is identically zero, no test possibl} \\
+Census data center construction (monthly, SAAR) & 151 & 63.0 & 0.000 & 0.000 & 26 [22, 31] & 54 [47, 61] & 2020-11 & 2020-11 to 2020-11 & 4/4/1 & 2016-10, 2018-12, 2022-03, 2024-06 & 0.010 \\
+QCEW 518210 California employment (quarterly) & 49 & 15.0 & 0.000 & 0.000 & 12 [9, 14] & -0 [-2, 2] & 2016-03 & 2016-03 to 2021-12 & 4/3/0 & 2016-03, 2018-09, 2021-03, 2023-09 & 0.035 \\
+QCEW 518210 California establishments (quarterly) & 49 & 11.0 & 0.000 & 0.000 & 11 [9, 13] & 1 [-1, 2] & 2019-03 & 2016-12 to 2022-09 & 4/4/0 & 2016-03, 2018-03, 2020-12, 2023-06 & 0.285 \\
+QCEW 518210 California wages (quarterly) & 49 & 5.5 & 0.007 & 0.000 & 22 [19, 24] & 11 [9, 13] & 2019-03 & 2016-12 to 2019-06 & 2/1/1 & 2019-03, 2021-12 & 0.005 \\
+CBRE Silicon Valley MW under construction (semiannual) & 21 & 0.5 & 0.614 & 0.000 & 35 [10, 66] & 4 [-2, 10] & 2020-12 & 2020-12 to 2020-12 & 1/0/0 & 2020-12 & 0.140 \\
+Epoch frontier sites, United States cumulative MW (monthly) & 69 & 176.1 & 0.000 & 0.000 & 0 [-0, 0] & 288 [250, 331] & 2023-01 & 2023-01 to 2023-01 & 2/2/1 & 2023-01, 2024-04 & 0.005 \\
+Epoch frontier sites, California cumulative MW & 0 & \multicolumn{10}{l}{no California site in the Epoch hub (0 of 87); series is identically zero, no test possibl} \\
 \bottomrule
 \end{tabular}

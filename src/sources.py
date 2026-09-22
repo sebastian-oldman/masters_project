@@ -135,7 +135,7 @@ def eia860m(first=(2015, 7), last=(2026, 8)) -> list[Source]:
 # --------------------------------------------------------------------------
 # BLS QCEW (NAICS 518210 data processing, hosting and related services)
 # --------------------------------------------------------------------------
-def qcew(first=2015, last=2026) -> list[Source]:
+def qcew(first=2014, last=2026) -> list[Source]:
     out = []
     for y in range(first, last + 1):
         for q in (1, 2, 3, 4):
@@ -575,6 +575,9 @@ STATIC += [
            "https://www.cbre.com/press-releases/fast-growing-north-american-data-center-market-set-records-in-2025", filename="cbre_press_release_2025_records.html", tags=["html"], optional=True),
     Source("cw_americas_dc_update_page", "market_reports", "Cushman & Wakefield", "Americas Data Center Update H2 2025 page (HTML)",
            "https://www.cushmanwakefield.com/en/insights/americas-data-center-update", filename="cw_americas_dc_update.html", tags=["html", "manual"], optional=True),
+    Source("pge_quarterly_earnings_page", "cec_tiers", "PG&E Corporation", "PG&E Corporation quarterly earnings reports page (data center pipeline table by PG&E stage each quarter; Q2 2026 table reproduced in CEC docket TN 272065 p.9)",
+           "https://investor.pgecorp.com/financials/quarterly-earnings-reports/default.aspx", filename="pge_quarterly_earnings_page.html", tags=["html", "manual", "vintage"], optional=True,
+           notes="Manual: download each quarter's earnings presentation PDF and record the Data Center Pipeline table (Application & Preliminary Engineering, Final Engineering, ICA, Construction)."),
     Source("jll_press_yearend_2025", "market_reports", "JLL", "JLL newsroom: North America Data Center Report year-end 2025 (HTML)",
            "https://www.jll.com/en-us/newsroom/jll-north-america-data-center-report-year-end-2025", filename="jll_press_yearend_2025.html", tags=["html"], optional=True),
     Source("ercot_board_2026_04_interconnection_update", "ercot", "ERCOT", "Interconnection and Grid Analysis Update (Jeff Billo), Apr 2026 board item 9",

@@ -61,9 +61,12 @@ def main() -> int:
     # ------------------------------------------------------------ 2. structural breaks and forecasts
     print("2. Structural breaks and forecasts")
     y = np.log(s.values)
-    res = c2.break_analysis(s, 12, c2.CHATGPT, max_breaks=3, bootstrap_reps=BOOT, label="Census data center construction (monthly, SAAR)")
-    bp = c2.bai_perron(y, max_breaks=3)
-    bp_table = pd.DataFrame([{"m": m, "breaks": ", ".join(s.index[b].strftime("%Y-%m") for b in v["breaks"]), "ssr": v["ssr"], "bic": v["bic"], "lwz": v["lwz"], "supF_0_m": v["supF"]} for m, v in bp["by_m"].items()])
+    res = c2.break_analysis(s, 12, c2.CHATGPT, max_breaks=5, bootstrap_reps=BOOT, label="Census data center construction (monthly, SAAR)")
+    bp = c2.bai_perron(y, max_breaks=5)  # five breaks is the most that 15 percent trimming allows, so the choice is uncensored
+    sq = c2.sequential_supF(y, max_breaks=5, reps=BOOT)
+    bp_table = pd.DataFrame([{"m": m, "breaks": ", ".join(s.index[b].strftime("%Y-%m") for b in v["breaks"]), "ssr": v["ssr"], "bic": v["bic"], "lwz": v["lwz"], "supF_0_m": v["supF"],
+                              "supF_seq": sq["levels"].get(m, {}).get("supF_seq", np.nan), "supF_seq_boot_p": sq["levels"].get(m, {}).get("boot_p", np.nan)} for m, v in bp["by_m"].items()])
+    print(f"   BIC m={bp['m_bic']}, LWZ m={bp['m_lwz']}, sequential m={sq['m_seq']}")
     bp_table.to_csv(PROCESSED / "ch2_census_bai_perron.csv", index=False)
     # segment growth rates for the BIC-selected partition
     seg_rows = []
@@ -75,10 +78,10 @@ def main() -> int:
     import ruptures as rpt
     sig = np.column_stack([y, np.ones(len(y)), np.arange(len(y))])
     algo = rpt.Dynp(model="linear", min_size=bp["h"], jump=1).fit(sig)
-    rupt = {m: [s.index[b - 1].strftime("%Y-%m") for b in algo.predict(n_bkps=m)[:-1]] for m in (1, 2, 3)}
+    rupt = {m: [s.index[b - 1].strftime("%Y-%m") for b in algo.predict(n_bkps=m)[:-1]] for m in (1, 2, 3, 4, 5)}
     fa, ia = c2.arima_forecast(np.log(s)); fa.to_csv(PROCESSED / "ch2_census_forecast_arima.csv")
     fe, ie = c2.ets_forecast(np.log(s)); fe.to_csv(PROCESSED / "ch2_census_forecast_ets.csv")
-    (PROCESSED / "ch2_census_break_summary.json").write_text(json.dumps({**{k: (str(v) if not isinstance(v, (int, float)) else v) for k, v in res.items()}, "ruptures_dynp": rupt, "arima": {**ia, "params": ia["params"]}, "ets": ie}, indent=1, default=str))
+    (PROCESSED / "ch2_census_break_summary.json").write_text(json.dumps({**{k: (str(v) if not isinstance(v, (int, float)) else v) for k, v in res.items()}, "ruptures_dynp": rupt, "sequential": {"m_seq": sq["m_seq"], "levels": sq["levels"]}, "arima": {**ia, "params": ia["params"]}, "ets": ie}, indent=1, default=str))
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.4))
     ax = axes[0]
@@ -123,7 +126,7 @@ def main() -> int:
     rows = [dict(res)]
     for lab, (ser, ppy, kb) in proxies.items():
         try:
-            rows.append(c2.break_analysis(ser, ppy, kb, max_breaks=2, bootstrap_reps=BOOT, label=lab))
+            rows.append(c2.break_analysis(ser, ppy, kb, max_breaks=5, bootstrap_reps=BOOT, label=lab))
         except Exception as e:  # keep going, record the failure
             rows.append({"series": lab, "error": str(e)[:200]})
     rows.append({"series": "Epoch frontier sites, California cumulative MW", "n": 0, "note": "no California site in the Epoch hub (0 of 87); series is identically zero, no test possible"})
@@ -139,12 +142,16 @@ def main() -> int:
     ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1); ax.set_title("Epoch AI Frontier Data Centers Hub, cumulative facility power"); ax.set_ylabel("GW"); ax.legend(fontsize=8, loc="upper left")
     ax = axes[1, 1]; ax.axis("off")
     cell = []
+    short = {"Census data center construction": "Census US DC construction", "QCEW 518210 California employment": "QCEW CA employment", "QCEW 518210 California establishments": "QCEW CA establishments",
+             "QCEW 518210 California wages": "QCEW CA wages", "CBRE Silicon Valley MW under construction": "CBRE SV under construction", "Epoch frontier sites, United States cumulative MW": "Epoch US cumulative MW",
+             "Epoch frontier sites, California cumulative MW": "Epoch CA cumulative MW"}
     for _, r in comp.iterrows():
+        nm = short.get(r["series"].split(" (")[0], r["series"][:26])
         if "chow_p" in r and pd.notna(r.get("chow_p", np.nan)):
-            cell.append([r["series"].split(" (")[0][:38], f"{r['chow_p']:.3f}", f"{100*r['cagr_pre']:.0f}% -> {100*r['cagr_post']:.0f}%", str(r.get("bp_break1", "")), str(r.get("bp_breaks_bic", ""))[:22]])
+            cell.append([nm, f"{r['chow_p']:.3f}", f"{100*r['cagr_pre']:.0f}% -> {100*r['cagr_post']:.0f}%", str(r.get("bp_break1", "")), f"{int(r['bp_m_bic'])}/{int(r['bp_m_lwz'])}/{int(r['bp_m_seq'])} (last {str(r.get('bp_breaks_bic', '')).split(', ')[-1]})" if r.get("bp_m_bic", 0) else "0/0/0"])
         else:
-            cell.append([r["series"].split(" (")[0][:38], "n/a", "n/a", "n/a", "no CA site (0 of 87)"])
-    tb = ax.table(cellText=cell, colLabels=["series", "Chow p", "growth before -> after", "BP 1-break", "BP breaks (BIC)"], loc="center", cellLoc="left", colWidths=[0.40, 0.09, 0.19, 0.12, 0.24])
+            cell.append([nm, "n/a", "n/a", "n/a", "no CA site (0 of 87)"])
+    tb = ax.table(cellText=cell, colLabels=["series", "Chow p", "growth pre -> post", "BP 1 break", "m BIC/LWZ/seq. (last)"], loc="center", cellLoc="left", colWidths=[0.30, 0.09, 0.19, 0.12, 0.30])
     tb.auto_set_font_size(False); tb.set_fontsize(6.2); tb.scale(1, 1.6); ax.set_title("Break tests: known break = first period after Nov 2022; BP = Bai-Perron", fontsize=9)
     save(fig, "fig2_03_california_proxies")
 
@@ -158,18 +165,23 @@ def main() -> int:
     statewide = est[~est.method.str.contains("Silicon Valley Power")]  # the SVP cluster is a single-utility lower bound, not a statewide estimate
     ex_low, ex_high = statewide.low_TWh.min() * 1e6 / 8760, statewide.high_TWh.max() * 1e6 / 8760  # average-load MW range from chapter 1
     ex_cec_peak = 1000.0
-    fig, ax = plt.subplots(figsize=(10, 5))
-    order = ["Signed agreement", "Active application", "Inquiry", "Agreements + applications (no inquiries)", "All tiers", "Canceled"]
+    fig, ax = plt.subplots(figsize=(10, 6.2))
+    order = ["Signed agreement", "Active application", "Agreements + applications (no inquiries)", "Inquiry", "All tiers", "Canceled"]
+    seen = set()
+    def lab_once(t):
+        if t in seen:
+            return None
+        seen.add(t); return t
     cols = {"Signed agreement": "#1b7837", "Active application": "#5aae61", "Inquiry": "#a6dba0", "Agreements + applications (no inquiries)": "#7fbf7b", "All tiers": "#bdbdbd", "Canceled": "#d9534f"}
-    vint = [("2024-12", "Dec 2024\n(PG&E+SCE, no inquiries)"), ("2025-08", "Summer 2025\n(7 utilities, tiers\nnot published)"), ("2025-12", "Dec 2025\n(7 utilities by tier)")]
+    vint = [("2024-12", "Dec 2024\n(PG&E+SCE, no inquiries)"), ("2025-08", "Summer 2025\n(PG&E, SCE split;\n5 others unsplit)"), ("2025-12", "Dec 2025\n(7 utilities by tier)")]
     xs = np.arange(len(vint))
     for i, (v, lab) in enumerate(vint):
-        d = tv[(tv.vintage == v) & (~tv.label.str.contains("SCE database"))]
+        d = tv[(tv.vintage == v) & (~tv.label.str.contains("SCE database|PG&E earnings"))]
         bottom = 0
         for tier in order:
             mw = d[d.tier == tier].mw.sum()
             if mw > 0:
-                ax.bar(i, mw, bottom=bottom, color=cols[tier], edgecolor="white", label=tier if i == 2 or tier in ("Agreements + applications (no inquiries)", "All tiers") else None, width=0.6)
+                ax.bar(i, mw, bottom=bottom, color=cols[tier], edgecolor="white", label=lab_once(tier), width=0.6)
                 ax.text(i, bottom + mw / 2, f"{mw:,.0f}", ha="center", va="center", fontsize=8)
                 bottom += mw
         ax.text(i, bottom + 400, f"total {bottom:,.0f} MW", ha="center", fontsize=8.5, fontweight="bold")
@@ -180,16 +192,30 @@ def main() -> int:
         for tier in ["Signed agreement", "Active application", "Inquiry", "Canceled"]:
             mw = d[d.tier == tier].mw.sum()
             if mw > 0:
-                ax.bar(3.2 + j * 0.8, mw, bottom=bottom, color=cols[tier], edgecolor="white", width=0.5, hatch="//" if tier == "Canceled" else None, label="Canceled" if (tier == "Canceled" and j == 0) else None)
+                ax.bar(3.2 + j * 0.8, mw, bottom=bottom, color=cols[tier], edgecolor="white", width=0.5, hatch="//" if tier == "Canceled" else None, label=lab_once(tier))
                 bottom += mw
         ax.text(3.2 + j * 0.8, bottom + 400, f"{bottom:,.0f}", ha="center", fontsize=8)
         vint.append((v, lab))
-    ax.axhline(caiso_record_mw, color="k", ls="--", lw=1); ax.text(4.75, caiso_record_mw - 2600, f"CAISO record peak 52,061 MW (Sep 6, 2022)", ha="right", fontsize=8)
+    # PG&E's own pipeline (PG&E stage definitions, no inquiries) as narrow bars
+    pcols = {"PG&E: application + preliminary engineering": "#5aae61", "PG&E: final engineering (WPA signed)": "#1b7837",
+             "PG&E: interconnection construction agreement": "#08306b", "PG&E: construction": "#000000"}
+    for j, (v, lab) in enumerate([("2026-03", "PG&E pipeline\nMar 2026\n(PG&E stages)"), ("2026-06", "PG&E pipeline\nJun 2026\n(PG&E stages)")]):
+        d = tv[(tv.vintage == v) & (tv.label.str.contains("PG&E earnings"))]
+        bottom = 0
+        for tier in ["PG&E: application + preliminary engineering", "PG&E: final engineering (WPA signed)", "PG&E: interconnection construction agreement", "PG&E: construction"]:
+            mw = d[d.tier == tier].mw.sum()
+            if mw > 0:
+                ax.bar(5.0 + j * 0.8, mw, bottom=bottom, color=pcols[tier], edgecolor="white", width=0.5, hatch="..", label=lab_once(tier + " (no inquiries)"))
+                bottom += mw
+        ax.text(5.0 + j * 0.8, bottom + 400, f"{bottom:,.0f}", ha="center", fontsize=8)
+        vint.append((v, lab))
+    ax.axhline(caiso_record_mw, color="k", ls="--", lw=1); ax.text(6.2, caiso_record_mw + 700, f"CAISO record peak 52,061 MW (Sep 6, 2022)", ha="right", fontsize=8)
     ax.axhspan(ex_low, ex_high, color="C1", alpha=0.18, label=f"existing data center load, chapter 1 range: {ex_low:,.0f}-{ex_high:,.0f} MW average load")
     ax.axhline(ex_cec_peak, color="C1", lw=1.2, label="existing data center peak demand, CEC: ~1,000 MW (Dec 2025)")
-    ax.set_xticks(list(xs) + [3.2, 4.0]); ax.set_xticklabels([l for _, l in vint], fontsize=8); ax.set_ylabel("MW requested"); ax.set_ylim(0, 58000)
+    ax.set_xticks(list(xs) + [3.2, 4.0, 5.0, 5.8]); ax.set_xticklabels([l for _, l in vint], fontsize=7.5); ax.set_ylabel("MW requested"); ax.set_ylim(0, 58000); ax.set_xlim(-0.5, 6.3)
     ax.set_title("CEC data center energization requests by vintage and tier, against CAISO's record peak and existing data center load")
-    ax.legend(fontsize=8, loc="upper left", ncol=2, bbox_to_anchor=(0.0, 0.93))
+    ax.legend(fontsize=7, loc="upper center", ncol=3, bbox_to_anchor=(0.5, -0.16), frameon=False)
+    fig.subplots_adjust(bottom=0.30)
     save(fig, "fig2_04_tier_vintages")
 
     # ------------------------------------------------------------ 5. RQ1 table

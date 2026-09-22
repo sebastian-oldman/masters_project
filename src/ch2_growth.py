@@ -138,8 +138,9 @@ def _segment_ssr_table(y: np.ndarray, X: np.ndarray, h: int) -> np.ndarray:
     return ssr
 
 
-def bai_perron(y_log: np.ndarray, max_breaks: int = 3, trim: float = 0.15, k: int = 2) -> dict:
-    """Global minimisation of SSR over partitions with m = 0..max_breaks breaks (Bai & Perron 1998, 2003)."""
+def bai_perron(y_log: np.ndarray, max_breaks: int = 5, trim: float = 0.15, k: int = 2) -> dict:
+    """Global minimisation of SSR over partitions with m = 0..max_breaks breaks (Bai & Perron 1998, 2003).
+    With 15 percent trimming at most five breaks are feasible, so max_breaks=5 leaves the BIC/LWZ choice uncensored."""
     n = len(y_log)
     X = trend_X(n)
     h = max(int(np.ceil(trim * n)), k + 1)
@@ -150,12 +151,12 @@ def bai_perron(y_log: np.ndarray, max_breaks: int = 3, trim: float = 0.15, k: in
     cost[0] = ssr[0]
     for m in range(1, max_breaks + 1):
         for j in range(n):
-            best, bi = np.inf, -1
-            for i in range(m * h - 1, j - h + 1):  # last break after obs i (segment m+1 = i+1..j)
-                c = cost[m - 1, i] + ssr[i + 1, j]
-                if c < best:
-                    best, bi = c, i
-            cost[m, j], arg[m, j] = best, bi
+            idx = np.arange(m * h - 1, j - h + 1)  # last break after obs i (segment m+1 = i+1..j)
+            if len(idx) == 0:
+                continue
+            cand = cost[m - 1, idx] + ssr[idx + 1, j]
+            b = int(np.argmin(cand))
+            cost[m, j], arg[m, j] = cand[b], idx[b]
     results = {}
     for m in range(0, max_breaks + 1):
         if not np.isfinite(cost[m, n - 1]):
@@ -195,6 +196,72 @@ def bootstrap_supF(y_log: np.ndarray, m: int = 1, reps: int = 299, block: int = 
         if bp["by_m"].get(m, {"supF": -np.inf})["supF"] >= obs:
             count += 1
     return {"supF_obs": float(obs), "bootstrap_p": (count + 1) / (reps + 1), "reps": reps, "block": block}
+
+
+def _segment_fit(y_log: np.ndarray, breaks: list[int]) -> tuple[np.ndarray, np.ndarray]:
+    """Piecewise OLS fit and residuals for a given partition (breaks = first obs of each new regime)."""
+    n = len(y_log); X = trend_X(n)
+    fit = np.empty(n)
+    for lo, hi in zip([0] + list(breaks), list(breaks) + [n]):
+        beta, *_ = np.linalg.lstsq(X[lo:hi], y_log[lo:hi], rcond=None)
+        fit[lo:hi] = X[lo:hi] @ beta
+    return fit, y_log - fit
+
+
+def _supF_one_more(y_log: np.ndarray, breaks: list[int], h: int, k: int = 2) -> float:
+    """supF(l+1|l): the largest single-break F statistic across the l+1 segments of a given partition
+    (Bai & Perron 1998, eq. 13), with the minimum segment length h imposed within each segment."""
+    n = len(y_log); best = -np.inf
+    for lo, hi in zip([0] + list(breaks), list(breaks) + [n]):
+        T = hi - lo
+        if T < 2 * h:
+            continue
+        yseg = y_log[lo:hi]; X = trend_X(T)
+        ssr = _segment_ssr_table(yseg, X, h)
+        ssr0 = ssr[0, T - 1]
+        i = np.arange(h - 1, T - h)
+        ssr1 = float(np.min(ssr[0, i] + ssr[i + 1, T - 1]))
+        tiny = 1e-10 * max(1.0, float(np.var(yseg)) * T)  # numerically exact fits (flat log series) carry no evidence
+        if ssr1 <= tiny:
+            F = np.inf if ssr0 > tiny else -np.inf
+        else:
+            F = max(0.0, ((T - 2 * k) / k) * (ssr0 - ssr1) / ssr1)
+        best = max(best, F)
+    return float(best)
+
+
+def sequential_supF(y_log: np.ndarray, max_breaks: int = 5, trim: float = 0.15, reps: int = 199, block: int = 12,
+                    seed: int = 13, alpha: float = 0.05) -> dict:
+    """Bai-Perron sequential procedure: test l+1 versus l breaks for l = 0..max_breaks-1, each with a moving-block
+    residual bootstrap p-value under the l-break null; m_seq is the first l whose null is not rejected at alpha."""
+    rng = np.random.default_rng(seed)
+    n = len(y_log)
+    bp = bai_perron(y_log, max_breaks=max_breaks, trim=trim)
+    h = bp["h"]; block = max(2, min(block, n // 4))
+    out = {"levels": {}, "m_seq": None}
+    for l in range(0, max_breaks):
+        if l not in bp["by_m"] or (l + 1) not in bp["by_m"]:
+            break
+        breaks = bp["by_m"][l]["breaks"]
+        obs = _supF_one_more(y_log, breaks, h)
+        if not np.isfinite(obs):
+            break
+        fit, resid = _segment_fit(y_log, breaks)
+        count = 0
+        for _ in range(reps):
+            idx = np.concatenate([np.arange(s, s + block) for s in rng.integers(0, n - block + 1, size=int(np.ceil(n / block)))])[:n]
+            yb = fit + resid[idx]
+            bb = bai_perron(yb, max_breaks=l, trim=trim)["by_m"][l]["breaks"] if l > 0 else []
+            if _supF_one_more(yb, bb, h) >= obs:
+                count += 1
+        p = (count + 1) / (reps + 1)
+        out["levels"][l + 1] = {"supF_seq": obs, "boot_p": p}
+        if p >= alpha and out["m_seq"] is None:
+            out["m_seq"] = l
+    if out["m_seq"] is None:
+        out["m_seq"] = max(out["levels"]) if out["levels"] else 0
+    out["reps"] = reps; out["block"] = block
+    return out
 
 
 def bootstrap_break_date(y_log: np.ndarray, reps: int = 299, trim: float = 0.15, seed: int = 11) -> dict:
@@ -260,7 +327,7 @@ def ets_forecast(y_log: pd.Series, horizon: int = 24, freq: str = "ME") -> tuple
     return out, {"aic": float(res.aic), "alpha": float(res.params[0]), "beta": float(res.params[1]), "phi": float(res.params[2]) if len(res.params) > 2 else np.nan}
 
 
-def break_analysis(series: pd.Series, periods_per_year: int, known_break: pd.Timestamp, max_breaks: int = 2,
+def break_analysis(series: pd.Series, periods_per_year: int, known_break: pd.Timestamp, max_breaks: int = 5,
                    bootstrap_reps: int = 199, label: str = "") -> dict:
     """Run the full battery on one positive series: Chow at the first period >= known_break, Bai-Perron,
     pre/post growth rates. Returns a flat dict for the comparison table."""
@@ -279,11 +346,17 @@ def break_analysis(series: pd.Series, periods_per_year: int, known_break: pd.Tim
         out.update({"cagr_pre": pre["cagr"], "cagr_pre_lo": pre["cagr_lo95"], "cagr_pre_hi": pre["cagr_hi95"],
                     "cagr_post": post["cagr"], "cagr_post_lo": post["cagr_lo95"], "cagr_post_hi": post["cagr_hi95"]})
     trim = 0.15 if n >= 20 else 0.2
-    bp = bai_perron(y, max_breaks=min(max_breaks, max(1, (n // max(int(np.ceil(trim * n)), 3)) - 1)), trim=trim)
+    mb = min(max_breaks, max(1, (n // max(int(np.ceil(trim * n)), 3)) - 1))  # every feasible number of breaks
+    bp = bai_perron(y, max_breaks=mb, trim=trim)
     fmt = lambda i: dates[min(i, n - 1)].strftime("%Y-%m")  # noqa: E731
-    out.update({"bp_m_bic": bp["m_bic"], "bp_m_lwz": bp["m_lwz"], "bp_breaks_bic": ", ".join(fmt(b) for b in bp["breaks_bic"]),
+    out.update({"bp_max_breaks": mb, "bp_m_bic": bp["m_bic"], "bp_m_lwz": bp["m_lwz"], "bp_breaks_bic": ", ".join(fmt(b) for b in bp["breaks_bic"]),
                 "bp_break1": fmt(bp["by_m"][1]["breaks"][0]) if 1 in bp["by_m"] else None,
                 "bp_supF_1": bp["by_m"][1]["supF"] if 1 in bp["by_m"] else np.nan, "bp_h": bp["h"]})
+    if bootstrap_reps:
+        sq = sequential_supF(y, max_breaks=mb, trim=trim, reps=bootstrap_reps, block=max(2, periods_per_year))
+        out["bp_m_seq"] = sq["m_seq"]
+        out["bp_seq_p"] = "; ".join(f"{l}|{l-1}: F={v['supF_seq']:.1f} p={v['boot_p']:.3f}" for l, v in sq["levels"].items())
+        out["bp_breaks_seq"] = ", ".join(fmt(b) for b in bp["by_m"][sq["m_seq"]]["breaks"]) if sq["m_seq"] in bp["by_m"] else ""
     if 1 in bp["by_m"] and bootstrap_reps:
         bs = bootstrap_supF(y, m=1, reps=bootstrap_reps, block=max(2, periods_per_year), trim=trim)
         out["bp_supF_1_boot_p"] = bs["bootstrap_p"]
@@ -359,9 +432,19 @@ def tier_vintages() -> pd.DataFrame:
     # 2024 IEPR Update, December 2024 data: agreements + applications (no inquiries), PG&E and SCE only
     for u, mw in (("PG&E", 5808), ("SCE", 963)):
         rows.append(dict(vintage="2024-12", label="Dec 2024 (2024 IEPR Update)", utility=u, tier="Agreements + applications (no inquiries)", mw=mw, source="cec_prelim_dc_forecast_2025 p.7", complete_tiers=False))
-    # 2025 IEPR preliminary, summer 2025 data: totals by utility (tier split shown graphically only)
-    for u, mw in (("PG&E", 11668), ("SVP", 1375), ("Palo Alto", 85), ("SCE", 5828), ("SDG&E", 100), ("Burbank", 100), ("VEA", 2600)):
-        rows.append(dict(vintage="2025-08", label="Summer 2025 (2025 IEPR preliminary)", utility=u, tier="All tiers", mw=mw, source="cec_prelim_dc_forecast_2025 p.6", complete_tiers=False))
+    # 2025 IEPR preliminary, summer 2025 data: totals by utility (p.6); PG&E and SCE split into agreements + applications
+    # versus inquiries (p.7, "Total Capacity of Applications, does not include inquiries"). The Nov 12 2025 workshop copy of
+    # the deck (TN267165) labelled SCE 2025 as 2,492 MW and SVP as 1,382 MW; the published deck corrects these to 143 and 1,375.
+    summer = {"PG&E": 11668, "SVP": 1375, "Palo Alto": 85, "SCE": 5828, "SDG&E": 100, "Burbank": 100, "VEA": 2600}
+    split = {"PG&E": 10080, "SCE": 143}
+    for u, mw in summer.items():
+        if u in split:
+            rows.append(dict(vintage="2025-08", label="Summer 2025 (2025 IEPR preliminary)", utility=u, tier="Agreements + applications (no inquiries)", mw=split[u], source="cec_prelim_dc_forecast_2025 p.7", complete_tiers=False,
+                             note="workshop copy TN267165 p.8 labelled SCE 2025 as 2,492 MW; published deck says 143 MW" if u == "SCE" else ""))
+            rows.append(dict(vintage="2025-08", label="Summer 2025 (2025 IEPR preliminary)", utility=u, tier="Inquiry", mw=mw - split[u], source="cec_prelim_dc_forecast_2025 p.6 minus p.7", complete_tiers=False, note="residual: utility total minus agreements + applications"))
+        else:
+            rows.append(dict(vintage="2025-08", label="Summer 2025 (2025 IEPR preliminary)", utility=u, tier="All tiers", mw=mw, source="cec_prelim_dc_forecast_2025 p.6", complete_tiers=False,
+                             note="workshop copy TN267165 p.7 labelled SVP as 1,382 MW; published deck says 1,375 MW" if u == "SVP" else ""))
     # 2025 IEPR final, December 2025 data: by utility and tier (memo Table 1); statewide equals Assembly slide 7
     memo = {"PG&E": (4356, 3617, 6774), "SVP": (644, 196, 198), "Palo Alto": (14, 0, 55), "SCE": (72, 3174, 1378), "SDG&E": (0, 0, 100), "Burbank": (0, 0, 100), "VEA": (0, 2600, 0)}
     for u, (a, b, c) in memo.items():
@@ -377,7 +460,18 @@ def tier_vintages() -> pd.DataFrame:
                 rows.append(dict(vintage=v, label=lab, utility="SCE", tier=tier, mw=float(g[grp]), source=sid, complete_tiers=True))
     # 2026 IEPR cycle, August 2026 workshop: restates December 2025 tiers; June 2026 known-load charts are images only
     rows.append(dict(vintage="2026-08", label="Aug 2026 workshop (restates Dec 2025)", utility="all", tier="Total restated", mw=23278, source="cec_tn272026 p.5", complete_tiers=False))
-    return pd.DataFrame(rows)
+    # PG&E's own pipeline by PG&E stage (PG&E Q2 2026 earnings table reproduced in its Aug 20 2026 CEC presentation, TN272065 p.9;
+    # Cal Advocates TN272807 p.3 quotes the same 3,880 MW WPA-signed and 630 MW ICA-or-later figures). Excludes inquiries.
+    pge = {"2026-03": (1700, 3110, 140, 140), "2026-06": (8200, 3880, 490, 140)}
+    for v, (appl, fe, ica, con) in pge.items():
+        lab = f"PG&E earnings pipeline {pd.Timestamp(v + '-01'):%b %Y}"
+        for tier, mw in (("PG&E: application + preliminary engineering", appl), ("PG&E: final engineering (WPA signed)", fe),
+                         ("PG&E: interconnection construction agreement", ica), ("PG&E: construction", con)):
+            rows.append(dict(vintage=v, label=lab, utility="PG&E", tier=tier, mw=mw, source="cec_tn272065 p.9 (PG&E Q2 2026 earnings); cec_tn272807 p.3", complete_tiers=False,
+                             note="PG&E stage definitions (PES fee paid and later); no inquiries"))
+    df = pd.DataFrame(rows)
+    df["note"] = df["note"].fillna("")
+    return df
 
 
 def cec_forecast_reference_points() -> pd.DataFrame:
