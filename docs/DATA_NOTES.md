@@ -172,3 +172,25 @@ California 810 MW and Southern California 355 MW of colocation inventory). The S
 - **Exploration-time errors** seen while building the chapter (eGRID path guess, EIA-861 header lookup, pandas fillna
   with an ndarray, CAISO '0:05' timestamps, a broken string in the table generator) were all fixed in
   `src/ch1_baseline.py` and `scripts/make_ch1_tables.py`; none affects the outputs, which are produced by `make ch1`.
+
+## Chapter 2 findings that affect later chapters (2026-09-21, `scripts/run_chapter2.py`)
+
+- **Census C30 data center line (SAAR):** $1.64B (Jan 2014) -> $13.9B (Nov 2022) -> $75.2B (Jul 2026 prelim.); 10.0% of private
+  nonresidential construction. Chow at Dec 2022: F = 63, p < 0.001; growth 26%/yr [22, 31] before, 54%/yr [47, 61] after.
+  Bai-Perron (15% trimming, BIC and LWZ): breaks Oct 2016, Dec 2018, Mar 2022; last segment 55%/yr [50, 61]; supF(0|1) = 125,
+  bootstrap p = 0.01; ruptures agrees within a month. ARIMA(1,1,1)+drift and ETS(A,Ad,N): ~$95-100B by Jul 2027,
+  $115-135B by Jul 2028, 95% bands ~$50-260B. The SA history is `census_c30_privsatime` (privtime.xlsx is NSA only).
+- **California proxies decelerated after 2022:** QCEW 518210 CA employment 31k (2015Q1) -> 74k (2022Q4) -> 84k (2026Q1) with
+  growth 10%/yr -> -0.3%/yr after 2023Q1 (Chow p < 0.001); establishments 1,619 -> 4,494, 10% -> 0.5%; CBRE Silicon Valley
+  under construction 44 MW (H1 2016) -> 142 MW (H2 2022) -> 125-168 MW since, no break at H1 2023 (p = 0.61), BP break H2 2020;
+  Epoch frontier sites: US 0 -> 15.3 GW, California 0 of 87 sites. Cushman tables gated; JLL single period only.
+- **Tier vintages** (`ch2_tier_vintages.csv`): Dec 2024 PG&E+SCE agr.+appl. 6,771 MW; summer 2025 seven utilities 21,756 MW
+  (tiers graphical); Dec 2025 5,086 / 9,587 / 8,604 = 23,277 MW (memo Table 1 by utility sums to 23,278); Aug 2026 workshop
+  restates Dec 2025. SCE database: Aug 2025 51/216/5,934 active + 709 canceled; Jan 2026 76/3,314/1,772 + 3,137 canceled.
+- **RQ1 denominators** (`ch2_rq1_denominators.json`): CAISO record 52,061 MW (2022-09-06 16:57) and hourly 51,104 MW; 2025 peak
+  43,860 MW; existing DC peak ~1,000 MW; existing avg load 795-2,362 MW (statewide estimates only, SVP excluded); CED 2025
+  planning-scenario CAISO managed net peak 46,479 -> 50,498 MW (2025-2030, +4,019); baseline consumption peak 50,502 -> 56,180;
+  data center at CAISO peak 96 -> 1,743 MW (local reliability 4,377); statewide energy 263,196 -> 298,167 GWh; data-center-only
+  deliveries 729 -> 12,078 GWh (sum of planning-area totals; the DC form's STATEWIDE row is empty). Ratios: total tiers = 44.7%
+  of record peak, 23.3x existing DC peak, 5.8x IEPR peak growth to 2030 (3.9x at 67% utilization), energy-equivalent 120 TWh =
+  3.4x statewide energy growth.

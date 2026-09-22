@@ -685,6 +685,14 @@ STATIC += [
            "https://efiling.energy.ca.gov/GetDocument.aspx?tn=261964", optional=True),
 ]
 
+STATIC += [
+    Source("census_c30_privsatime", "census_c30", "U.S. Census Bureau",
+           "Value of Private Construction Put in Place, seasonally adjusted annual rate, historical monthly time series incl. Data center (2014 onward)",
+           "https://www.census.gov/construction/c30/xlsx/privsatime.xlsx", tags=["vintage"]),
+    Source("census_c30_release", "census_c30", "U.S. Census Bureau", "Monthly Construction Spending release workbook (latest)",
+           "https://www.census.gov/construction/c30/xlsx/release.xlsx", tags=["vintage"], optional=True),
+]
+
 
 def all_sources() -> list[Source]:
     srcs = (STATIC + eia930() + eia861() + eia923() + eia860() + eia860m()

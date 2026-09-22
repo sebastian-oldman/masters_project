@@ -1,3 +1,107 @@
 \chapter{Data Center Growth in California}
 \label{ch:growth}
-% TODO
+
+This chapter answers RQ1: how California's planned data center capacity varies by stage of development, in absolute terms and relative to the scale of the existing grid. It first reproduces the national construction-spending series that frames public discussion, tests it for structural breaks, and then asks whether California's own indicators show the same acceleration. It ends with every vintage of the CEC's energization tiers and the RQ1 table. All code is in \texttt{src/ch2\_growth.py} and \texttt{notebooks/02\_data\_center\_growth.ipynb}.
+
+\section{The national construction boom, reproduced}
+\label{sec:census}
+
+The Census Bureau's Value of Construction Put in Place survey has carried a ``data center'' line under private nonresidential construction since January 2014 \citep{census_c30}. Figure~\ref{fig:census} reproduces the widely circulated chart from the raw seasonally adjusted workbook and adds month-over-month growth. Spending at a seasonally adjusted annual rate rose from \$1.6~billion in January 2014 to \$13.9~billion in November 2022 and \$75.2~billion in July 2026 (preliminary). Data centers were half a percent of private nonresidential construction in 2014, two percent when ChatGPT launched, and ten percent in July 2026. Month-over-month growth averaged 4.1~percent from 2023 through mid-2026 against 1.2~percent in 2019 through 2021. No comparable state-level series exists: the Census publishes this category for the nation only, and the California picture must be built from proxies (Section~\ref{sec:proxies}).
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig2_01_census_data_center_construction}
+\caption{US private data center construction spending, seasonally adjusted annual rate, with month-over-month growth. Source: Census C30, July 2026 preliminary.}
+\label{fig:census}
+\end{figure}
+
+\section{Structural breaks and forecasts}
+\label{sec:breaks}
+
+The analysis works on the log of the seasonally adjusted series, so that a linear trend is a constant compound growth rate. Three questions are asked in turn: does a break at the known date change the trend (Chow test, \citealp{chow1960}); where does the data itself place breaks when none is imposed (Bai-Perron, \citealp{baiperron1998,baiperron2003}); and what does a time-series model project. Growth rates carry Newey-West standard errors; the Bai-Perron search uses 15~percent trimming (a minimum segment of 23 months), chooses the number of breaks by BIC and by the LWZ criterion, reports supF(0$|$1) with a moving-block residual bootstrap $p$-value under the no-break null, and gives the single-break date a residual-bootstrap 90~percent interval. The \texttt{ruptures} dynamic-programming search \citep{truong2020} is run as an independent check.
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig2_02_census_breaks_and_forecast}
+\caption{Left: log-linear trends before and after December 2022 with Bai-Perron break dates. Right: 24-month ARIMA and ETS forecasts with 80 and 95 percent prediction bands.}
+\label{fig:breaks}
+\end{figure}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Bai-Perron global search on the log Census series: break dates, sum of squared residuals, information criteria and supF statistics for $m = 0$ to 3 breaks.}
+\label{tab:bp}
+\input{tables/ch2_bai_perron}
+\end{table}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Compound growth by segment of the BIC-selected partition (Newey-West 95 percent intervals).}
+\label{tab:seg}
+\input{tables/ch2_segment_growth}
+\end{table}
+
+The known-date test is unambiguous. A break in intercept and slope at December 2022 gives a Chow $F$ of 63 ($p < 0.001$) and the HAC-robust Wald test agrees ($p < 0.001$). Compound growth was 26~percent a year (95~percent interval 22 to 31) before the launch and 54~percent a year (47 to 61) after it. Letting the data locate the breaks refines the timing (Tables~\ref{tab:bp} and \ref{tab:seg}). Both criteria choose three breaks, in October 2016, December 2018 and March 2022, so the current regime began eight months before ChatGPT, in the hyperscaler capital-spending ramp of early 2022, and the segment from March 2022 to July 2026 grows at 55~percent a year (50 to 61). The single-break supF of 125 has a bootstrap $p$-value of 0.01, and \texttt{ruptures} reproduces every break date within one month. The forecasts in Table~\ref{tab:fc} continue the current trend: an ARIMA(1,1,1) with drift and a damped-trend ETS both put July 2027 near \$95 to \$100~billion and July 2028 near \$115 to \$135~billion, with 95~percent bands from roughly \$50 to \$260~billion by then. The bands, not the point forecasts, are the finding: a series growing at 55~percent a year with a one-third chance of a further break is not something a planner should extrapolate.
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Forecasts of US data center construction spending, 6, 12 and 24 months ahead.}
+\label{tab:fc}
+\input{tables/ch2_forecast}
+\end{table}
+
+\section{California proxies}
+\label{sec:proxies}
+
+Three California indicators are subjected to the same battery, with the known break set to the first period after November 2022 (Figure~\ref{fig:proxies}, Table~\ref{tab:comp}).
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig2_03_california_proxies}
+\caption{California proxies for data center growth: BLS QCEW NAICS 518210 (top left), CBRE Silicon Valley construction and inventory (top right), Epoch AI frontier sites (bottom left), and the break-test summary (bottom right).}
+\label{fig:proxies}
+\end{figure}
+
+\begin{table}[H]
+\centering\scriptsize
+\caption{Break tests on the Census series and the California proxies. Chow: known break at the first period after November 2022. BP: Bai-Perron single break with residual-bootstrap 90 percent interval, BIC-selected breaks, and the bootstrap $p$-value of supF(0$|$1).}
+\label{tab:comp}
+\resizebox{\textwidth}{!}{\input{tables/ch2_break_comparison}}
+\end{table}
+
+\paragraph{Employment and establishments.} The Quarterly Census of Employment and Wages counts private establishments and jobs in NAICS 518210, data processing, hosting and related services, by quarter \citep{qcew}. California employment in the industry rose from 31,000 in 2015 to 74,000 by the end of 2022, then flattened: 84,000 in 2026 Q1 after a plateau through 2024 and 2025. The Chow test at 2023 Q1 rejects a common trend ($F = 24$, $p < 0.001$), but the break is a deceleration, from 10~percent a year to roughly zero. Establishments show the same shape (10~percent a year to 0.5~percent), and Bai-Perron places their break between 2022 Q3 and 2023 Q2. Wages decelerated from 20 to 11~percent a year with breaks in 2019 and 2021 that reflect the industry's earlier expansion. The county detail is in the notebook; Santa Clara, Los Angeles and San Francisco account for most of the state total.
+
+\paragraph{MW under construction.} CBRE's semiannual market chapters give Silicon Valley colocation capacity under construction from H1 2016 and inventory from H1 2023 \citep{cbre_series}. Construction rose from 44~MW in H1 2016 to 142~MW by H2 2022 and has since ranged between 125 and 168~MW, with inventory creeping from 411 to 509~MW. The Chow test finds no break at H1 2023 ($p = 0.61$); Bai-Perron puts the only break in H2 2020, when the pipeline stepped up from tens of megawatts to over a hundred, and growth has been 4~percent a year since. Cushman \& Wakefield's tables are form-gated and JLL's report gives a single-period inventory, so the digitized series rests on CBRE; Southern California is available only from H1 2024 and is reported in the notebook.
+
+\paragraph{Frontier facilities.} Epoch AI's hub tracks 87 large AI data centers from satellite imagery and permits, 75 of them in the United States, with per-site power timelines \citep{epoch_timelines}. Cumulative US power in these sites went from under 0.5~GW at the end of 2023 to 15.3~GW by September 2026, with a break in January 2023. Not one of the 87 sites is in California, so the California series is identically zero and no test is possible.
+
+The three proxies agree on a finding that the national series hides: after 2022 California's data center industry did not accelerate in jobs, establishments or built colocation capacity, and the largest AI campuses were sited elsewhere. The growth that California records is in requests to connect, which is the subject of the next section, and the divergence between requests and built capacity is exactly what the tiers are meant to measure.
+
+\section{Every vintage of the energization tiers}
+\label{sec:vintages}
+
+Table~\ref{tab:vint} and Figure~\ref{fig:vint} assemble every published vintage of the CEC's data center energization requests. The December 2024 data behind the 2024 IEPR Update are known only as PG\&E's and SCE's agreements plus applications, 5,808 and 963~MW, because inquiries were not published \citep{cec_prelim2025}. The summer 2025 data behind the preliminary 2025 forecast are published as totals by utility, 21,756~MW across seven utilities, with the tier split shown graphically \citep{cec_prelim2025}. The December 2025 data behind the adopted forecast are the first complete vintage: 5,086~MW signed, 9,587~MW in application and 8,604~MW in inquiry, 23,277~MW in all, with PG\&E accounting for 14,747~MW and SCE for 4,623~MW \citep{cec_dc_memo2026,cec_assembly2026}. The August 2026 workshop restated the December 2025 figures and showed June 2026 known-load data only as charts \citep{cec_tn272026}. SCE's public project database provides the only utility-level vintages with cancellations: between its August 2025 and January 2026 versions, inquiries fell from 5,934 to 1,772~MW as about 3,100~MW moved into the application stage, and canceled requests rose from 709 to 3,137~MW \citep{sce_database2026}. Thirty-eight percent of everything SCE had ever logged was canceled within five months, the first direct California evidence on attrition.
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Vintages of the CEC energization tiers found in the record (MW of requested capacity).}
+\label{tab:vint}
+\resizebox{\textwidth}{!}{\input{tables/ch2_tier_vintages}}
+\end{table}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig2_04_tier_vintages}
+\caption{Energization requests by vintage and tier against CAISO's record peak and the existing data center load from Chapter~\ref{ch:current}.}
+\label{fig:vint}
+\end{figure}
+
+The sums and ratios are stated explicitly. The three December 2025 tiers total 23,277~MW. Against CAISO's all-time peak of 52,061~MW on September~6, 2022 \citep{caiso_keystats}, that is 45~percent (46~percent against the hourly EIA-930 peak of 51,104~MW). Against the roughly 1,000~MW of existing data center peak demand that the CEC reports for December 2025, it is 23 times; against the chapter~1 range of existing average load, 795 to 2,362~MW, it is 10 to 29 times. Finland's ratio of registered to installed capacity was 27 \citep{manner2026}; California's is of the same order.
+
+\section{RQ1: planned capacity by stage}
+\label{sec:rq1}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{RQ1: California's planned data center capacity by stage (December 2025) relative to the grid, to existing data center load, and to the adopted forecast's growth to 2030.}
+\label{tab:rq1}
+\resizebox{\textwidth}{!}{\input{tables/ch2_rq1}}\\[2pt] \input{tables/ch2_rq1_note}
+\end{table}
+
+Table~\ref{tab:rq1} answers RQ1. The denominators come from the sources of the preceding chapters: the CAISO record and 2025 peaks, the CEC's existing-load figure and the chapter~1 range, and the adopted 2025 IEPR planning forecast, whose hourly CAISO forecast gives a managed net peak of 46,479~MW in 2025 and 50,498~MW in 2030, a growth of 4,019~MW, and whose statewide energy to serve load grows from 263 to 298~TWh \citep{ced2025_tables}. Signed agreements alone, 5,086~MW, exceed the forecast's entire five-year peak growth (127~percent of it); the three tiers together are 5.8 times that growth, 3.9 times it even at the CEC's 67~percent utilization factor, and their energy equivalent at that utilization and a 0.88 load factor, about 120~TWh a year, is 3.4 times the forecast's statewide energy growth to 2030. The forecast is not blind to data centers: its planning scenario carries a data center contribution at the CAISO peak that rises from 96~MW in 2025 to 1,743~MW in 2030 (4,377~MW in the local-reliability scenario), and data-center-only deliveries of 12.1~TWh in 2030, roughly a third of projected statewide energy growth. What the forecast does is discount the requests, by the confidence levels and utilization of Chapter~\ref{ch:current}, to about a tenth of their face value at the peak by 2030. Whether that discount is right is the question the remaining chapters take up with the supply side, the attrition evidence and the adequacy framing.

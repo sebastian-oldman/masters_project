@@ -50,6 +50,7 @@ The snapshot is scheduled through a user-level LaunchAgent installed on 2026-09-
 | Chapter | Run | Outputs |
 |---|---|---|
 | 1 Current status (baseline grid, prices, carbon, existing data center load, institutions) | `make ch1` (= `scripts/run_chapter1.py`, `scripts/make_ch1_tables.py`, `scripts/build_notebook_ch1.py --execute`) | `data/processed/ch1_*`, `figures/fig1_*`, `report/tables/ch1_*.tex`, `notebooks/01_baseline_grid.ipynb`, `report/sections/02_current_status.tex` |
+| 2 Data center growth (Census chart, Chow and Bai-Perron breaks, ARIMA/ETS forecasts, California proxies, tier vintages, RQ1 table) | `make ch2` (= `scripts/run_chapter2.py`, `scripts/make_ch2_tables.py`, `scripts/build_notebook_ch2.py --execute`) | `data/processed/ch2_*`, `figures/fig2_*`, `report/tables/ch2_*.tex`, `notebooks/02_data_center_growth.ipynb`, `report/sections/03_data_center_growth.tex` |
 
 ## Provenance rules
 
