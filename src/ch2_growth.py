@@ -27,7 +27,8 @@ import pandas as pd
 from .ch1_baseline import raw_path
 from .paths import PROCESSED
 
-CHATGPT = pd.Timestamp("2022-11-30")
+CHATGPT = pd.Timestamp("2022-11-30")  # launch date, used for annotations
+CHATGPT_FIRST_POST = pd.Timestamp("2022-12-31")  # first full post-launch monthly observation (December 2022)
 
 
 # ------------------------------------------------------------------------------------------------
@@ -325,6 +326,34 @@ def ets_forecast(y_log: pd.Series, horizon: int = 24, freq: str = "ME") -> tuple
     out = pd.DataFrame({"mean": np.exp(sf80["mean"].values), "lo80": np.exp(sf80["pi_lower"].values), "hi80": np.exp(sf80["pi_upper"].values),
                         "lo95": np.exp(sf95["pi_lower"].values), "hi95": np.exp(sf95["pi_upper"].values)}, index=idx)
     return out, {"aic": float(res.aic), "alpha": float(res.params[0]), "beta": float(res.params[1]), "phi": float(res.params[2]) if len(res.params) > 2 else np.nan}
+
+
+def backtest_forecasts(y_log: pd.Series, n_origins: int = 24, horizons=(1, 3, 6, 12), freq: str = "ME") -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Rolling-origin evaluation of the ARIMA and ETS forecasts against naive and drift benchmarks.
+    For each of the last n_origins months that leave room for the longest horizon, the models are refit on the
+    data up to the origin and forecast max(horizons) months ahead. Errors are absolute percentage errors on the
+    level scale and log errors; coverage is the share of actuals inside the 80 and 95 percent bands."""
+    y = y_log.dropna(); n = len(y); H = max(horizons)
+    recs = []
+    for origin in range(n - n_origins - H + 1, n - H + 1):
+        train, actual = y.iloc[:origin], y.iloc[origin:origin + H]
+        fa, _ = arima_forecast(train, horizon=H, freq=freq)
+        fe, _ = ets_forecast(train, horizon=H, freq=freq)
+        last = float(train.iloc[-1]); drift = float((train.iloc[-1] - train.iloc[0]) / (len(train) - 1))
+        for h in horizons:
+            a = float(np.exp(actual.iloc[h - 1]))
+            preds = {"ARIMA (log, drift)": (float(fa["mean"].iloc[h - 1]), fa.iloc[h - 1]), "ETS(A,Ad,N) (log)": (float(fe["mean"].iloc[h - 1]), fe.iloc[h - 1]),
+                     "drift benchmark (log random walk)": (float(np.exp(last + h * drift)), None), "naive benchmark (last value)": (float(np.exp(last)), None)}
+            for model, (pt, row) in preds.items():
+                rec = {"origin": y.index[origin - 1], "horizon": h, "model": model, "actual": a, "forecast": pt, "ape_pct": abs(pt - a) / a * 100, "log_err": float(np.log(pt) - np.log(a))}
+                if row is not None:
+                    rec["in80"] = bool(row["lo80"] <= a <= row["hi80"]); rec["in95"] = bool(row["lo95"] <= a <= row["hi95"])
+                recs.append(rec)
+    d = pd.DataFrame(recs)
+    g = d.groupby(["model", "horizon"])
+    out = pd.DataFrame({"n": g.size(), "mape_pct": g["ape_pct"].mean(), "rmse_log": g["log_err"].apply(lambda e: float(np.sqrt(np.mean(e ** 2)))),
+                        "bias_log": g["log_err"].mean(), "coverage80_pct": g["in80"].mean() * 100, "coverage95_pct": g["in95"].mean() * 100}).reset_index()
+    return out, d
 
 
 def break_analysis(series: pd.Series, periods_per_year: int, known_break: pd.Timestamp, max_breaks: int = 5,

@@ -1,0 +1,12 @@
+\begin{tabular}{lrrrcrrrcrrrc}
+\toprule
+ & \multicolumn{4}{c}{1 month ahead} & \multicolumn{4}{c}{6 months ahead} & \multicolumn{4}{c}{12 months ahead} \\
+Model & MAPE & RMSE & bias & cover. & MAPE & RMSE & bias & cover. & MAPE & RMSE & bias & cover. \\
+ & (\%) & (log) & (log) & 80/95 & (\%) & (log) & (log) & 80/95 & (\%) & (log) & (log) & 80/95 \\
+\midrule
+ARIMA (log, drift) & 4.6 & 0.06 & -0.02 & 96 / 100 & 11.6 & 0.14 & -0.08 & 75 / 100 & 14.0 & 0.20 & -0.11 & 67 / 92 \\
+ETS(A,Ad,N) (log) & 4.9 & 0.06 & -0.03 & 96 / 100 & 13.9 & 0.18 & -0.11 & 75 / 92 & 18.8 & 0.30 & -0.20 & 67 / 79 \\
+drift benchmark (log random walk) & 4.0 & 0.06 & -0.01 & -- / -- & 10.2 & 0.12 & -0.06 & -- / -- & 13.0 & 0.18 & -0.10 & -- / -- \\
+naive benchmark (last value) & 5.1 & 0.07 & -0.04 & -- / -- & 18.2 & 0.23 & -0.21 & -- / -- & 31.2 & 0.41 & -0.39 & -- / -- \\
+\bottomrule
+\end{tabular}

@@ -130,7 +130,8 @@ def annual_summary(h: pd.DataFrame) -> pd.DataFrame:
     s = pd.DataFrame({
         "hours": g["demand"].count(),
         "hours_in_year": hours_in_year,
-        "energy_TWh": g["demand"].mean() * hours_in_year / 1e6,  # mean x calendar hours: robust to nulled artifact hours
+        "missing_hours": hours_in_year - g["demand"].count(),
+        "energy_TWh": g["demand"].mean() * hours_in_year / 1e6,  # mean of valid hours x calendar hours: missing hours imputed at the annual mean
         "avg_demand_MW": g["demand"].mean(),
         "peak_demand_MW": g["demand"].max(),
         "peak_demand_time": g["demand"].idxmax(),
@@ -281,65 +282,96 @@ def load_ice_daily() -> pd.DataFrame:
 # --------------------------------------------------------------------------------------
 # 3. Carbon intensity from CAISO Today's Outlook (co2, demand) and eGRID
 # --------------------------------------------------------------------------------------
-def load_caiso_outlook_hourly(first_year: int = 2019, last_year: int = 2025) -> pd.DataFrame:
-    """Hourly means of CAISO 5-minute CO2 (t/h by source) and demand (MW)."""
+
+def _outlook_day_files(sub: str) -> dict:
+    """CAISO Today's Outlook daily CSVs (YYYYMMDD.csv) for one series folder, keyed by date string."""
     base = sorted(glob.glob(str(RAW / "caiso_outlook" / "*")))[-1]
-    co2_files = sorted(glob.glob(f"{base}/co2/*.csv"))
+    return {Path(f).stem: f for f in sorted(glob.glob(f"{base}/{sub}/*.csv")) if re.fullmatch(r"\d{8}", Path(f).stem)}
+
+
+def _hourly_means(df: pd.DataFrame, cols: list[str]) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Five-minute rows of one calendar day -> hourly means by clock hour, plus the number of non-missing
+    intervals per hour. CAISO publishes a fixed 24 x 12 clock grid for every day, including the two daylight-
+    saving transition days, so the repeated autumn hour and the skipped spring hour cannot be separated; the
+    grid is taken as published (an error of at most two hours per year)."""
+    d = df.dropna(subset=["Time"]).copy()
+    hh = pd.to_numeric(d["Time"].astype(str).str.split(":").str[0], errors="coerce")
+    keep = hh.notna() & (hh < 24)
+    d = d[keep]
+    d["hour"] = hh[keep].astype(int)
+    vals = d[cols].apply(pd.to_numeric, errors="coerce")
+    g = vals.groupby(d["hour"])
+    return g.mean(), g.count()
+
+
+def load_caiso_outlook_hourly(first_year: int = 2019, last_year: int = 2025, min_intervals: int = 6) -> pd.DataFrame:
+    """Hourly CAISO CO2 accounting (t/h by source, imports net of exports) and demand (MW) from the five-minute
+    Today's Outlook files. An hour is valid when CO2 and demand each have at least `min_intervals` of 12 intervals
+    and demand exceeds 5 GW. Total CO2 is NaN, not zero, when every source is missing. Two intensities are kept:
+    the accounting series (net CO2 / demand, negative in export-heavy hours) and a floored-at-zero sensitivity."""
+    co2_files, dem_files = _outlook_day_files("co2"), _outlook_day_files("demand")
     out = []
-    for f in co2_files:
-        day = Path(f).stem
+    for day, f in co2_files.items():
         y = int(day[:4])
-        if y < first_year or y > last_year:
+        if y < first_year or y > last_year or day not in dem_files:
             continue
         try:
-            c = pd.read_csv(f)
-            dm = pd.read_csv(f"{base}/demand/{day}.csv")
+            c = pd.read_csv(f); dm = pd.read_csv(dem_files[day])
         except Exception:
             continue
-        if "Time" not in c or "Time" not in dm:
+        if "Time" not in c or "Time" not in dm or "Current demand" not in dm:
             continue
-        c = c.dropna(subset=["Time"]); dm = dm.dropna(subset=["Time"])
-        c["hour"] = pd.to_numeric(c["Time"].astype(str).str.split(":").str[0], errors="coerce")
-        dm["hour"] = pd.to_numeric(dm["Time"].astype(str).str.split(":").str[0], errors="coerce")
-        c = c.dropna(subset=["hour"]); dm = dm.dropna(subset=["hour"])
-        c["hour"] = c["hour"].astype(int); dm["hour"] = dm["hour"].astype(int)
         src = [k for k in c.columns if k.endswith("CO2")]
-        ch = c.groupby("hour")[src].mean(numeric_only=True)
-        ch["co2_total_tph"] = ch[src].sum(axis=1)
-        dh = dm.groupby("hour")["Current demand"].mean()
-        h = ch.join(dh.rename("demand_MW"), how="inner")
-        h["date"] = pd.Timestamp(day)
+        cm, cn = _hourly_means(c, src)
+        dmm, dn = _hourly_means(dm, ["Current demand"])
+        h = cm.copy()
+        h["co2_total_tph"] = cm[src].sum(axis=1, min_count=1)
+        h["n_intervals_co2"] = cn[src].max(axis=1)
+        h["demand_MW"] = dmm["Current demand"]
+        h["n_intervals_demand"] = dn["Current demand"]
+        h["date"] = pd.Timestamp(f"{day[:4]}-{day[4:6]}-{day[6:]}")
         out.append(h.reset_index())
     d = pd.concat(out)
-    d["t"] = pd.to_datetime(d["date"]) + pd.to_timedelta(d["hour"], unit="h")
+    d["t"] = d["date"] + pd.to_timedelta(d["hour"], unit="h")
     d = d.set_index("t").sort_index()
-    # CAISO reports import CO2 net of exports, so net CO2 can be negative in export-heavy hours;
-    # intensity is floored at zero rather than dropping those hours (they are counted in net_co2_negative).
-    d["net_co2_negative"] = d["co2_total_tph"] < 0
+    d["n_intervals_demand"] = d["n_intervals_demand"].fillna(0); d["n_intervals_co2"] = d["n_intervals_co2"].fillna(0)
+    ok = (d["n_intervals_co2"] >= min_intervals) & (d["n_intervals_demand"] >= min_intervals) & (d["demand_MW"] > 5000) & d["co2_total_tph"].notna()
+    d["valid_hour"] = ok
+    d["net_co2_negative"] = ok & (d["co2_total_tph"] < 0)
     d["co2_total_clipped_tph"] = d["co2_total_tph"].clip(lower=0)
-    d["intensity_g_per_kWh"] = d["co2_total_clipped_tph"] / d["demand_MW"] * 1000.0
-    d.loc[d["demand_MW"] <= 5000, "intensity_g_per_kWh"] = np.nan
+    d["intensity_accounting_g_per_kWh"] = np.where(ok, d["co2_total_tph"] / d["demand_MW"] * 1000.0, np.nan)
+    d["intensity_floored_g_per_kWh"] = np.where(ok, d["co2_total_clipped_tph"] / d["demand_MW"] * 1000.0, np.nan)
+    d["intensity_g_per_kWh"] = d["intensity_accounting_g_per_kWh"]  # primary indicator: CAISO accounting, unclipped
     d["year"] = d.index.year
     d["month"] = d.index.month
     d["season"] = d["month"].map(SEASON)
     return d
 
 
+
 def carbon_summary(ci: pd.DataFrame) -> pd.DataFrame:
-    g = ci.dropna(subset=["intensity_g_per_kWh"]).groupby("year")
+    """Annual CAISO CO2 accounting intensity: the unclipped accounting series is the headline, the floored
+    series is the sensitivity; coverage counts the valid hours against the calendar."""
+    v = ci[ci["valid_hour"]]
+    g = v.groupby("year")
+    cal = pd.Series({y: pd.Timestamp(f"{y}-12-31").dayofyear * 24 for y in g.size().index})
     s = pd.DataFrame({
-        "hours": g["intensity_g_per_kWh"].count(),
+        "hours": g.size(),
+        "hours_in_year": cal,
         "hours_net_co2_negative": g["net_co2_negative"].sum(),
-        "energy_weighted_g_per_kWh": g["co2_total_clipped_tph"].sum() / g["demand_MW"].sum() * 1000,
-        "hourly_mean_g_per_kWh": g["intensity_g_per_kWh"].mean(),
-        "p5_g_per_kWh": g["intensity_g_per_kWh"].quantile(0.05),
-        "p95_g_per_kWh": g["intensity_g_per_kWh"].quantile(0.95),
-        "min_g_per_kWh": g["intensity_g_per_kWh"].min(),
-        "max_g_per_kWh": g["intensity_g_per_kWh"].max(),
+        "energy_weighted_g_per_kWh": g["co2_total_tph"].sum() / g["demand_MW"].sum() * 1000,
+        "energy_weighted_floored_g_per_kWh": g["co2_total_clipped_tph"].sum() / g["demand_MW"].sum() * 1000,
+        "hourly_mean_g_per_kWh": g["intensity_accounting_g_per_kWh"].mean(),
+        "p5_g_per_kWh": g["intensity_accounting_g_per_kWh"].quantile(0.05),
+        "p95_g_per_kWh": g["intensity_accounting_g_per_kWh"].quantile(0.95),
+        "min_g_per_kWh": g["intensity_accounting_g_per_kWh"].min(),
+        "max_g_per_kWh": g["intensity_accounting_g_per_kWh"].max(),
         "co2_Mt": g["co2_total_tph"].sum() / 1e6,
         "imports_co2_share": g["Imports CO2"].sum() / g["co2_total_tph"].sum(),
         "gas_co2_share": g["Natural Gas CO2"].sum() / g["co2_total_tph"].sum(),
+        "implied_gas_kg_per_MWh": np.nan,
     })
+    s["coverage_pct"] = s["hours"] / s["hours_in_year"] * 100
     return s
 
 
@@ -378,8 +410,10 @@ def cec_statewide_consumption() -> pd.DataFrame:
     return t
 
 
+
 def svp_fact_sheet_energy() -> pd.DataFrame:
-    """Peak demand and load factor from SVP utility fact sheets -> annual energy estimate."""
+    """Silicon Valley Power utility fact sheets: peak demand, system load factor, retail kWh sales and total
+    purchased/generated energy. energy_GWh_est = peak x load factor x 8760 approximates the supply total."""
     from pypdf import PdfReader
     rows = []
     for y in range(2017, 2024):
@@ -391,50 +425,60 @@ def svp_fact_sheet_energy() -> pd.DataFrame:
         pk = re.search(r"Peak Demand\s*([\d,]+\.?\d*)\s*MW", t)
         lf = re.search(r"Load Factor\s*([\d.]+)\s*%", t)
         acc = re.search(r"Electric Accounts\s*([\d,]+)", t)
+        sales = re.search(r"kWh Sales\d?\s*([\d,]{9,})", t)
+        supply = re.search(r"Total\s*([\d,]{9,})\s*100\.0%", t)
         rows.append({"fact_sheet_year": y, "peak_MW": float(pk.group(1).replace(",", "")) if pk else np.nan,
                      "load_factor": float(lf.group(1)) / 100 if lf else np.nan,
-                     "electric_accounts": int(acc.group(1).replace(",", "")) if acc else np.nan})
+                     "electric_accounts": int(acc.group(1).replace(",", "")) if acc else np.nan,
+                     "retail_sales_GWh": float(sales.group(1).replace(",", "")) / 1e6 if sales else np.nan,
+                     "supply_GWh": float(supply.group(1).replace(",", "")) / 1e6 if supply else np.nan})
     d = pd.DataFrame(rows)
     d["energy_GWh_est"] = d["peak_MW"] * d["load_factor"] * 8760 / 1000
     return d
 
 
-def dc_load_estimates(retail_TWh: float, retail_year: int) -> pd.DataFrame:
-    """Four independent estimates of existing California data center electricity use (TWh/yr)."""
+
+def dc_load_estimates(retail: pd.DataFrame) -> pd.DataFrame:
+    """Evidence and assumptions for existing California data center electricity use, in four groups that are
+    not interchangeable: (A) a statewide historical estimate, (B) an assumed conversion of the CEC's existing
+    peak, (D) a single-utility subset. Group C, the count-based sensitivity, is appended by the caller.
+    Shares use the retail-sales year that matches each estimate (EIA-861 Parts A + C + D)."""
+    rs = retail.set_index("year")["retail_sales_TWh"]
     rows = []
-    # (a) EPRI 2024 state table: 2023 consumption and share
-    rows.append(dict(method="EPRI 2024 state table (2023)", low_TWh=9.33, central_TWh=9.33, high_TWh=9.33,
-                     basis="9,331,619 MWh = 3.70% of state consumption in 2023 (EPRI Table, p.13 and Appendix p.28)",
+    rows.append(dict(group="A. Statewide estimate", method="EPRI 2024 state table, 2023 consumption", year=2023, denominator_year=2023,
+                     low_TWh=9.33, central_TWh=9.33, high_TWh=9.33,
+                     basis="9,331,619 MWh = 3.70% of state consumption in 2023 (EPRI Table, p.13 and Appendix p.28); share below uses EIA-861 2023 retail sales",
                      source="epri_powering_intelligence_2024"))
-    # (b) CEC existing peak demand (Dec 2025) x annual load factor range from CEC load-factor profiles
-    mw = 1000.0
-    lf_lo, lf_c, lf_hi = 0.80, 0.88, 0.95
-    rows.append(dict(method="CEC existing peak demand x load factor", low_TWh=mw * lf_lo * 8760 / 1e6, central_TWh=mw * lf_c * 8760 / 1e6, high_TWh=mw * lf_hi * 8760 / 1e6,
-                     basis="~1,000 MW existing data center peak demand as of Dec 2025 (CEC methodology memo, Apr 2026, pp. 2 and 18); annual load factor 0.80-0.95 from CEC weekday/weekend load-factor profiles (75-100% of annual max)",
+    mw, (lf_lo, lf_c, lf_hi) = 1000.0, (0.80, 0.88, 0.95)
+    rows.append(dict(group="B. Assumed conversion", method="CEC ~1,000 MW existing peak (Dec 2025) x assumed annual load factor 0.80-0.95", year=2025, denominator_year=int(rs.index.max()),
+                     low_TWh=mw * lf_lo * 8760 / 1e6, central_TWh=mw * lf_c * 8760 / 1e6, high_TWh=mw * lf_hi * 8760 / 1e6,
+                     basis="~1,000 MW existing data center peak demand as of Dec 2025 (CEC methodology memo, Apr 2026, pp. 2 and 18); the annual load factor is an assumption bracketed by the CEC's daily load-factor profiles (75-100% of annual max), not a measured annual value; share uses the latest EIA-861 year",
                      source="cec_dc_methodology_memo_2026; cec_prelim_dc_forecast_2025"))
-    # (c) Silicon Valley Power anchored cluster: share of SVP energy
     svp = svp_fact_sheet_energy()
-    e23 = float(svp.loc[svp["fact_sheet_year"] == 2023, "energy_GWh_est"].iloc[0]) / 1000
-    rows.append(dict(method="Silicon Valley Power cluster only (lower bound)", low_TWh=0.53 * e23, central_TWh=0.55 * e23, high_TWh=0.60 * e23,
-                     basis=f"SVP 2023 fact sheet: peak 669.2 MW, load factor 78.3% -> {e23:.2f} TWh; data centers 53% of power use (SVP data center page), 55% (SVP Assembly deck Jan 2026), ~60% (Santa Clara officials, 2025)",
+    r23 = svp.loc[svp["fact_sheet_year"] == 2023].iloc[0]
+    sales23 = float(r23["retail_sales_GWh"]) / 1000
+    rows.append(dict(group="D. Utility subset", method="Silicon Valley Power only: 53-60% of SVP 2023 retail sales", year=2023, denominator_year=2023,
+                     low_TWh=0.53 * sales23, central_TWh=0.55 * sales23, high_TWh=0.60 * sales23,
+                     basis=f"SVP 2023 fact sheet: retail kWh sales {sales23:.2f} TWh (purchased and generated supply {float(r23['supply_GWh'])/1000:.2f} TWh; peak 669.2 MW, load factor 78.3%); data center share of power use 53% (SVP data center page), 55% (SVP Assembly deck Jan 2026), ~60% (Santa Clara officials, 2025), statements from different dates applied to 2023 sales",
                      source="svp_fact_sheet_2023; svp_data_centers_page_wayback; svp_assembly_hearing_2026_01_28; sjspotlight_santa_clara_capacity_2025"))
     df = pd.DataFrame(rows)
-    df["retail_sales_TWh"] = retail_TWh
-    df["retail_year"] = retail_year
+    df["retail_sales_TWh"] = df["denominator_year"].map(rs)
     for k in ("low", "central", "high"):
-        df[f"{k}_share_pct"] = df[f"{k}_TWh"] / retail_TWh * 100
+        df[f"{k}_share_pct"] = df[f"{k}_TWh"] / df["retail_sales_TWh"] * 100
     return df
 
 
 # --------------------------------------------------------------------------------------
 # 5. Additional series: CAISO fuel mix (batteries), ICE daily hub prices, facility counts
 # --------------------------------------------------------------------------------------
-def load_caiso_fuelmix_hourly(first_year: int = 2019, last_year: int = 2025) -> pd.DataFrame:
-    """Hourly means of CAISO 5-minute fuel mix (MW): batteries (negative = charging), solar, wind, imports, gas."""
-    base = sorted(glob.glob(str(RAW / "caiso_outlook" / "*")))[-1]
+
+def load_caiso_fuelmix_hourly(first_year: int = 2019, last_year: int = 2025, min_intervals: int = 6) -> pd.DataFrame:
+    """Hourly means of the CAISO five-minute fuel mix (MW): batteries (negative = charging), solar, wind, imports,
+    natural gas, hydro, nuclear, geothermal, other. Column names are normalised because the files switched from
+    'Natural gas' / 'Large hydro' to 'Natural Gas' / 'Large Hydro' in mid-2021. Hours with fewer than
+    `min_intervals` intervals are set to NaN rather than averaged over a few rows."""
     out = []
-    for f in sorted(glob.glob(f"{base}/fuelsource/*.csv")):
-        day = Path(f).stem
+    for day, f in _outlook_day_files("fuelsource").items():
         y = int(day[:4])
         if y < first_year or y > last_year:
             continue
@@ -444,18 +488,18 @@ def load_caiso_fuelmix_hourly(first_year: int = 2019, last_year: int = 2025) -> 
             continue
         if "Time" not in d:
             continue
-        d["hour"] = pd.to_numeric(d["Time"].astype(str).str.split(":").str[0], errors="coerce")
-        d = d.dropna(subset=["hour"])
-        cols = [c for c in ["Solar", "Wind", "Batteries", "Imports", "Natural Gas", "Large Hydro", "Small hydro", "Nuclear", "Geothermal"] if c in d.columns]
-        h = d.groupby(d["hour"].astype(int))[cols].mean(numeric_only=True)
-        hyd = [c for c in d.columns if "hydro" in c.lower()]  # 'Large Hydro' + 'Small hydro', or a single 'Hydro' in older files
-        h["hydro_total"] = d.groupby(d["hour"].astype(int))[hyd].mean(numeric_only=True).sum(axis=1, min_count=1) if hyd else np.nan
-        h["date"] = pd.Timestamp(day)
-        out.append(h.reset_index())
+        d.columns = [str(c).strip().lower().replace(" ", "_") for c in d.columns]
+        d = d.rename(columns={"time": "Time"})
+        cols = [c for c in ["solar", "wind", "batteries", "imports", "natural_gas", "large_hydro", "small_hydro", "nuclear", "geothermal", "biomass", "biogas", "coal", "other"] if c in d.columns]
+        m, n = _hourly_means(d, cols)
+        m[m.columns] = m.where(n >= min_intervals)
+        m["n_intervals"] = n.max(axis=1)
+        m["hydro_total"] = m[[c for c in ("large_hydro", "small_hydro") if c in m.columns]].sum(axis=1, min_count=1)
+        m["date"] = pd.Timestamp(f"{day[:4]}-{day[4:6]}-{day[6:]}")
+        out.append(m.reset_index())
     d = pd.concat(out)
-    d["t"] = pd.to_datetime(d["date"]) + pd.to_timedelta(d["hour"], unit="h")
+    d["t"] = d["date"] + pd.to_timedelta(d["hour"], unit="h")
     d = d.set_index("t").sort_index().drop(columns=["date"])
-    d.columns = [c.lower().replace(" ", "_") for c in d.columns]
     d["year"] = d.index.year
     return d
 
@@ -534,20 +578,21 @@ def kollar_grady_california() -> pd.DataFrame:
     return pts
 
 
-def bottom_up_estimate(n_ca: int, n_svp_cluster: int, svp_dc_peak_MW: float, svp_dc_count: int = 58,
-                       util=(0.50, 0.67, 0.80), size_scale=(0.70, 1.00, 1.30), n_epoch_ca: int = 0) -> dict:
-    """Count-based bottom-up: facilities x average peak capacity per facility x utilization (load factor).
 
-    Average peak per facility is anchored on Silicon Valley Power (58 data centers taking 55% of a 746 MW
-    system peak); size_scale brackets it by -30%/+30%. Utilization brackets SVP's observed 64-67% of
-    capacity (the origin of the CEC's 67% factor) with 50% and 80%.
-    """
-    avg_peak = svp_dc_peak_MW / svp_dc_count
-    lo, c, hi = (n_ca * avg_peak * sc * u * 8760 / 1e6 for sc, u in zip(size_scale, util))
+def bottom_up_estimate(n_ca: int, n_svp_cluster: int, svp_dc_energy_GWh: float, svp_dc_count: int = 58,
+                       size_scale=(0.50, 0.75, 1.00), n_epoch_ca: int = 0) -> dict:
+    """Illustrative count-based sensitivity: facilities x assumed annual energy per facility.
+
+    The per-facility energy is the Silicon Valley Power cluster average (its data centers' share of SVP retail
+    sales divided by the 58 facilities SVP reports); size_scale brackets it because the SVP cluster hosts
+    unusually large facilities and the statewide inventory includes small ones. This is a transparent
+    assumption set, not a measurement: it uses no peak-demand or utilization factor."""
+    per_fac = svp_dc_energy_GWh / svp_dc_count
+    lo, c, hi = (n_ca * per_fac * sc / 1000 for sc in size_scale)
     return {"n_california_facilities_kollar_grady": n_ca, "n_within_12km_of_santa_clara": n_svp_cluster,
-            "n_epoch_california_sites": n_epoch_ca, "svp_data_centers": svp_dc_count, "svp_dc_peak_MW": svp_dc_peak_MW,
-            "avg_peak_MW_per_facility_svp_anchor": avg_peak, "size_scale_low_central_high": list(size_scale),
-            "utilization_low_central_high": list(util), "low_TWh": lo, "central_TWh": c, "high_TWh": hi}
+            "n_epoch_california_sites": n_epoch_ca, "svp_data_centers": svp_dc_count, "svp_dc_energy_GWh": svp_dc_energy_GWh,
+            "avg_energy_GWh_per_facility_svp_anchor": per_fac, "avg_load_MW_per_facility_svp_anchor": per_fac * 1000 / 8760,
+            "size_scale_low_central_high": list(size_scale), "low_TWh": lo, "central_TWh": c, "high_TWh": hi}
 
 
 def _to_hour_ending(s: pd.Series) -> pd.Series:
@@ -579,12 +624,16 @@ def clean_demand_against_caiso(h: pd.DataFrame, caiso_hourly: pd.DataFrame, tol:
     return out, flagged
 
 
+
 def add_storage_adjusted(h: pd.DataFrame, fm: pd.DataFrame) -> pd.DataFrame:
-    """Add demand_ex_storage and net_load_ex_storage: EIA-930 demand minus battery charging
-    (CAISO fuel-mix 'Batteries' is negative when charging), i.e. end-use load as CAISO reports it."""
+    """Add demand_ex_storage and net_load_ex_storage: EIA-930 demand minus the estimated net battery charging
+    of the CAISO fleet (the five-minute 'Batteries' series is negative when the fleet is a net charger). This
+    is an approximation: it does not remove pumped storage or hydro pumping, and it cannot recover gross
+    charging when part of the fleet charges while another part discharges. Hours without a CAISO battery
+    value stay NaN rather than being treated as zero charging."""
     b = _to_hour_ending(fm["batteries"])
     out = h.join(b.rename("battery_caiso"), how="left")
-    charging = (-out["battery_caiso"]).clip(lower=0).fillna(0)
+    charging = (-out["battery_caiso"]).clip(lower=0)
     out["demand_ex_storage"] = out["demand"] - charging
     out["net_load_ex_storage"] = out["net_load"] - charging
     return out

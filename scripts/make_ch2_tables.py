@@ -70,6 +70,16 @@ def main() -> int:
     write("ch2_forecast", [r"\begin{tabular}{lrllrll}", r"\toprule", r" & \multicolumn{3}{c}{ARIMA" + esc(str(tuple(summ['arima']['order']))) + r" with drift} & \multicolumn{3}{c}{ETS(A,Ad,N)} \\",
                            r"Month & Mean & 80\% band & 95\% band & Mean & 80\% band & 95\% band \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}", r"\\[2pt] {\footnotesize Billion dollars per year, seasonally adjusted annual rate.}"])
 
+    bt = pd.read_csv(PROCESSED / "ch2_census_forecast_backtest.csv")
+    rows = []
+    for m in ["ARIMA (log, drift)", "ETS(A,Ad,N) (log)", "drift benchmark (log random walk)", "naive benchmark (last value)"]:
+        b = bt[bt.model == m].set_index("horizon")
+        cell = lambda h, k, d=1: ("--" if pd.isna(b.loc[h, k]) else f"{b.loc[h, k]:.{d}f}")  # noqa: E731
+        rows.append(f"{esc(m)} & " + " & ".join(f"{cell(h, 'mape_pct')} & {cell(h, 'rmse_log', 2)} & {cell(h, 'bias_log', 2)} & {cell(h, 'coverage80_pct', 0)} / {cell(h, 'coverage95_pct', 0)}" for h in (1, 6, 12)) + r" \\")
+    write("ch2_forecast_backtest", [r"\begin{tabular}{lrrrcrrrcrrrc}", r"\toprule", r" & \multicolumn{4}{c}{1 month ahead} & \multicolumn{4}{c}{6 months ahead} & \multicolumn{4}{c}{12 months ahead} \\",
+                                    r"Model & MAPE & RMSE & bias & cover. & MAPE & RMSE & bias & cover. & MAPE & RMSE & bias & cover. \\",
+                                    r" & (\%) & (log) & (log) & 80/95 & (\%) & (log) & (log) & 80/95 & (\%) & (log) & (log) & 80/95 \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+
     # tier vintages
     tv = pd.read_csv(PROCESSED / "ch2_tier_vintages.csv")
     piv = tv[~tv.label.str.contains("SCE database|PG&E earnings")].groupby(["vintage", "label", "tier"]).mw.sum().unstack("tier").fillna(0)
@@ -84,10 +94,16 @@ def main() -> int:
         wpa = r.get("PG&E: final engineering (WPA signed)", 0) + r.get("PG&E: interconnection construction agreement", 0) + r.get("PG&E: construction", 0)
         rows.append(f"{esc(lab)} (PG\\&E only, PG\\&E stages) & WPA+ {wpa:,.0f} & {r.get('PG&E: application + preliminary engineering', 0):,.0f} & n/a & {r.sum():,.0f} & -- & {r.sum():,.0f} \\\\")
     write("ch2_tier_vintages", [r"\begin{tabular}{p{5.6cm}rrrrrr}", r"\toprule", r"Vintage & Signed & Applications & Inquiries & Agr.+appl. only & Unsplit total & Total active (MW) \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+    nv = tv[tv.utility == "VEA"].groupby("vintage").mw.sum()
+    write("ch2_tier_vintages_note", [r"\footnotesize Totals are as reported by the utilities and include VEA's " + f"{nv.get('2025-08', 0):,.0f}" + r"~MW (summer 2025) and " + f"{nv.get('2025-12', 0):,.0f}" + r"~MW (December 2025) of requests located in Nevada; California-only totals are " + f"{tv[(tv.vintage=='2025-08')&(tv.label.str.startswith('Summer'))&(tv.utility!='VEA')].mw.sum():,.0f}" + r" and " + f"{tv[(tv.vintage=='2025-12')&(tv.utility!='VEA')].mw.sum():,.0f}" + r"~MW by utility rows (the CEC's marginal totals are 1~MW lower: 23,277 and 20,677~MW). SCE active totals exclude canceled requests."])
 
     # RQ1
     rq = pd.read_csv(PROCESSED / "ch2_rq1_table.csv"); den = json.loads((PROCESSED / "ch2_rq1_denominators.json").read_text())
-    rows = [f"{esc(r.stage)} & {r.mw:,.0f} & {r.share_of_caiso_record_peak_pct:.1f} & {r.share_of_caiso_2025_peak_pct:.1f} & {r.multiple_of_existing_dc_peak_1000MW:.1f}x & {esc(r.multiple_of_existing_dc_avg_load_range)}x & {r.share_of_IEPR_planning_managed_net_peak_growth_2025_2030_pct:.0f} & {r.expected_demand_share_of_managed_net_peak_growth_pct:.0f} \\\\" for _, r in rq.iterrows()]
+    rows = []
+    for _, r in rq.iterrows():
+        if str(r.stage).startswith("Memo") and not any(x.startswith(r"\midrule") for x in rows[-1:]):
+            rows.append(r"\midrule")
+        rows.append(f"{esc(r.stage)} & {r.mw:,.0f} & {r.share_of_caiso_record_peak_pct:.1f} & {r.share_of_caiso_2025_peak_pct:.1f} & {r.multiple_of_existing_dc_peak_1000MW:.1f}x & {esc(r.multiple_of_existing_dc_avg_load_range)}x & {r.share_of_IEPR_planning_managed_net_peak_growth_2025_2030_pct:.0f} & {r.expected_demand_share_of_managed_net_peak_growth_pct:.0f} \\\\")
     write("ch2_rq1", [r"\begin{tabular}{lrrrrrrr}", r"\toprule",
                       r"Stage (Dec 2025) & MW & \% of CAISO & \% of 2025 & $\times$ existing & $\times$ existing & \% of IEPR & \% of IEPR growth \\",
                       r" & & record peak & peak & DC peak & DC avg. load & peak growth & at 67\% util. \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])

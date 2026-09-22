@@ -55,12 +55,12 @@ def main() -> int:
 
     c = pd.read_csv(PROCESSED / "ch1_carbon_intensity_annual.csv", index_col=0)
     eg = json.loads((PROCESSED / "ch1_egrid_camx_2023.json").read_text())
-    rows = [f"{y} & {r.energy_weighted_g_per_kWh:.0f} & {r.p5_g_per_kWh:.0f} & {r.p95_g_per_kWh:.0f} & {r.co2_Mt:.1f} & {100*r.imports_co2_share:.0f} & {100*r.gas_co2_share:.0f} \\\\" for y, r in c.iterrows()]
+    rows = [f"{y} & {r.energy_weighted_g_per_kWh:.1f} & {r.energy_weighted_floored_g_per_kWh:.1f} & {int(r.hours_net_co2_negative)} & {r.p5_g_per_kWh:.0f} & {r.p95_g_per_kWh:.0f} & {r.co2_Mt:.1f} & {100*r.imports_co2_share:.0f} & {100*r.gas_co2_share:.0f} & {r.coverage_pct:.1f} \\\\" for y, r in c.iterrows()]
     write("ch1_carbon", "\n".join([
-        r"\begin{tabular}{lrrrrrr}", r"\toprule",
-        r"Year & Energy-weighted & P5 & P95 & CO$_2$ & Imports share & Gas share \\",
-        r" & (g/kWh) & (g/kWh) & (g/kWh) & (Mt) & (\%) & (\%) \\", r"\midrule", *rows, r"\midrule",
-        f"eGRID 2023 CAMX & {eg['co2_output_rate_g_per_kWh']:.0f} & -- & -- & {eg['co2_Mt']:.1f} & -- & -- \\\\",
+        r"\begin{tabular}{lrrrrrrrrr}", r"\toprule",
+        r"Year & Accounting & Floored & Negative & P5 & P95 & CO$_2$ & Imports & Gas & Valid \\",
+        r" & (g/kWh) & (g/kWh) & hours & (g/kWh) & (g/kWh) & (Mt) & share (\%) & share (\%) & hours (\%) \\", r"\midrule", *rows, r"\midrule",
+        f"eGRID 2023 CAMX generation output rate & {eg['co2_output_rate_g_per_kWh']:.1f} & -- & -- & -- & -- & {eg['co2_Mt']:.1f} & -- & -- & -- \\\\",
         r"\bottomrule", r"\end{tabular}"]))
 
     e = pd.read_csv(PROCESSED / "ch1_dc_load_estimates.csv")
@@ -68,10 +68,10 @@ def main() -> int:
     for _, r in e.iterrows():
         rng = f"{r.central_TWh:.1f}" if r.low_TWh == r.high_TWh else f"{r.low_TWh:.1f}--{r.high_TWh:.1f}"
         sh = f"{r.central_share_pct:.1f}" if r.low_TWh == r.high_TWh else f"{r.low_share_pct:.1f}--{r.high_share_pct:.1f}"
-        rows.append(f"{esc(r.method)} & {rng} & {sh} \\\\")
+        rows.append(f"{esc(r.group)} & {esc(r.method)} & {int(r.year)} & {rng} & {sh} ({int(r.denominator_year)}) \\\\")
     write("ch1_dc_estimates", "\n".join([
-        r"\begin{tabular}{p{6.4cm}rr}", r"\toprule",
-        f"Method & TWh per year & Share of {e.retail_sales_TWh.iloc[0]:.0f} TWh (\\%) \\\\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"]))
+        r"\begin{tabular}{p{2.6cm}p{6.2cm}rrr}", r"\toprule",
+        r"Group & Method & Data year & TWh per year & Share of retail sales, \% (year) \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"]))
 
     b = pd.read_csv(PROCESSED / "ch1_battery_summary.csv", index_col=0)
     rows = [f"{y} & {r.discharge_TWh:.2f} & {-r.charge_TWh:.2f} & {r.peak_discharge_MW/1000:.1f} & {-r.peak_charge_MW/1000:.1f} \\\\" for y, r in b.iterrows()]

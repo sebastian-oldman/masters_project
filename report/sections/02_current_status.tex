@@ -6,11 +6,11 @@ This chapter establishes the baseline that the gap analysis in later chapters is
 \section{Grid baseline: CAISO demand, net load and imports, 2019--2025}
 \label{sec:baseline}
 
-Hourly demand, generation by fuel and net interchange for the CAISO balancing authority come from the EIA-930 Hourly Electric Grid Monitor, using EIA's ``Adjusted'' series \citep{eia930}. Net load is demand minus utility-scale solar and wind. Two definitional points matter. First, EIA-930 demand for CISO includes battery charging and pumping load, whereas CAISO's own reported demand excludes charging; in 2025 the hourly gap between the two series tracks battery charging almost one for one (slope 0.91, correlation 0.87). Both definitions are kept in the processed table. Second, EIA's series contains reporting artifacts, chiefly in early 2019, where demand falls implausibly below CAISO's demand plus charging; those 347 hours are nulled rather than corrected, and annual energy is computed from the mean of the remaining hours. Third, EIA-930 carries no CISO interchange at all, in any of its reported, imputed or adjusted variants, from July~2 to November~3, 2024, and no hydro for parts of 2019 and 2020; those hours are filled from CAISO's own five-minute imports and hydro series through a per-year linear calibration fitted on the overlapping hours (correlation 0.986 or better; the fill log is \texttt{ch1\_eia930\_fill\_log.csv}).
+Hourly demand, generation by fuel and net interchange for the CAISO balancing authority come from the EIA-930 Hourly Electric Grid Monitor, using EIA's ``Adjusted'' series \citep{eia930}. Net load is demand minus utility-scale solar and wind. Two definitional points matter. First, EIA-930 demand for CISO includes battery charging and pumping load, whereas CAISO's own reported demand excludes charging; in 2025 the hourly gap between the two series tracks battery charging almost one for one (slope 0.91, correlation 0.87). Both definitions are kept in the processed table. Second, EIA's series contains reporting artifacts, chiefly in early 2019, where demand falls implausibly below CAISO's demand plus charging; those hours are nulled rather than corrected, leaving 8,435 valid hours in 2019 (325 missing, 3.7 percent) and at most 27 missing hours in any later year; annual energy is the mean of the valid hours times the calendar hours, which imputes the missing hours at the annual mean, and the duration curves and profiles below are drawn over valid hours only. Third, EIA-930 carries no CISO interchange at all, in any of its reported, imputed or adjusted variants, from July~2 to November~3, 2024, and no hydro for parts of 2019 and 2020; those hours are filled from CAISO's own five-minute imports and hydro series through a per-year linear calibration fitted on the overlapping hours (correlation 0.986 or better; the fill log is \texttt{ch1\_eia930\_fill\_log.csv}). Fourth, EIA warns that CAISO changed its data collection for natural gas in December 2023 and that the EIA-930 gas series is not comparable across that date \citep{eia_caiso_gas2025}. The warning is confirmed here: through November 2023 EIA's CISO gas generation matches CAISO's own five-minute fuel mix to within 0.1~TWh a month, and from December 2023 it exceeds it by 0.7 to 1.8~TWh a month, 20~TWh in 2024 and 25~TWh in 2025 (\texttt{ch1\_gas\_series\_comparability\_monthly.csv}). Gas figures in Tables~\ref{tab:annual} and \ref{tab:top100} are EIA's series and must not be compared across that month.
 
 \begin{table}[H]
 \centering\footnotesize
-\caption{CAISO annual baseline from EIA-930 (Adjusted series), 2019--2025. Storage charging from CAISO's five-minute fuel mix. Import share is net imports divided by demand.}
+\caption{CAISO annual baseline from EIA-930 (Adjusted series), 2019--2025. Demand energy is the mean of valid hours times calendar hours. Storage charging is the estimated net charging of the CAISO battery fleet from the five-minute fuel mix. Import share is net imports divided by demand. Gas is EIA's series, not comparable across December 2023.}
 \label{tab:annual}
 \resizebox{\textwidth}{!}{\input{tables/ch1_annual_summary}}
 \end{table}
@@ -19,13 +19,13 @@ Table~\ref{tab:annual} shows a grid whose annual demand has been flat since 2019
 
 \begin{figure}[H]
 \centering\includegraphics[width=0.85\textwidth]{fig1_01_load_duration_curves}
-\caption{Load duration curves, CAISO, 2019--2025. Source: EIA-930.}
+\caption{Load duration curves over valid hours (counts in the legend), CAISO, 2019--2025. Hours flagged as reporting artifacts are excluded and interchange and hydro gaps are filled from CAISO series. Source: EIA-930 Adjusted demand.}
 \label{fig:ldc}
 \end{figure}
 
 \begin{figure}[H]
 \centering\includegraphics[width=0.85\textwidth]{fig1_02_net_load_duration_curves}
-\caption{Net-load duration curves, CAISO, 2019--2025. The dashed line removes battery charging from 2025 demand. Source: EIA-930, CAISO fuel mix.}
+\caption{Net-load duration curves over valid hours, CAISO, 2019--2025. The dashed line subtracts the estimated net battery charging of the CAISO fleet from 2025 demand; it does not remove pumped storage and cannot recover gross charging in hours when part of the fleet discharges. Source: EIA-930, CAISO fuel mix.}
 \label{fig:nldc}
 \end{figure}
 
@@ -33,7 +33,7 @@ Figures~\ref{fig:ldc} and \ref{fig:nldc} make the contrast visible. The load dur
 
 \begin{figure}[H]
 \centering\includegraphics[width=\textwidth]{fig1_03_seasonal_daily_profiles}
-\caption{Average daily profiles by season: demand (top) and net load (bottom), 2019, 2022 and 2025. Source: EIA-930.}
+\caption{Average daily profiles by season: demand (top) and net load (bottom), 2019, 2022 and 2025. Means over valid hours; descriptive averages, not weather-normalised, and demand includes storage charging and pumping. Source: EIA-930.}
 \label{fig:profiles}
 \end{figure}
 
@@ -41,14 +41,14 @@ The seasonal profiles in Figure~\ref{fig:profiles} show the mechanism. Demand pr
 
 \begin{table}[H]
 \centering\footnotesize
-\caption{The 100 highest net-load hours of each year: when they occur and what serves them. Source: EIA-930.}
+\caption{The 100 highest net-load hours of each year: when they occur and what serves them. Mean gas is EIA's series (comparability note in the text). Source: EIA-930.}
 \label{tab:top100}
 \resizebox{\textwidth}{!}{\input{tables/ch1_top100_timing}}
 \end{table}
 
 \begin{figure}[H]
 \centering\includegraphics[width=\textwidth]{fig1_04_top100_net_load_timing}
-\caption{Month and hour of the 100 highest net-load hours, by year. Source: EIA-930.}
+\caption{Month and hour of the 100 highest net-load hours, by year, on one common colour scale. Source: EIA-930.}
 \label{fig:top100}
 \end{figure}
 
@@ -68,33 +68,33 @@ Hourly day-ahead prices at the three investor-owned utility default load aggrega
 
 \begin{figure}[H]
 \centering\includegraphics[width=\textwidth]{fig1_05_price_duration_and_diurnal}
-\caption{Price duration curves (left) and average price by hour of day (right), 2024 and 2025. Source: CAISO OASIS.}
+\caption{Price duration curves (left) and average price by hour of day (right), 2024 and 2025; one colour per DLAP, dashed 2024 and solid 2025. The duration axis is truncated at $-60$ and 250~\$/MWh and the extremes are printed in the panel (2024 maxima of 628 to 649~\$/MWh). Source: CAISO OASIS.}
 \label{fig:pdc}
 \end{figure}
 
 \begin{figure}[H]
 \centering\includegraphics[width=\textwidth]{fig1_06_negative_price_hours}
-\caption{Negative-price hours per year (left) and by month (right) at the three DLAPs. Source: CAISO OASIS.}
+\caption{Negative-price hours at the three DLAPs. Left: the complete years 2024 and 2025 and matched January~1 to September~22 windows for 2024, 2025 and 2026, with the share of hours in each window; 2023 (July to December only) is omitted from the comparison. Right: by month. Source: CAISO OASIS.}
 \label{fig:neg}
 \end{figure}
 
-Negative day-ahead prices are now routine in Southern California (Table~\ref{tab:prices}, Figures~\ref{fig:pdc} and \ref{fig:neg}). The SCE aggregation point cleared below zero in 1,131 hours of 2024 and 877 hours of 2025, and in 890 hours of 2026 through September~22; SDG\&E's point saw 989 and 748 hours; PG\&E's 190 and 218. Between 72 and 94 percent of those hours fall between 10:00 and 16:00, concentrated in February through June, and the average price by hour of day drops to \$7--\$30 per MWh at midday against \$50--\$70 in the evening peak. The daily ICE block prices show almost no negative days, which is why the hourly series is required. This is the California-specific fact that Chapter~\ref{ch:together} uses: a data center able to place consumption in those hours faces a zero or negative marginal energy price, and one that cannot adds to the evening hours where prices and net load are highest.
+Negative day-ahead prices are now routine in Southern California (Table~\ref{tab:prices}, Figures~\ref{fig:pdc} and \ref{fig:neg}). The SCE aggregation point cleared below zero in 1,131 hours of 2024 and 877 hours of 2025, and in 890 hours of 2026 through September~22; SDG\&E's point saw 989 and 748 hours; PG\&E's 190 and 218. On the matched January~1 to September~22 window the SCE point had 1,045 negative hours in 2024, 775 in 2025 and 890 in 2026, 16, 12 and 14 percent of the hours in the window, so 2026 sits between the two complete years rather than above them (\texttt{ch1\_negative\_price\_hours\_windows.csv}). Between 72 and 94 percent of those hours fall between 10:00 and 16:00, concentrated in February through June, and the average price by hour of day drops to \$7--\$30 per MWh at midday against \$50--\$70 in the evening peak. The daily ICE block prices show almost no negative days, which is why the hourly series is required. This is the California-specific fact that Chapter~\ref{ch:together} uses: a data center able to place consumption in those hours faces a zero or negative marginal energy price, and one that cannot adds to the evening hours where prices and net load are highest.
 
 \section{Hourly carbon intensity}
 \label{sec:carbon}
 
-CAISO's Today's Outlook reports five-minute CO$_2$ emissions by source, including imports at CAISO's default factor \citep{caiso_outlook}. Intensity is computed as total CO$_2$ divided by CAISO demand, energy-weighted per year. Because CAISO nets export emissions against imports, net CO$_2$ is negative in export-heavy hours (374 hours in 2024, 425 in 2025); intensity is floored at zero in those hours rather than dropping them. The EPA eGRID output emission rate for the CAMX subregion is the annual reference factor \citep{egrid2023}.
+CAISO's Today's Outlook reports five-minute CO$_2$ by source, with imports carried at CAISO's default factor and export emissions netted against them \citep{caiso_outlook}. The indicator used here is that accounting total divided by CAISO demand, energy-weighted per year: an accounting rate for the supply serving CAISO demand, not a measured consumption footprint. Three properties of the data are made explicit. First, because exports are netted, net CO$_2$ is negative in export-heavy hours (374 in 2024, 425 in 2025); the headline series keeps those hours at their negative values, and a variant that floors them at zero is shown as a sensitivity (it raises 2025 from 186.3 to 187.7~g/kWh). Second, CAISO publishes a fixed grid of 288 five-minute rows for every calendar day, including the two daylight-saving transition days, so the repeated autumn hour and the skipped spring hour cannot be separated; an hour is counted as valid when at least six of its twelve intervals exist for both CO$_2$ and demand, hours with no source data are left missing rather than counted as zero, and coverage is 99.8 percent of calendar hours or better in every year. Third, EIA's warning that CAISO's natural gas data collection changed in December 2023 \citep{eia_caiso_gas2025} applies to the EIA-930 gas series, not to CAISO's own accounting: the emission factor implied by CAISO's gas CO$_2$ over CAISO's gas generation stays between 432 and 452~kg/MWh in every month from June 2023 to June 2024 and between 437 and 458 in every year, and CAISO's gas share of demand moves from 48.8 to 47.8 to 47.9 percent across November, December and January. The EPA eGRID output rate for the CAMX subregion is drawn as a reference with a different boundary: a generation-based rate for the whole subregion with no import factor \citep{egrid2023}.
 
 \begin{table}[H]
 \centering\footnotesize
-\caption{Carbon intensity of CAISO demand (load-based, including imports) and the eGRID CAMX annual output rate. Source: CAISO Today's Outlook, eGRID 2023.}
+\caption{CO$_2$ accounting intensity of CAISO demand: CAISO's CO$_2$ accounting (imports net of exports) divided by CAISO demand, energy-weighted, with the floored variant, the number of negative hours and valid hours as a share of the calendar. eGRID CAMX is a generation output rate with a different boundary. Source: CAISO Today's Outlook, eGRID 2023.}
 \label{tab:carbon}
-\input{tables/ch1_carbon}
+\resizebox{\textwidth}{!}{\input{tables/ch1_carbon}}
 \end{table}
 
 \begin{figure}[H]
 \centering\includegraphics[width=\textwidth]{fig1_07_carbon_intensity}
-\caption{Annual, duration-curve and diurnal views of CAISO carbon intensity. Source: CAISO Today's Outlook, eGRID 2023.}
+\caption{Annual, duration-curve and diurnal views of the CAISO CO$_2$ accounting intensity. Left: headline series with negative hours kept, the floored sensitivity, the hourly 5th to 95th percentile band (variability, not a confidence interval), the eGRID reference and the December 2023 EIA-930 gas reporting change. Middle: hourly duration curves, axis cut at $-160$~g/kWh. Right: 2025 seasonal diurnal means against 2019. Source: CAISO Today's Outlook, eGRID 2023.}
 \label{fig:carbon}
 \end{figure}
 
@@ -105,34 +105,34 @@ CAISO's Today's Outlook reports five-minute CO$_2$ emissions by source, includin
 \input{tables/ch1_battery}
 \end{table}
 
-Load-based intensity fell from 257~g/kWh in 2019 to 188~g/kWh in 2025 (Table~\ref{tab:carbon}, Figure~\ref{fig:carbon}). The hourly spread widened: in 2025 the fifth percentile was below 1~g/kWh, the ninety-fifth 319~g/kWh, and the average midday hour was under 30~g/kWh in spring and about 50~g/kWh in summer against roughly 240 to 300~g/kWh at night. eGRID's 2023 CAMX output rate of 198~g/kWh is lower than the CAISO load-based figure for 2023 (242~g/kWh) because it is generation-based, excludes the default import factor and covers the whole CAMX subregion; both measures show the same decline. For a flat load, the annual factor is the right one; for a flexible load, the diurnal difference of roughly 4 to 1 is the relevant number.
+The accounting intensity fell from 257~g/kWh in 2019 to 186~g/kWh in 2025 (Table~\ref{tab:carbon}, Figure~\ref{fig:carbon}); the floored variant gives 257 and 188. The hourly spread widened: in 2025 the fifth percentile was 1~g/kWh and the ninety-fifth 319~g/kWh, and the average midday hour was about 10~g/kWh in spring and 46~g/kWh in summer against roughly 240 to 315~g/kWh at night. eGRID's 2023 CAMX generation rate of 198~g/kWh is lower than the 2023 accounting figure of 242~g/kWh because it excludes the import factor and covers the whole subregion; it is a single-year reference, not a trend. The decline is consistent with the solar and battery additions of Table~\ref{tab:annual}, but the series remains an accounting construct: a validated consumption-emissions series would need CAISO's greenhouse gas tracking reports as an independent check, which is deferred to the supply chapter. For a flat load the annual factor is the relevant one; for a flexible load the diurnal ratio, about five to one in summer and far larger in spring, is the relevant number, and an average intensity is not a marginal emissions factor for load shifting.
 
 \section{How much of the state's power do data centers use}
 \label{sec:dcload}
 
-No agency meters California's data center consumption. Four independent estimates are therefore presented against California retail sales of 245.7~TWh in 2024 from EIA-861 (Parts~A, C and D, which avoids counting delivery-only sales twice) \citep{eia861}. No single estimate is chosen; the spread is the finding.
+No agency meters California's data center consumption, and the four items in Table~\ref{tab:dc} and Figure~\ref{fig:dc} are not four comparable estimates of one quantity. They are grouped by what they are: one statewide historical estimate, one assumed conversion of a published peak, one illustrative count-based sensitivity and one utility subset. Shares are computed against EIA-861 California retail sales for the year that matches each item, 239.5~TWh in 2023 and 245.7~TWh in 2024 (Parts~A, C and D, which avoids counting delivery-only sales twice) \citep{eia861}.
 
 \begin{table}[H]
 \centering\footnotesize
-\caption{Existing California data center electricity use, four estimates.}
+\caption{Evidence and assumptions for existing California data center electricity use, by type. Shares use EIA-861 retail sales of the year in parentheses.}
 \label{tab:dc}
-\input{tables/ch1_dc_estimates}
+\resizebox{\textwidth}{!}{\input{tables/ch1_dc_estimates}}
 \end{table}
 
 \begin{figure}[H]
 \centering\includegraphics[width=\textwidth]{fig1_08_existing_dc_load_estimates}
-\caption{Existing data center load in California, four estimates, against 2024 retail sales.}
+\caption{Existing data center electricity use in California: one statewide estimate (A), one assumed conversion (B), one illustrative sensitivity (C) and one utility subset (D), with matching-year retail-sales shares. No metered statewide total exists.}
 \label{fig:dc}
 \end{figure}
 
 \begin{enumerate}
-\item \textbf{EPRI state table.} EPRI's 2024 study estimates California data centers consumed 9,331,619~MWh in 2023, 3.70 percent of state consumption, the third-largest state total after Virginia and Texas \citep[pp.~13, 28]{epri2024}. That is 3.8 percent of 2024 retail sales.
-\item \textbf{CEC existing peak demand.} The CEC's methodology memo states that ``as of December 2025, approximately 1,000 megawatts (MW) of existing data center peak demand operates in California'' and that its forecast values ``represent incremental growth beyond approximately 1,000 MW of existing data center load'' \citep[pp.~2, 18]{cec_dc_memo2026}. The CEC's own hourly load-factor profiles for existing facilities range from 75 to 100 percent of annual maximum \citep{cec_prelim2025}; an annual load factor of 0.80 to 0.95 converts the 1,000~MW into 7.0 to 8.3~TWh, or 2.9 to 3.4 percent of retail sales.
-\item \textbf{Count-based bottom-up.} The Kollar and Grady inventory places 321 of its 2,484 facility points inside California, 102 of them within 12~km of Santa Clara \citep{kollar2025}; it carries no per-facility power, and Epoch AI's Frontier Data Centers Hub lists no California site at all \citep{epoch2026}. The estimate therefore multiplies the count by an average peak capacity per facility and a utilization range: the capacity is anchored on Silicon Valley Power, where 58 data centers take 55 percent of a 746~MW system peak, or 7.1~MW per facility, bracketed at minus and plus 30 percent; utilization is 0.50, 0.67 and 0.80, bracketing SVP's observed 64 to 67 percent of requested capacity. The result, 7.0 to 20.7~TWh (2.8 to 8.4 percent), is the widest of the four because the size and utilization assumptions dominate; it is a bound, not a measurement.
-\item \textbf{Silicon Valley Power cluster.} The municipal utility of Santa Clara reports 58 data centers, the largest cluster on the West Coast, taking 55 percent of its power use and 51 percent of its sales \citep{svp_assembly2026}; its web page states 53 percent \citep{svp_dcpage}, and city officials cited about 60 percent in 2025 \citep{sjspotlight2025}. SVP's 2023 fact sheet gives a peak of 669.2~MW and a system load factor of 78.3 percent \citep{svp_factsheets}, or about 4.6~TWh a year, so the cluster alone uses 2.4 to 2.8~TWh, about one percent of state retail sales. SVP also reports that its best-performing data center customers reach about 67 percent utilization of requested capacity and that observed utilization fell to about 64 percent in 2023 \citep{svp_irp2025}, the empirical origin of the CEC's 67 percent factor.
+\item \textbf{A. Statewide estimate.} EPRI's 2024 study estimates California data centers consumed 9,331,619~MWh in 2023, 3.70 percent of state consumption on EPRI's denominator, the third-largest state total after Virginia and Texas \citep[pp.~13, 28]{epri2024}; against EIA-861 2023 retail sales it is 3.9 percent. This is the only statewide historical estimate in the set.
+\item \textbf{B. Assumed conversion.} The CEC's methodology memo states that ``as of December 2025, approximately 1,000 megawatts (MW) of existing data center peak demand operates in California'' \citep[pp.~2, 18]{cec_dc_memo2026}. Converting a peak into energy needs an annual load factor that no source reports. The CEC's daily load-factor profiles for existing facilities range from 75 to 100 percent of the daily maximum \citep{cec_prelim2025}, and an assumed annual factor of 0.80 to 0.95 turns the 1,000~MW into 7.0 to 8.3~TWh, 2.9 to 3.4 percent of 2024 retail sales. It is a conversion scenario, not a measured total.
+\item \textbf{C. Illustrative sensitivity.} The Kollar and Grady inventory places 321 of its 2,484 facility points inside California, 102 of them within 12~km of Santa Clara \citep{kollar2025}, but carries no per-facility power, and the Epoch AI hub snapshot contains no California observation \citep{epoch2026}, which is a limit of its coverage rather than a count of zero. The sensitivity multiplies the count by an assumed annual energy per facility taken from the Silicon Valley Power cluster: 42~GWh, or 55 percent of SVP's 2023 retail sales spread over its 58 data centers, an average load of 4.8~MW, scaled by 0.5, 0.75 and 1.0 because the statewide inventory includes many small facilities. The result, 6.8 to 13.6~TWh or 2.8 to 5.7 percent, uses no peak-demand or utilization factor. It is an assumption set whose representativeness is untested, shown to bound the statewide figure rather than to estimate it.
+\item \textbf{D. Utility subset.} The municipal utility of Santa Clara reports 58 data centers, the largest cluster on the West Coast, taking 55 percent of its power use \citep{svp_assembly2026}; its web page states 53 percent \citep{svp_dcpage}, and city officials cited about 60 percent in 2025 \citep{sjspotlight2025}. Applied to SVP's 2023 retail sales of 4.48~TWh \citep{svp_factsheets} (its purchased and generated supply was 4.59~TWh, which is what a peak of 669.2~MW times a 78.3 percent load factor reconstructs), the cluster used 2.4 to 2.7~TWh, about one percent of statewide 2023 sales; the percentages come from different dates than the sales figure. SVP also reports that its best-performing data center customers reach about 67 percent utilization of requested capacity and that observed utilization was about 64 percent in 2023 \citep{svp_irp2025}, the empirical origin of the CEC's 67 percent factor; that ratio relates operating peak to requested capacity and is not an annual load factor.
 \end{enumerate}
 
-The two institutional estimates agree with each other at 7 to 9~TWh, roughly 3 to 4 percent of California's retail sales, and the bottom-up bound admits values from about 3 to 8 percent. One municipal utility hosts about a third of the institutional estimate. The defensible statement for the rest of this study is that existing data centers use about 3 to 4 percent of the state's electricity, and that the load is geographically concentrated. Against roughly 1~GW of existing peak, the CEC's December 2025 energization tiers total 23,277~MW \citep{cec_assembly2026}, a 23-fold ratio that is the California analogue of Finland's 27x \citep{manner2026} and the subject of Chapter~\ref{ch:growth}.
+The statewide estimate and the assumed conversion agree at 7 to 9~TWh, roughly 3 to 4 percent of retail sales, and the sensitivity admits 3 to 6 percent. One municipal utility hosts about a quarter to a third of that. The defensible statement for the rest of this study is that existing data centers used about 3 to 4 percent of California's electricity in 2023 to 2025, that the load is geographically concentrated, and that no metered statewide total exists. Against roughly 1~GW of existing peak, the CEC's December 2025 energization requests located in California total 20,677~MW, or 23,277~MW including the 2,600~MW that VEA reports for Nevada \citep{cec_dc_memo2026}, a ratio of about 21 that is the California analogue of Finland's 27x \citep{manner2026} and the subject of Chapter~\ref{ch:growth}.
 
 \section{Institutional context}
 \label{sec:institutions}

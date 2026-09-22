@@ -43,8 +43,8 @@ def main() -> int:
     ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1)
     ax.annotate("ChatGPT\nlaunch\n(Nov 30, 2022)", xy=(c2.CHATGPT, s.loc["2022-11-30"] / 1000), xytext=(pd.Timestamp("2020-06-30"), 22),
                 arrowprops=dict(arrowstyle="->", color="grey"), fontsize=8, ha="center")
-    ax.set_ylabel("Billion dollars per year (SAAR)"); ax.set_ylim(0, None)
-    ax.set_title("Data center construction at record highs: US private construction spending, data center category, Jan 2014 to Jul 2026 (Census C30)")
+    ax.set_ylabel("Billion nominal dollars per year (SAAR)"); ax.set_ylim(0, None)
+    ax.set_title("US private construction spending, data center category (nominal dollars, seasonally adjusted annual rate), Jan 2014 to Jul 2026 (Census C30)", fontsize=9.5)
     ax.legend(loc="upper left", fontsize=8)
     last = s.index[-1]
     ax.text(last, s.iloc[-1] / 1000, f" ${s.iloc[-1]/1000:.1f}B\n {last:%b %Y} (prelim.)", fontsize=8, va="center")
@@ -61,7 +61,7 @@ def main() -> int:
     # ------------------------------------------------------------ 2. structural breaks and forecasts
     print("2. Structural breaks and forecasts")
     y = np.log(s.values)
-    res = c2.break_analysis(s, 12, c2.CHATGPT, max_breaks=5, bootstrap_reps=BOOT, label="Census data center construction (monthly, SAAR)")
+    res = c2.break_analysis(s, 12, c2.CHATGPT_FIRST_POST, max_breaks=5, bootstrap_reps=BOOT, label="Census data center construction (monthly, SAAR)")  # first post-launch observation: December 2022
     bp = c2.bai_perron(y, max_breaks=5)  # five breaks is the most that 15 percent trimming allows, so the choice is uncensored
     sq = c2.sequential_supF(y, max_breaks=5, reps=BOOT)
     bp_table = pd.DataFrame([{"m": m, "breaks": ", ".join(s.index[b].strftime("%Y-%m") for b in v["breaks"]), "ssr": v["ssr"], "bic": v["bic"], "lwz": v["lwz"], "supF_0_m": v["supF"],
@@ -81,6 +81,8 @@ def main() -> int:
     rupt = {m: [s.index[b - 1].strftime("%Y-%m") for b in algo.predict(n_bkps=m)[:-1]] for m in (1, 2, 3, 4, 5)}
     fa, ia = c2.arima_forecast(np.log(s)); fa.to_csv(PROCESSED / "ch2_census_forecast_arima.csv")
     fe, ie = c2.ets_forecast(np.log(s)); fe.to_csv(PROCESSED / "ch2_census_forecast_ets.csv")
+    bt, bt_raw = c2.backtest_forecasts(np.log(s), n_origins=24); bt.to_csv(PROCESSED / "ch2_census_forecast_backtest.csv", index=False); bt_raw.to_csv(PROCESSED / "ch2_census_forecast_backtest_detail.csv", index=False)
+    print("   backtest (MAPE %, 12-month horizon):", {m: round(float(v), 1) for m, v in bt[bt.horizon == 12].set_index("model").mape_pct.items()})
     (PROCESSED / "ch2_census_break_summary.json").write_text(json.dumps({**{k: (str(v) if not isinstance(v, (int, float)) else v) for k, v in res.items()}, "ruptures_dynp": rupt, "sequential": {"m_seq": sq["m_seq"], "levels": sq["levels"]}, "arima": {**ia, "params": ia["params"]}, "ets": ie}, indent=1, default=str))
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.4))
@@ -88,21 +90,21 @@ def main() -> int:
     ax.plot(s.index, s / 1000, color="k", lw=1.2, label="observed (SAAR)")
     kb = res["known_break_period"]
     kbi = int(np.searchsorted(s.index.values, np.datetime64(pd.Timestamp(kb))))
-    for lo, hi, col, lab in ((0, kbi, "C0", f"pre-ChatGPT trend: {100*res['cagr_pre']:.0f}%/yr [{100*res['cagr_pre_lo']:.0f}, {100*res['cagr_pre_hi']:.0f}]"),
-                             (kbi, len(y), "C3", f"post-ChatGPT trend: {100*res['cagr_post']:.0f}%/yr [{100*res['cagr_post_lo']:.0f}, {100*res['cagr_post_hi']:.0f}]")):
+    for lo, hi, col, lab in ((0, kbi, "C0", f"pre-launch trend, Jan 2014-Nov 2022: {100*res['cagr_pre']:.0f}%/yr [{100*res['cagr_pre_lo']:.0f}, {100*res['cagr_pre_hi']:.0f}]"),
+                             (kbi, len(y), "C3", f"post-launch trend, Dec 2022-Jul 2026: {100*res['cagr_post']:.0f}%/yr [{100*res['cagr_post_lo']:.0f}, {100*res['cagr_post_hi']:.0f}]")):
         X = c2.trend_X(hi - lo); beta, *_ = np.linalg.lstsq(X, y[lo:hi], rcond=None)
         ax.plot(s.index[lo:hi], np.exp(X @ beta) / 1000, color=col, lw=2, label=lab)
     for k, b in enumerate(bp["breaks_bic"]):
         ax.axvline(s.index[b], color="C2", ls=":", lw=1.2, label=("BP breaks (BIC): " + ", ".join(s.index[bb].strftime("%b %Y") for bb in bp["breaks_bic"])) if k == 0 else None)
-    ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1, label="ChatGPT launch, Nov 2022")
+    ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1, label="ChatGPT launch, Nov 30 2022 (December 2022 is the first post-launch month)")
     ax.set_yscale("log"); ax.set_ylabel("Billion dollars per year (log scale)"); ax.set_title(f"Log-linear trends and breaks (Chow F = {res['chow_F']:.0f}, p < 0.001)"); ax.legend(fontsize=7.5, loc="upper center", bbox_to_anchor=(0.5, -0.10), ncol=2, frameon=False)
     ax = axes[1]
     ax.plot(s.index[-60:], s.iloc[-60:] / 1000, color="k", lw=1.2, label="observed")
-    for f, col, lab in ((fa, "C0", f"ARIMA{ia['order']} with drift"), (fe, "C1", "ETS (A,Ad,N)")):
+    for f, col, lab in ((fa, "C0", f"ARIMA{ia['order']} with drift on log spending, median"), (fe, "C1", "ETS(A,Ad,N) on log spending, median")):
         ax.plot(f.index, f["mean"] / 1000, color=col, lw=1.6, label=lab)
         ax.fill_between(f.index, f["lo80"] / 1000, f["hi80"] / 1000, color=col, alpha=0.25)
         ax.fill_between(f.index, f["lo95"] / 1000, f["hi95"] / 1000, color=col, alpha=0.12)
-    ax.set_ylabel("Billion dollars per year"); ax.set_title("24-month forecasts with 80% and 95% prediction bands"); ax.legend(fontsize=8, loc="upper left")
+    ax.set_ylabel("Billion nominal dollars per year"); ax.set_title("24-month forecasts (back-transformed log medians) with 80% and 95% bands"); ax.legend(fontsize=7.5, loc="upper left")
     ax.xaxis.set_major_locator(mdates.YearLocator()); ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     fig.subplots_adjust(bottom=0.27, wspace=0.22)
     save(fig, "fig2_02_census_breaks_and_forecast")
@@ -128,7 +130,7 @@ def main() -> int:
             rows.append(c2.break_analysis(ser, ppy, kb, max_breaks=5, bootstrap_reps=BOOT, label=lab))
         except Exception as e:  # keep going, record the failure
             rows.append({"series": lab, "error": str(e)[:200]})
-    rows.append({"series": "Epoch frontier sites, California cumulative MW", "n": 0, "note": "no California site in the Epoch hub (0 of 87); series is identically zero, no test possible"})
+    rows.append({"series": "Epoch frontier sites, California cumulative MW", "n": 0, "note": "no California observation in the Epoch snapshot (0 of 87 sites): a coverage limit of the hub, not evidence of zero activity; no test possible"})
     comp = pd.DataFrame(rows); comp.to_csv(PROCESSED / "ch2_break_test_comparison.csv", index=False)
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 7.2))
@@ -138,7 +140,8 @@ def main() -> int:
     ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1); ax.set_title("California NAICS 518210 (data processing, hosting), BLS QCEW, private"); ax.legend(loc="upper left", fontsize=8); ax2.legend(loc="lower right", fontsize=8)
     ax = axes[0, 1]; ax.bar(sv_uc.index, sv_uc.values.astype(float), width=150, color="C2", label="under construction (MW)"); ax.plot(sv_inv.index, sv_inv.values.astype(float), "k.-", label="inventory (MW, CBRE overview tables)")
     ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1); ax.set_title("CBRE Silicon Valley colocation market, semiannual"); ax.set_ylabel("MW"); ax.legend(fontsize=8, loc="upper left")
-    ax = axes[1, 0]; ax.plot(ep.index, ep["power_MW_us"] / 1000, color="C3", label="United States (75 sites)"); ax.plot(ep.index, ep["power_MW_california"], color="C4", lw=2, label="California (0 sites)")
+    ax = axes[1, 0]; ax.plot(ep.index, ep["power_MW_us"] / 1000, color="C3", label="United States: 75 sites in the Epoch snapshot")
+    ax.text(0.03, 0.55, "California: no observations in this Epoch snapshot\n(a coverage limit of the hub, not evidence of zero\nCalifornia activity; no California series is drawn)", transform=ax.transAxes, fontsize=7.5, color="C4", va="center")
     ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1); ax.set_title("Epoch AI Frontier Data Centers Hub, cumulative facility power"); ax.set_ylabel("GW"); ax.legend(fontsize=8, loc="upper left")
     ax = axes[1, 1]; ax.axis("off")
     cell = []
@@ -148,10 +151,10 @@ def main() -> int:
     for _, r in comp.iterrows():
         nm = short.get(r["series"].split(" (")[0], r["series"][:26])
         if "chow_p" in r and pd.notna(r.get("chow_p", np.nan)):
-            cell.append([nm, f"{r['chow_p']:.3f}", f"{100*r['cagr_pre']:.0f}% -> {100*r['cagr_post']:.0f}%", str(r.get("bp_break1", "")), f"{int(r['bp_m_bic'])}/{int(r['bp_m_lwz'])}/{int(r['bp_m_seq'])} (last {str(r.get('bp_breaks_bic', '')).split(', ')[-1]})" if r.get("bp_m_bic", 0) else "0/0/0"])
+            cell.append([nm, ("<0.001" if r["chow_p"] < 0.0005 else f"{r['chow_p']:.3f}"), f"{100*r['cagr_pre']:.0f}% -> {100*r['cagr_post']:.0f}%", str(r.get("bp_break1", "")), f"{int(r['bp_m_bic'])}/{int(r['bp_m_lwz'])}/{int(r['bp_m_seq'])} (last {str(r.get('bp_breaks_bic', '')).split(', ')[-1]})" if r.get("bp_m_bic", 0) else "0/0/0"])
         else:
-            cell.append([nm, "n/a", "n/a", "n/a", "no CA site (0 of 87)"])
-    tb = ax.table(cellText=cell, colLabels=["series", "Chow\np", "growth\npre -> post", "BP\nbreak", "m: BIC / LWZ / seq.\n(last break)"], loc="center", cellLoc="left", colWidths=[0.28, 0.08, 0.16, 0.11, 0.37])
+            cell.append([nm, "n/a", "n/a", "n/a", "no CA observation in snapshot"])
+    tb = ax.table(cellText=cell, colLabels=["series", "Chow\np", "growth\npre -> post", "BP break\n(1-break fit)", "m: BIC / LWZ / seq.\n(last break)"], loc="center", cellLoc="left", colWidths=[0.28, 0.08, 0.16, 0.13, 0.35])
     tb.auto_set_font_size(False); tb.set_fontsize(5.8); tb.scale(1, 1.6)
     for ci in range(5):
         tb[0, ci].set_height(tb[0, ci].get_height() * 1.8); tb[0, ci].get_text().set_ha("center"); tb[0, ci].set_text_props(ha="center")
@@ -168,7 +171,7 @@ def main() -> int:
     caiso_record_mw = 52061.0  # CAISO all-time instantaneous peak, Sept 6 2022 16:57 (Key Statistics)
     caiso_record_hourly = 51104.0  # EIA-930 hourly, chapter 1
     est = pd.read_csv(PROCESSED / "ch1_dc_load_estimates.csv")
-    statewide = est[~est.method.str.contains("Silicon Valley Power")]  # the SVP cluster is a single-utility lower bound, not a statewide estimate
+    statewide = est[est.group.str.startswith(("A.", "B."))]  # statewide estimate and assumed conversion only (not the illustrative sensitivity or the SVP subset)
     ex_low, ex_high = statewide.low_TWh.min() * 1e6 / 8760, statewide.high_TWh.max() * 1e6 / 8760  # average-load MW range from chapter 1
     ex_cec_peak = 1000.0
     fig, ax = plt.subplots(figsize=(10, 6.2))
@@ -183,51 +186,68 @@ def main() -> int:
     xs = np.arange(len(vint))
     for i, (v, lab) in enumerate(vint):
         d = tv[(tv.vintage == v) & (~tv.label.str.contains("SCE database|PG&E earnings"))]
+        dca, dnv = d[d.utility != "VEA"], d[d.utility == "VEA"]
         bottom = 0
         for tier in order:
-            mw = d[d.tier == tier].mw.sum()
+            mw = dca[dca.tier == tier].mw.sum()
             if mw > 0:
                 ax.bar(i, mw, bottom=bottom, color=cols[tier], edgecolor="white", label=lab_once(tier), width=0.6)
                 ax.text(i, bottom + mw / 2, f"{mw:,.0f}", ha="center", va="center", fontsize=8)
                 bottom += mw
-        ax.text(i, bottom + 400, f"total {bottom:,.0f} MW", ha="center", fontsize=8.5, fontweight="bold")
+        ca_total, nv = bottom, float(dnv.mw.sum())
+        if nv > 0:
+            ax.bar(i, nv, bottom=bottom, color="#e0e0e0", edgecolor="grey", hatch="xx", width=0.6, label=lab_once("VEA requests located in Nevada (inside CAISO, outside California)"))
+            ax.text(i, bottom + nv / 2, f"{nv:,.0f} (NV)", ha="center", va="center", fontsize=7.5)
+            bottom += nv
+        lbl = f"CA {ca_total:,.0f} MW" + (f"\n+{nv:,.0f} NV\n= {bottom:,.0f}" if nv > 0 else "") + ("*" if v == "2025-12" else "")
+        ax.text(i, bottom + 400, lbl, ha="center", fontsize=7.5, fontweight="bold", va="bottom")
     # SCE-only vintages as narrow bars
-    for j, (v, lab) in enumerate([("2025-08", "SCE database\nAug 2025"), ("2026-01", "SCE database\nJan 2026")]):
+    for j, (v, lab) in enumerate([("2025-08", "SCE database\nAug 2025\n(active | canceled)"), ("2026-01", "SCE database\nJan 2026\n(active | canceled)")]):
         d = tv[(tv.vintage == v) & (tv.label.str.contains("SCE database"))]
-        bottom = 0
-        for tier in ["Signed agreement", "Active application", "Inquiry", "Canceled"]:
+        x = 3.2 + j * 0.9; bottom = 0
+        for tier in ["Signed agreement", "Active application", "Inquiry"]:
             mw = d[d.tier == tier].mw.sum()
             if mw > 0:
-                ax.bar(3.2 + j * 0.8, mw, bottom=bottom, color=cols[tier], edgecolor="white", width=0.5, hatch="//" if tier == "Canceled" else None, label=lab_once(tier))
+                ax.bar(x, mw, bottom=bottom, color=cols[tier], edgecolor="white", width=0.42, label=lab_once(tier))
                 bottom += mw
-        ax.text(3.2 + j * 0.8, bottom + 400, f"{bottom:,.0f}", ha="center", fontsize=8)
+        ax.text(x, bottom + 400, f"active\n{bottom:,.0f}", ha="center", fontsize=7.5, va="bottom")
+        canc = float(d[d.tier == "Canceled"].mw.sum())
+        ax.bar(x + 0.32, canc, color=cols["Canceled"], edgecolor="white", width=0.18, hatch="//", label=lab_once("Canceled (drawn separately, not part of the active pipeline)"))
+        ax.text(x + 0.43, canc + 300, f"canceled\n{canc:,.0f}", ha="left", fontsize=6.5, va="bottom", color=cols["Canceled"])
         vint.append((v, lab))
     # PG&E's own pipeline (PG&E stage definitions, no inquiries) as narrow bars
     pcols = {"PG&E: application + preliminary engineering": "#5aae61", "PG&E: final engineering (WPA signed)": "#1b7837",
              "PG&E: interconnection construction agreement": "#08306b", "PG&E: construction": "#000000"}
     for j, (v, lab) in enumerate([("2026-03", "PG&E pipeline\nMar 2026\n(PG&E stages)"), ("2026-06", "PG&E pipeline\nJun 2026\n(PG&E stages)")]):
         d = tv[(tv.vintage == v) & (tv.label.str.contains("PG&E earnings"))]
-        bottom = 0
+        x = 5.3 + j * 0.85; bottom = 0
         for tier in ["PG&E: application + preliminary engineering", "PG&E: final engineering (WPA signed)", "PG&E: interconnection construction agreement", "PG&E: construction"]:
             mw = d[d.tier == tier].mw.sum()
             if mw > 0:
-                ax.bar(5.0 + j * 0.8, mw, bottom=bottom, color=pcols[tier], edgecolor="white", width=0.5, hatch="..", label=lab_once(tier + " (no inquiries)"))
+                ax.bar(x, mw, bottom=bottom, color=pcols[tier], edgecolor="white", width=0.5, hatch="..", label=lab_once(tier + " (no inquiries)"))
                 bottom += mw
-        ax.text(5.0 + j * 0.8, bottom + 400, f"{bottom:,.0f}", ha="center", fontsize=8)
+        ax.text(x, bottom + 400, f"{bottom:,.0f}", ha="center", fontsize=8, va="bottom")
         vint.append((v, lab))
-    ax.axhline(caiso_record_mw, color="k", ls="--", lw=1); ax.text(6.2, caiso_record_mw + 700, f"CAISO record peak 52,061 MW (Sep 6, 2022)", ha="right", fontsize=8)
-    ax.axhspan(ex_low, ex_high, color="C1", alpha=0.18, label=f"existing data center load, chapter 1 range: {ex_low:,.0f}-{ex_high:,.0f} MW average load")
+    for xd in (2.65, 4.85):
+        ax.axvline(xd, color="grey", lw=0.8, ls="-.")
+    ax.text(1.0, 59300, "CEC statewide vintages (7 utilities, CEC tiers)", ha="center", fontsize=7.5, color="grey", va="top"); ax.text(3.75, 59300, "SCE public database\n(one utility)", ha="center", fontsize=7.5, color="grey", va="top"); ax.text(5.7, 59300, "PG&E earnings pipeline\n(one utility, PG&E stages)", ha="center", fontsize=7.5, color="grey", va="top")
+    ax.axhline(caiso_record_mw, color="k", ls="--", lw=1); ax.text(-0.4, caiso_record_mw + 600, f"CAISO record instantaneous peak 52,061 MW (Sep 6, 2022): scale reference only", ha="left", fontsize=7.5, va="bottom")
+    ax.text(1.5, 30200, "* utility rows sum to 23,278; CEC marginal totals 23,277 (20,677 in CA)", ha="center", fontsize=6.5, color="grey")
+    ax.axhspan(ex_low, ex_high, color="C1", alpha=0.18, label=f"existing data center average load, chapter 1 statewide estimate and conversion: {ex_low:,.0f}-{ex_high:,.0f} MW")
     ax.axhline(ex_cec_peak, color="C1", lw=1.2, label="existing data center peak demand, CEC: ~1,000 MW (Dec 2025)")
-    ax.set_xticks(list(xs) + [3.2, 4.0, 5.0, 5.8]); ax.set_xticklabels([l for _, l in vint], fontsize=7.5); ax.set_ylabel("MW requested"); ax.set_ylim(0, 58000); ax.set_xlim(-0.5, 6.3)
-    ax.set_title("CEC data center energization requests by vintage and tier, against CAISO's record peak and existing data center load")
+    ax.set_xticks(list(xs) + [3.2, 4.1, 5.3, 6.15]); ax.set_xticklabels([l for _, l in vint], fontsize=7.5); ax.set_ylabel("MW requested"); ax.set_ylim(0, 60000); ax.set_xlim(-0.5, 6.55)
+    ax.set_title("Data center energization requests by vintage and tier, against CAISO's record peak and existing data center load\nThree source families with different utilities, stage definitions and dates: not one consistent growth series", fontsize=9.5)
     ax.legend(fontsize=7, loc="upper center", ncol=3, bbox_to_anchor=(0.5, -0.16), frameon=False)
     fig.subplots_adjust(bottom=0.30)
     save(fig, "fig2_04_tier_vintages")
 
     # ------------------------------------------------------------ 5. RQ1 table
     print("5. RQ1 table")
-    tiers = {"Signed agreements": 5086.0, "Active applications": 9587.0, "Inquiries": 8604.0}  # statewide as published (Assembly slide 7); memo per-utility sums differ by 1 MW rounding
-    total = sum(tiers.values())
+    # CEC marginal totals as published (memo Table 1 / Assembly slide 7): 5,086 / 9,587 / 8,604 = 23,277 MW; the utility rows sum to 23,278.
+    # VEA's 2,600 MW of applications are located in Nevada (memo Table 1 footnote), so the California-only pipeline is 20,677 MW.
+    vea_nv = 2600.0
+    tiers = {"Signed agreements": 5086.0, "Active applications, California": 9587.0 - vea_nv, "Inquiries": 8604.0}
+    total = sum(tiers.values())  # California only
     peaks = c2.ced2025_caiso_peaks()
     pl = peaks[peaks.SCENARIO == "Planning_Scenario"].set_index("YEAR")
     growth_peak_2030 = float(pl.loc[2030, "MANAGED_NET_LOAD"] - pl.loc[2025, "MANAGED_NET_LOAD"])
@@ -240,7 +260,7 @@ def main() -> int:
     dc_energy_2030 = float(dcen.iloc[0]["y2030"]) if len(dcen) else np.nan
     ch1_2025_peak = 43860.0
     rows = []
-    for name, mw in list(tiers.items()) + [("Total, three tiers", total)]:
+    for name, mw in list(tiers.items()) + [("Total, three tiers, California only", total), ("Memo: VEA applications located in Nevada", vea_nv), ("Memo: CEC statewide total including VEA", total + vea_nv)]:
         rows.append({"stage": name, "mw": mw,
                      "share_of_caiso_record_peak_pct": mw / caiso_record_mw * 100,
                      "share_of_caiso_2025_peak_pct": mw / ch1_2025_peak * 100,
@@ -261,7 +281,9 @@ def main() -> int:
              "iepr_planning_statewide_energy_growth_2025_2030_GWh": growth_energy_2030, "iepr_planning_statewide_data_center_deliveries_2030_GWh": dc_energy_2030,
              "iepr_planning_statewide_data_center_deliveries_2025_GWh": float(dcen.iloc[0]["y2025"]) if len(dcen) else np.nan,
              "iepr_planning_statewide_energy_2025_GWh": float(en.iloc[0]["y2025"]), "iepr_planning_statewide_energy_2030_GWh": float(en.iloc[0]["y2030"]),
-             "total_tiers_mw": total, "ratio_total_to_caiso_record_peak": total / caiso_record_mw, "ratio_total_to_caiso_record_hourly": total / caiso_record_hourly, "ratio_total_to_existing_dc_peak": total / ex_cec_peak,
+             "total_tiers_mw": total, "total_tiers_mw_california": total, "vea_nevada_applications_mw": vea_nv, "total_tiers_mw_cec_incl_vea": total + vea_nv,
+             "ratio_total_to_caiso_record_peak": total / caiso_record_mw, "ratio_cec_total_incl_vea_to_caiso_record_peak": (total + vea_nv) / caiso_record_mw,
+             "ratio_total_to_caiso_record_hourly": total / caiso_record_hourly, "ratio_total_to_existing_dc_peak": total / ex_cec_peak,
              "ratio_total_to_existing_dc_avg_load_low": total / ex_high, "ratio_total_to_existing_dc_avg_load_high": total / ex_low}
     (PROCESSED / "ch2_rq1_denominators.json").write_text(json.dumps(denom, indent=1))
     print(json.dumps(denom, indent=1))
