@@ -85,14 +85,14 @@ def eia861(first=2010, last=2024) -> list[Source]:
     return out
 
 
-def eia923(first=2010, last=2025) -> list[Source]:
+def eia923(first=2010, last=2026) -> list[Source]:
     out = []
     for y in range(first, last + 1):
         fn = f"f923_{y}.zip"
         cur = f"https://www.eia.gov/electricity/data/eia923/xls/{fn}"
         arch = f"https://www.eia.gov/electricity/data/eia923/archive/xls/{fn}"
         out.append(Source(id=f"eia923_{y}", group="eia923", owner="EIA",
-                          title=f"EIA-923 Power Plant Operations Report {y}",
+                          title=f"EIA-923 Power Plant Operations Report {y}" + (" (current-year monthly file, monthly respondents only, year to date)" if y == 2026 else ""),
                           url=arch if y < last else cur, fallback_urls=[cur if y < last else arch],
                           filename=fn, notes="Monthly generation and fuel consumption by plant."))
     return out

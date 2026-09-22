@@ -36,12 +36,21 @@ Operable nameplate capacity by technology comes from the EIA-860 annual generato
 
 \begin{table}[H]
 \centering\footnotesize
-\caption{Operable nameplate capacity by technology, battery energy capacity and CAISO curtailment, selected years. Source: EIA-860, CAISO.}
+\caption{Operable nameplate capacity by technology, battery energy capacity and CAISO curtailment, selected years and the July 2026 inventory. Source: EIA-860, EIA-860M, CAISO.}
 \label{tab:capacity}
-\input{tables/ch3_capacity}
+\input{tables/ch3_capacity}\\[2pt] \input{tables/ch3_capacity_note}
 \end{table}
 
 Capacity rose from 73~GW in 2010 to 107~GW in 2025 (Figure~\ref{fig:capacity}, Table~\ref{tab:capacity}). Solar added 24~GW and batteries 15~GW, the latter almost entirely since 2020 and holding 51~GWh of energy across 281 units by 2025; gas capacity fell only from 45 to 40~GW and remains the largest block. The battery fleet is what moved the net peak later in the evening in Chapter~\ref{ch:current}. Curtailment of wind and solar rose from 0.2~TWh in 2015 to 3.8~TWh in 2025, and reached 4.9~TWh in the first eight months of 2026 alone, so the midday surplus that Chapter~\ref{ch:current} measured in prices is now also visible as discarded energy of the order of the output of a gigawatt of solar.
+
+\paragraph{The most recent data.} The CEC has not yet published 2025 statewide imports and the EIA-860 annual file ends in 2025, so the latest observations come from three other files, each preliminary (Table~\ref{tab:ytd}). The EIA-923 monthly file through June 2026, which includes EIA's state-level increment rows for the plants that report only annually, puts January to June in-state generation at 89.6~TWh against 97.4~TWh in the same months of 2025, with natural gas down 28 percent, hydro down 9 percent and solar up 6 percent; CAISO net imports over the same months rose from 15.7 to 20.6~TWh. The EIA-860M inventory of July 2026 puts operable capacity at 109~GW, with 16.3~GW and 56~GWh of batteries in 305 units, and CAISO curtailment through August 2026 had already exceeded the whole of 2025. The EIA-860M file for August 2026 had not been published when this chapter was built.
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{January to June generation by resource, 2025 final against 2026 preliminary, and CAISO net imports over the same months. Source: EIA-923 annual 2025 and monthly June 2026 files, EIA-930.}
+\label{tab:ytd}
+\input{tables/ch3_ytd2026}
+\end{table}
 
 \section{Retirement schedule}
 \label{sec:retirements}
@@ -99,12 +108,19 @@ Across the seven vintages, 69 percent of units and 65 percent of planned megawat
 
 \begin{table}[H]
 \centering\footnotesize
+\caption{Three specifications of the completion model: the main model, the model without construction status, and the literal specification with planned year and vintage fixed effects.}
+\label{tab:specs}
+\resizebox{\textwidth}{!}{\input{tables/ch3_logit_specs}}
+\end{table}
+
+\begin{table}[H]
+\centering\footnotesize
 \caption{Delay from the planned to the actual commercial date, seven vintages pooled.}
 \label{tab:delay}
 \input{tables/ch3_delay}
 \end{table}
 
-The logistic model (Table~\ref{tab:logit}) puts numbers on these patterns while holding the others fixed. Each additional year of planned lead time cuts the odds of completion within the window by more than half (odds ratio 0.46, $p < 0.001$); each additional year of observation raises them by 17 percent ($p = 0.005$), which is the mechanical effect of giving late projects time to finish; being under construction at the vintage doubles the odds ($p = 0.055$); gas and geothermal have lower odds than solar at conventional or near-conventional significance, and size adds a little (odds ratio 1.17 per log-unit of megawatts, $p = 0.09$). The in-sample AUC is 0.78. The delay curves (Table~\ref{tab:delay}) describe the projects that do finish and the ones that do not: among completed units the median delay from the planned to the actual commercial date is 3 months, a quarter are on time or early and a quarter are more than a year late. Treating cancellation as a competing risk, 53 percent of planned units are operating within 12 months of their planned date, 62 percent within 24 and 70 percent within 60, while 23 percent have been cancelled or dropped by then; the Kaplan-Meier curve with cancellations censored, an upper bound, reaches about 88 percent at six years.
+The logistic model (Table~\ref{tab:logit}) puts numbers on these patterns while holding the others fixed. Each additional year of planned lead time cuts the odds of completion within the window by more than half (odds ratio 0.46, $p < 0.001$); each additional year of observation raises them by 17 percent ($p = 0.005$), which is the mechanical effect of giving late projects time to finish; being under construction at the vintage doubles the odds ($p = 0.055$); gas and geothermal have lower odds than solar at conventional or near-conventional significance, and size adds a little (odds ratio 1.17 per log-unit of megawatts, $p = 0.09$). The in-sample AUC is 0.78. Lead time and observation window are a reparametrisation of the planned year and the vintage; the literal specification with planned year and vintage fixed effects (Table~\ref{tab:specs}) gives the same ranking of technologies and construction status. The delay curves (Table~\ref{tab:delay}) describe the projects that do finish and the ones that do not: among completed units the median delay from the planned to the actual commercial date is 3 months, a quarter are on time or early and a quarter are more than a year late. Treating cancellation as a competing risk, 53 percent of planned units are operating within 12 months of their planned date, 62 percent within 24 and 70 percent within 60, while 23 percent have been cancelled or dropped by then; the Kaplan-Meier curve with cancellations censored, an upper bound, reaches about 88 percent at six years.
 
 \section{Probability-weighted supply for 2030}
 \label{sec:cases}

@@ -36,12 +36,31 @@ def main() -> int:
 
     c = pd.read_csv(PROCESSED / "ch3_eia860_capacity_by_resource.csv"); cp = c.pivot(index="year", columns="resource", values="nameplate_mw")
     rows = [f"{esc(r)} & " + " & ".join(f"{cp.loc[y, r]/1000:.1f}" if r in cp and pd.notna(cp.loc[y, r]) else "--" for y in years) + r" \\" for r in CAP_ROWS]
-    rows.append(r"\midrule" + "\n" + "Total & " + " & ".join(f"{cp.loc[y, 'Total']/1000:.1f}" for y in years) + r" \\")
+    snap = pd.read_csv(PROCESSED / "ch3_capacity_snapshot_2026_07.csv").set_index("resource"); si = json.loads((PROCESSED / "ch3_capacity_snapshot_2026_07.json").read_text())
+    rows = [f"{esc(r)} & " + " & ".join(f"{cp.loc[y, r]/1000:.1f}" if r in cp and pd.notna(cp.loc[y, r]) else "--" for y in years) + f" & {snap.nameplate_mw.get(r, 0)/1000:.1f}" + r" \\" for r in CAP_ROWS]
+    rows.append(r"\midrule" + "\n" + "Total & " + " & ".join(f"{cp.loc[y, 'Total']/1000:.1f}" for y in years) + f" & {si['total_mw']/1000:.1f}" + r" \\")
     bat = pd.read_csv(PROCESSED / "ch3_battery_capacity.csv").set_index("year")
-    rows.append("Battery energy capacity (GWh) & " + " & ".join(f"{bat.loc[y, 'energy_mwh']/1000:.1f}" if y in bat.index else "--" for y in years) + r" \\")
+    rows.append("Battery energy capacity (GWh) & " + " & ".join(f"{bat.loc[y, 'energy_mwh']/1000:.1f}" if y in bat.index else "--" for y in years) + f" & {si['batteries_mwh']/1000:.1f}" + r" \\")
     cur = pd.read_csv(PROCESSED / "ch3_caiso_curtailment_annual.csv").set_index("year")
-    rows.append("CAISO wind and solar curtailment (TWh) & " + " & ".join(f"{cur.loc[y, 'curtailed_gwh']/1000:.2f}" if y in cur.index and cur.loc[y, "months"] == 12 else "--" for y in years) + r" \\")
-    write("ch3_capacity", [r"\begin{tabular}{l" + "r" * len(years) + "}", r"\toprule", "Technology (GW nameplate) & " + " & ".join(str(y) for y in years) + r" \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+    rows.append("CAISO wind and solar curtailment (TWh) & " + " & ".join(f"{cur.loc[y, 'curtailed_gwh']/1000:.2f}" if y in cur.index and cur.loc[y, "months"] == 12 else "--" for y in years) + f" & {cur.loc[2026, 'curtailed_gwh']/1000:.2f} (Jan--Aug)" + r" \\")
+    write("ch3_capacity", [r"\begin{tabular}{l" + "r" * (len(years) + 1) + "}", r"\toprule", "Technology (GW nameplate) & " + " & ".join(str(y) for y in years) + r" & Jul 2026 \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+    write("ch3_capacity_note", [r"\footnotesize The 2010--2025 columns are the EIA-860 annual files; the July 2026 column is the EIA-860M monthly inventory, which is preliminary."])
+
+    h1 = pd.read_csv(PROCESSED / "ch3_generation_jan_jun_2025_2026_monthly_respondents.csv"); hp = h1.pivot(index="resource", columns="year", values="gwh_jan_jun")
+    ytd = pd.read_csv(PROCESSED / "ch3_caiso_net_imports_jan_jun.csv").set_index("year")
+    order = ["Natural gas", "Nuclear", "Hydro", "Geothermal", "Biomass", "Wind", "Solar", "Coal and petcoke", "Oil", "Other", "Batteries", "Pumped storage", "Total in-state", "of which EIA state-level increment rows"]
+    rows = []
+    for r in order:
+        if r not in hp.index: continue
+        a, b = hp.loc[r, 2025], hp.loc[r, 2026]; ch = f"{(b/a-1)*100:+.0f}" if (a and abs(a) > 50 and not r.startswith("of which")) else "--"
+        rows.append((r"\midrule" + "\n" if r == "Total in-state" else "") + f"{esc(r)} & {a/1000:.1f} & {b/1000:.1f} & {ch} \\\\")
+    rows.append(f"CAISO net imports, EIA-930 (CAISO footprint) & {ytd.loc[2025, 'caiso_net_imports_twh']:.1f} & {ytd.loc[2026, 'caiso_net_imports_twh']:.1f} & {(ytd.loc[2026, 'caiso_net_imports_twh']/ytd.loc[2025, 'caiso_net_imports_twh']-1)*100:+.0f} \\\\")
+    write("ch3_ytd2026", [r"\begin{tabular}{lrrr}", r"\toprule", r"January--June (TWh) & 2025 (final) & 2026 (preliminary) & Change (\%) \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+
+    sp = pd.read_csv(PROCESSED / "ch3_logit_specs.csv")
+    f2 = lambda v: "--" if pd.isna(v) else f"{v:.2f}"  # noqa: E731
+    rows = [f"{esc(r.specification)} & {int(r.n)} & {r.pseudo_r2:.3f} & {r.auc:.3f} & {f2(r.or_lead_or_planned_year)} & {f2(r.or_under_construction)} & {f2(r.or_natural_gas)} & {f2(r.or_log_mw)} \\\\" for r in sp.itertuples()]
+    write("ch3_logit_specs", [r"\begin{tabular}{p{6.2cm}rrrrrrr}", r"\toprule", r"Specification & $n$ & Pseudo $R^2$ & AUC & OR: lead time (A, B) or planned year (C), per year & OR: under construction & OR: gas vs solar & OR: log MW \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
 
     otc = pd.read_csv(PROCESSED / "ch3_otc_units.csv"); sched = pd.read_csv(PROCESSED / "ch3_eia860m_planned_retirements.csv")
     rows = []

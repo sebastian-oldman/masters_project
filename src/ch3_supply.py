@@ -107,6 +107,52 @@ def eia923_ca_generation(years=range(2010, 2026)) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def eia923_h1_monthly_respondents(years=(2025, 2026)) -> pd.DataFrame:
+    """January-June net generation by resource, all California rows, from the final 2025 annual file and the 2026
+    year-to-date monthly file. The monthly file carries EIA's 'State-Fuel Level Increment' rows that estimate the
+    plants which report annually, so the two years are comparable at the state level (2026 is preliminary)."""
+    rows = []
+    for y in years:
+        zz = zipfile.ZipFile(raw_path(f"eia923_{y}"))
+        name = [n for n in zz.namelist() if "2_3_4_5" in n.upper().replace(" ", "_") and n.lower().endswith(("xlsx", "xls"))][0]
+        x = pd.ExcelFile(io.BytesIO(zz.read(name)))
+        sheet = [s for s in x.sheet_names if s.lower().startswith("page 1 generation")][0]
+        d = x.parse(sheet, header=_find_header(x, sheet, "plant id")); d.columns = [_norm(c) for c in d.columns]
+        st = [c for c in d.columns if c.lower() in ("plant state", "state")][0]; fuel = [c for c in d.columns if "reported" in c.lower() and "fuel" in c.lower()][0]; pm = [c for c in d.columns if "prime mover" in c.lower()][0]
+        freq = [c for c in d.columns if "respondent" in c.lower() and "frequency" in c.lower()]
+        ca = d[d[st].astype(str).str.strip() == "CA"].copy()
+        months = [c for c in ca.columns if c.lower().startswith("netgen") and any(mn in c.lower() for mn in ("january", "february", "march", "april", "may", "june"))]
+        ca["gwh_h1"] = ca[months].apply(pd.to_numeric, errors="coerce").sum(axis=1) / 1000.0
+        ca["resource"] = [classify(e, p) for e, p in zip(ca[fuel], ca[pm])]; ca["resource"] = ca["resource"].replace({"Large hydro": "Hydro"})
+        g = ca.groupby("resource")["gwh_h1"].sum()
+        for r, v in g.items():
+            rows.append({"year": y, "resource": r, "gwh_jan_jun": float(v), "rows": int((ca.resource == r).sum())})
+        inc = ca[ca["Plant Name"].astype(str).str.contains("Increment", case=False)] if "Plant Name" in ca.columns else ca.iloc[0:0]
+        rows.append({"year": y, "resource": "Total in-state", "gwh_jan_jun": float(ca["gwh_h1"].sum()), "rows": int(len(ca))})
+        rows.append({"year": y, "resource": "of which EIA state-level increment rows", "gwh_jan_jun": float(inc["gwh_h1"].sum()), "rows": int(len(inc))})
+    return pd.DataFrame(rows)
+
+
+def caiso_net_imports_ytd(years=(2025, 2026), last_month: int = 6) -> pd.DataFrame:
+    """CAISO net imports (EIA-930 net interchange, sign reversed) for January to last_month of each year, TWh."""
+    from .ch1_baseline import load_eia930_ciso
+    rows = []
+    for y in years:
+        h = load_eia930_ciso(y, y)
+        h = h[h["month"] <= last_month]
+        rows.append({"year": y, "months": f"Jan-{pd.Timestamp(year=y, month=last_month, day=1):%b}", "caiso_net_imports_twh": float(h["imports"].sum() / 1e6), "hours": int(h["imports"].count())})
+    return pd.DataFrame(rows)
+
+
+def eia860m_capacity_snapshot(source_id: str = "eia860m_2026_07") -> tuple[pd.DataFrame, dict]:
+    """Operating nameplate by resource in an EIA-860M monthly file, with battery power and energy capacity."""
+    op = _load_860m(source_id, "Operating")
+    cap = op.groupby("resource").agg(nameplate_mw=("mw", "sum"), units=("mw", "size")).reset_index()
+    b = op[op["resource"] == "Batteries"]
+    mwh = pd.to_numeric(b.get("Nameplate Energy Capacity (MWh)", pd.Series(dtype=float)), errors="coerce").sum() if "Nameplate Energy Capacity (MWh)" in op.columns else np.nan
+    return cap, {"batteries_units": int(len(b)), "batteries_mw": float(b["mw"].sum()), "batteries_mwh": float(mwh), "total_mw": float(op["mw"].sum())}
+
+
 # ------------------------------------------------------------------------------------------------
 # 1b. CEC Energy Almanac: total system electric generation (in-state by fuel, NW and SW imports)
 # ------------------------------------------------------------------------------------------------
@@ -277,6 +323,8 @@ def retirement_schedule(latest: str = "eia860m_2026_07") -> tuple[pd.DataFrame, 
     op["planned_retirement_month"] = pd.to_numeric(op["Planned Retirement Month"], errors="coerce")
     sched = op[op["planned_retirement_year"].notna()][["plant_id", "Plant Name", "gen_id", "Technology", "resource", "mw", "Operating Year", "planned_retirement_month", "planned_retirement_year"]].copy()
     sched = sched.rename(columns={"Plant Name": "plant_name", "Operating Year": "operating_year"})
+    for c in ("operating_year", "planned_retirement_month", "planned_retirement_year"):
+        sched[c] = pd.to_numeric(sched[c], errors="coerce").astype("Int64")
     otc_rows = []
     for r in OTC_SCHEDULE:
         units = [u.strip() for u in r["units"].split(",")]
@@ -286,6 +334,8 @@ def retirement_schedule(latest: str = "eia860m_2026_07") -> tuple[pd.DataFrame, 
                                  operating_year=u["Operating Year"], eia_planned_retirement_year=u["planned_retirement_year"], otc_compliance_date=r["compliance"],
                                  otc_milestone=r["milestone"], schedule_year=int(r["compliance"][:4])))
     otc = pd.DataFrame(otc_rows)
+    for c in ("operating_year", "eia_planned_retirement_year", "schedule_year"):
+        otc[c] = pd.to_numeric(otc[c], errors="coerce").astype("Int64")
     sched["otc_unit"] = sched.set_index(["plant_id", "gen_id"]).index.isin(otc.set_index(["plant_id", "gen_id"]).index)
     return sched, otc
 
@@ -353,6 +403,8 @@ def eia860m_vintage_outcomes(vintages=range(2016, 2023), reference: str = "eia86
     d["event_date"] = d["actual_date"].where(d["completed"], exit_date.fillna(ref_date))
     d["t_months"] = ((d["event_date"] - d["planned_date"]).dt.days / 30.44).clip(lower=0)
     d["event"] = np.where(d["completed"], 1, np.where(d["outcome"].isin(["cancelled", "dropped from survey"]), 2, 0))  # 1 complete, 2 cancel, 0 censored
+    for c in ("planned_year", "planned_month", "exit_year", "vintage"):
+        d[c] = pd.to_numeric(d[c], errors="coerce").astype("Int64")
     return d
 
 
@@ -368,17 +420,20 @@ def realization_by(d: pd.DataFrame, by: str) -> pd.DataFrame:
     return out.reset_index()
 
 
-def fit_completion_logit(d: pd.DataFrame, with_status: bool = True):
-    """Logistic model of completion by December 2025 on technology, log size, planned lead time and observation window
-    (and construction status), with standard errors clustered by unit."""
+def fit_completion_logit(d: pd.DataFrame, with_status: bool = True, spec: str = "lead_window"):
+    """Logistic model of completion by December 2025 on technology, log size and timing, with standard errors clustered
+    by unit. spec 'lead_window' (main): planned lead time and observation window, which together are a reparametrisation
+    of planned year and vintage; spec 'planned_year': planned year plus vintage fixed effects, the literal specification."""
     import statsmodels.formula.api as smf
     m = d.dropna(subset=["mw", "lead_years", "window_years"]).copy()
     m = m[m["mw"] > 0]
     m["log_mw"] = np.log(m["mw"])
     m["completed_i"] = m["completed"].astype(int)
+    m["planned_year_f"] = m["planned_year"].astype(float); m["vintage_f"] = m["vintage"].astype(int)
     top = m["resource"].value_counts()
     m["tech"] = np.where(m["resource"].isin(top[top >= 15].index), m["resource"], "Other")
-    formula = "completed_i ~ C(tech, Treatment('Solar')) + log_mw + lead_years + window_years" + (" + C(status_group, Treatment('approvals not initiated'))" if with_status else "")
+    timing = "lead_years + window_years" if spec == "lead_window" else "planned_year_f + C(vintage_f)"
+    formula = f"completed_i ~ C(tech, Treatment('Solar')) + log_mw + {timing}" + (" + C(status_group, Treatment('approvals not initiated'))" if with_status else "")
     model = smf.logit(formula, data=m)
     res = model.fit(disp=0, maxiter=200, cov_type="cluster", cov_kwds={"groups": pd.factorize(m["key"])[0]})
     m["p_hat"] = res.predict(m)
@@ -458,6 +513,7 @@ def current_planned(latest: str = "eia860m_2026_07") -> pd.DataFrame:
     file_date = pd.Timestamp("2026-07-15")
     p["lead_years"] = (p["planned_date"] - file_date).dt.days / 365.25
     p["window_years"] = (pd.Timestamp("2030-12-31") - file_date).days / 365.25
+    p["planned_year"] = p["planned_year"].astype("Int64"); p["planned_month"] = p["planned_month"].astype("Int64")
     return p[["key", "plant_id", "gen_id", "Plant Name", "Technology", "resource", "mw", "status_code", "status_group", "planned_year", "planned_month", "planned_date", "lead_years", "window_years", "Balancing Authority Code"]].rename(columns={"Plant Name": "plant_name", "Balancing Authority Code": "balancing_authority"})
 
 

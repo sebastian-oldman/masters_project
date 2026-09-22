@@ -257,3 +257,34 @@ California 810 MW and Southern California 355 MW of colocation inventory). The S
   EIA state profile table was not retrievable); hydro small/large split in EIA-923; the CAISO NQC list carries no nameplate, so
   class-level NQC ratios were not derived (ELCC/derate assumptions used instead).
 
+## Chapter 3 audit (2026-09-22): most recent data, integer years, and where each reported number lives
+
+- **Newest inputs added.** `eia923_2026` (EIA-923 monthly file through June 2026, released 2026-08-21; contains EIA "State-Fuel Level
+  Increment" rows for annually reporting plants, so it is a statewide estimate, preliminary). EIA-930 2026 Jan-Jun for CAISO net imports.
+  EIA-860M July 2026 for capacity and batteries (August 2026 not published as of 2026-09-22, checked). CEC 2025 total-system page
+  returns 404 and the multi-year table still ends in 2024 (re-checked 2026-09-22). Curtailment CSV re-fetched: unchanged, through Aug 2026.
+  Outputs: `ch3_generation_jan_jun_2025_2026_monthly_respondents.csv` (Jan-Jun 2025 97.4 TWh vs 2026 89.6 TWh; gas 30.6 -> 22.2, solar
+  27.5 -> 29.1, hydro 15.1 -> 13.7, nuclear 8.7 -> 9.5), `ch3_caiso_net_imports_jan_jun.csv` (15.7 -> 20.6 TWh), `ch3_capacity_snapshot_2026_07.*`
+  (109.4 GW; batteries 305 units, 16.3 GW, 55.6 GWh). A matched-plant comparison is NOT valid for the monthly file (its increment rows
+  absorb annual respondents), so the comparison is done on all rows in both years.
+- **Integer years.** All year and month columns in ch3 outputs are nullable integers (no more 2025.0); the notebook's `table()` helper
+  calls `convert_dtypes()` so integer-valued columns display as integers; figure axes use integer year ticks.
+- **Model specification.** `ch3_logit_specs.csv`: A lead time + window + status (main); B without status; C planned year + vintage fixed
+  effects (the literal "planned year" specification). Same technology and status ranking across specifications.
+- **Provenance of the numbers quoted in the chapter and in the summary to the user** (all are in the files below; figures now print them):
+  | number | file (field) | table | figure |
+  |---|---|---|---|
+  | in-state 204 -> 205 TWh; gas 109 -> 75 TWh; solar 0.8 -> 55 TWh | `ch3_supply_by_year.csv` | ch3_generation | fig3_01 (labels 2010, 2025) |
+  | gas share 53 -> 36 %; solar+wind 3 -> 34 %; imports 34 -> 22 % | derived from `ch3_supply_by_year.csv` | -- | fig3_01 right panel (end labels) |
+  | net imports 103 (2012) -> 62 TWh (2024) | `ch3_cec_generation_multi_year.csv` (Net Imports) | ch3_generation | fig3_01 (label 2024) |
+  | capacity 73 -> 107 GW; 109 GW Jul 2026 | `ch3_eia860_capacity_by_resource.csv`, `ch3_capacity_snapshot_2026_07.json` | ch3_capacity | fig3_02 left (labels) |
+  | batteries 15 GW / 51 GWh (2025), 16.3 GW / 56 GWh (Jul 2026) | `ch3_battery_capacity.csv`, snapshot json | ch3_capacity | fig3_02 middle (labels) |
+  | curtailment 0.2 -> 3.8 TWh; 4.9 TWh Jan-Aug 2026 | `ch3_caiso_curtailment_annual.csv` | ch3_capacity | fig3_02 right (bar labels) |
+  | retirements 6.5 GW through 2030 (EIA 3.4; OTC-only 0.8; Diablo 2.3) | `ch3_eia860m_planned_retirements.csv`, `ch3_otc_units.csv`, `ch3_cases_2030_summary.json` (retirements_through_2030_mw) | ch3_retirements | fig3_03 (box and bar labels) |
+  | 925 unit-vintages, 513 units, 64 GW, 65 % of MW / 69 % of units completed | `ch3_logit_summary.json`, `ch3_realization_by_vintage.csv` | ch3_realization_vintage | fig3_04 top-left (box) |
+  | by technology 71/76/78/44/6 %; by status 77 vs 54 % | `ch3_realization_by_technology.csv`, `ch3_realization_by_status.csv` | ch3_realization_tech, ch3_realization_vintage | fig3_04 top-right |
+  | odds ratios 0.46, 1.17, 1.98, 0.44, 1.17; AUC 0.78 | `ch3_logit_coefficients.csv`, `ch3_logit_summary.json` | ch3_logit | fig3_04 bottom-left (box) |
+  | median delay 3.0 months; 26 % on time; 24 % > 12 months; CIF 53/62/70 %; cancel 23 % | `ch3_logit_summary.json` (delay), `ch3_delay_cif.csv` | ch3_delay | fig3_04 bottom-right (markers and box) |
+  | planned 20.1 GW / 229 units; weighted 13.2 GW; shares 71/78/31/13 %; 88 vs 36 % by status | `ch3_planned_current_weighted.csv`, `ch3_cases_2030_summary.json` | ch3_cases_2030 | fig3_05 (box) |
+  | cases 128/121/114 GW, 236/231/204 TWh, 78/74/68 GW; Diablo continuing 117/222/71 | `ch3_cases_2030.csv`, `ch3_cases_2030_summary.json` | ch3_cases_2030 | fig3_05 (bar labels) |
+
