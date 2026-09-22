@@ -222,7 +222,7 @@ def main() -> int:
     axes[0].plot(csum.index, csum.energy_weighted_floored_g_per_kWh, marker="s", ms=3, ls=":", color="C0", alpha=0.8, label="same, negative hours floored at zero (sensitivity)")
     axes[0].fill_between(csum.index, csum.p5_g_per_kWh, csum.p95_g_per_kWh, alpha=0.2, label="hourly 5th-95th percentile (variability, not a confidence interval)")
     axes[0].axhline(eg["co2_output_rate_g_per_kWh"], color="C3", ls="--", label=f"eGRID 2023 CAMX generation output rate ({eg['co2_output_rate_g_per_kWh']:.0f}): different boundary")
-    axes[0].axvline(2023.92, color="grey", ls=":", lw=1); axes[0].text(2023.95, 5, "Dec 2023: CAISO gas data\nmethod change (EIA-930 gas\nnot comparable across it)", fontsize=6, color="grey", va="bottom")
+    axes[0].axvline(2023.92, color="grey", ls=":", lw=1, label="Dec 2023: CAISO gas data method change (affects the EIA-930 gas series, not this accounting series)")
     axes[0].set_ylabel("g CO2 per kWh"); axes[0].set_title("Annual CO2 accounting intensity of CAISO demand"); axes[0].legend(fontsize=6, loc="upper center", bbox_to_anchor=(0.5, -0.14), frameon=False); axes[0].set_ylim(0, None)
     for y in YEARS:
         axes[1].plot(cdc.index, cdc[y], color=YCOL[y], label=str(y), lw=1.2)

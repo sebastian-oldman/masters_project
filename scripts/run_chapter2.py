@@ -141,7 +141,7 @@ def main() -> int:
     ax = axes[0, 1]; ax.bar(sv_uc.index, sv_uc.values.astype(float), width=150, color="C2", label="under construction (MW)"); ax.plot(sv_inv.index, sv_inv.values.astype(float), "k.-", label="inventory (MW, CBRE overview tables)")
     ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1); ax.set_title("CBRE Silicon Valley colocation market, semiannual"); ax.set_ylabel("MW"); ax.legend(fontsize=8, loc="upper left")
     ax = axes[1, 0]; ax.plot(ep.index, ep["power_MW_us"] / 1000, color="C3", label="United States: 75 sites in the Epoch snapshot")
-    ax.text(0.03, 0.55, "California: no observations in this Epoch snapshot\n(a coverage limit of the hub, not evidence of zero\nCalifornia activity; no California series is drawn)", transform=ax.transAxes, fontsize=7.5, color="C4", va="center")
+    ax.text(0.03, 0.78, "California: no observations in\nthis Epoch snapshot (a coverage\nlimit of the hub, not evidence of\nzero activity; no CA series drawn)", transform=ax.transAxes, fontsize=7, color="C4", va="top")
     ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1); ax.set_title("Epoch AI Frontier Data Centers Hub, cumulative facility power"); ax.set_ylabel("GW"); ax.legend(fontsize=8, loc="upper left")
     ax = axes[1, 1]; ax.axis("off")
     cell = []
@@ -154,7 +154,7 @@ def main() -> int:
             cell.append([nm, ("<0.001" if r["chow_p"] < 0.0005 else f"{r['chow_p']:.3f}"), f"{100*r['cagr_pre']:.0f}% -> {100*r['cagr_post']:.0f}%", str(r.get("bp_break1", "")), f"{int(r['bp_m_bic'])}/{int(r['bp_m_lwz'])}/{int(r['bp_m_seq'])} (last {str(r.get('bp_breaks_bic', '')).split(', ')[-1]})" if r.get("bp_m_bic", 0) else "0/0/0"])
         else:
             cell.append([nm, "n/a", "n/a", "n/a", "no CA observation in snapshot"])
-    tb = ax.table(cellText=cell, colLabels=["series", "Chow\np", "growth\npre -> post", "BP break\n(1-break fit)", "m: BIC / LWZ / seq.\n(last break)"], loc="center", cellLoc="left", colWidths=[0.28, 0.08, 0.16, 0.13, 0.35])
+    tb = ax.table(cellText=cell, colLabels=["series", "Chow\np", "growth\npre -> post", "BP break\n(1 break)", "m: BIC / LWZ / seq.\n(last break)"], loc="center", cellLoc="left", colWidths=[0.27, 0.08, 0.16, 0.13, 0.36])
     tb.auto_set_font_size(False); tb.set_fontsize(5.8); tb.scale(1, 1.6)
     for ci in range(5):
         tb[0, ci].set_height(tb[0, ci].get_height() * 1.8); tb[0, ci].get_text().set_ha("center"); tb[0, ci].set_text_props(ha="center")
