@@ -218,3 +218,42 @@ California 810 MW and Southern California 355 MW of colocation inventory). The S
 - **Fig 2.03 (confirmed).** Epoch's missing California observations are a coverage limit and are described as such; no California series is drawn. Tiny p-values printed as <0.001; the single-break column is labelled as the one-break fit.
 - **Fig 2.04 and RQ1 (confirmed; rebuilt).** The memo's Table 1 footnote places VEA's 2,600 MW in Nevada; California-only totals are 20,677 MW (Dec 2025; 20,678 by utility rows) and 19,156 MW (summer 2025). Nevada is hatched and the California totals are labelled; the 1 MW rows-versus-marginals difference is stated, not edited away. SCE's noncanceled totals fall from 6,201 to 5,162 MW (canceled 709 -> 3,137); cancellations are drawn beside, not on top of, the active bars. The three source families are divided and the title says they are not one growth series. The RQ1 table is California-only with Nevada and the reported total as memo rows: 39.7% of the CAISO record instantaneous peak (scale reference only), 47.1% of the 2025 peak, 20.7x existing DC peak, 19-26x existing average load, 5.1x IEPR managed-net-peak growth 2025-2030 (3.4x at 67%), 107 TWh = 3.1x statewide energy growth.
 - **Not changed (deferred with reasons).** An independent check of the CAISO CO2 accounting against CAISO's GHG tracking reports, and an inflation adjustment of the Census series, need sources not yet in the raw store; both are listed for the supply chapter. The CBRE, QCEW, OASIS and Census values the review reproduced were confirmed unchanged.
+
+## Chapter 3 findings that affect later chapters (2026-09-22, `scripts/run_chapter3.py`, about 6 minutes)
+
+- **Supply series** (`ch3_supply_by_year.csv`): EIA-923 in-state generation by resource 2010-2025 (204 -> 205 TWh; gas 109 -> 75 TWh,
+  53% -> 36% of in-state; solar 0.8 -> 55 TWh; solar+wind 3% -> 34%; nuclear halved after San Onofre); CEC statewide net imports
+  2012-2024 (103 -> 62 TWh, 34% -> 22% of the total system; 2025 not yet published). EIA-923 and CEC in-state totals agree within
+  1% in every overlapping year. The CEC per-year page captured for 2021 repeats the 2020 table (flagged in
+  `ch3_cec_imports_by_year.csv`); the multi-year table is used. Hydro is not split by size in EIA-923 (no unit capacity).
+- **Capacity** (`ch3_eia860_capacity_by_resource.csv`): EIA-860 operable nameplate 72.6 GW (2010) -> 107.4 GW (2025); solar 0.5 -> 24.8 GW;
+  batteries 0 -> 14.9 GW / 50.6 GWh (281 units; `ch3_battery_capacity.csv`); gas 45.5 -> 40.4 GW. Classification is by energy source
+  and prime mover (EIA's Technology field starts only in 2012-2013). CAISO curtailment 0.19 TWh (2015) -> 3.77 TWh (2025); 4.95 TWh in
+  Jan-Aug 2026 (`ch3_caiso_curtailment_annual.csv`).
+- **Retirements** (`ch3_eia860m_planned_retirements.csv`, `ch3_otc_units.csv`): EIA-860M July 2026 planned dates 3,364 MW through 2030
+  (2026: Alamitos 3-5 + Huntington Beach 2 = 1,333; 2027: Ormond Beach 1-2 = 1,612; 2029: 408 incl. Scattergood 1-2). OTC policy
+  (SWRCB, amended 2023-08-15, Table 1; manifest `swrcb_otc_policy_2023`): Alamitos/Huntington/Ormond 2026-12-31; Haynes 1, 2, 8,
+  Harbor 5, Scattergood 1-2 2029-12-31; Diablo Canyon 1-2 2030-10-31 (SB 846). Haynes (724 MW), Harbor 5 (75 MW) and Diablo Canyon
+  (2,323 MW) have no EIA retirement date; the policy dates are used for them in case C. Total through 2030: 6,486 MW.
+- **Realization model** (`ch3_vintage_outcomes.csv` and `ch3_realization_by_*.csv`): January EIA-860M planned lists 2016-2022 for
+  California, outcome in the December 2025 file (its Canceled or Postponed sheet is cumulative; units absent from every sheet are
+  treated as cancelled). 925 unit-vintages, 513 units, 64 GW: 69% of units / 65% of MW operating by Dec 2025; by vintage 66/51/50/68/
+  76/71/68% of MW; solar 71%, batteries 76%, wind 78%, gas 44%, geothermal 6%; under construction 77% vs approvals not initiated 54%.
+  Logit (cluster-robust by unit, `ch3_logit_coefficients.csv`): lead time OR 0.46/yr (p<0.001), window OR 1.17/yr (p=0.005), under
+  construction OR 1.98 (p=0.055), gas OR 0.44 (p=0.075), geothermal OR 0.11 (p=0.052), log MW OR 1.17 (p=0.09); AUC 0.78, pseudo R2
+  0.18. Delay among completers: median 3.0 months, 26% on time or early, 24% > 12 months late, p90 24 months; cumulative incidence
+  of completion (cancellation as competing risk, step values) 53% at 12 months, 62% at 24, 68% at 36, 70% at 60; cancellation 23% by 60 months.
+  Capacity basis: net summer MW for the January 2016 vintage (no nameplate column), nameplate afterwards.
+- **2030 cases** (`ch3_cases_2030.csv`, `ch3_cases_2030_summary.json`): existing Dec 2025 107.5 GW; July 2026 planned list through
+  2030 = 229 units, 20,054 MW (batteries 9,922; solar 7,931; pumped storage 1,600 = Whale Rock 600 + Haiwee 1,000, approvals not
+  initiated; wind 344; gas engines 170); model-weighted 13,221 MW (batteries/solar 71%, wind 78%, gas 31%, pumped storage 13%; under
+  construction 88%, approvals not initiated 36%). ELCC (E3/Astrape 2023 Table 1, Tranche 6 = 2028): solar 8.8%, in-state wind 14.7%,
+  4-hour battery 76.5%, 8-hour PSH 88.7%; firm resources 0.95 (biomass/oil 0.90, other 0.80) and hydro 0.55/0.45 are stated assumptions.
+  Capacity factors 2023-2025: gas 0.244, nuclear 0.879, hydro 0.342, geothermal 0.430, wind 0.265, solar 0.244.
+  A everything builds 127,566 MW / 236 TWh / 78,297 MW ELCC; B model-weighted 120,732 / 231 / 74,467; C minus retirements
+  114,246 / 204 / 68,306 (Diablo Canyon continuing: 116,569 / 222 / 70,512). For gas, energy at the fleet-average capacity factor
+  overstates the energy of retiring peakers.
+- **Not available / limits:** CEC statewide imports before 2012 and for 2025 (the CEC per-year pages for 2010-2014 return 404; the
+  EIA state profile table was not retrievable); hydro small/large split in EIA-923; the CAISO NQC list carries no nameplate, so
+  class-level NQC ratios were not derived (ELCC/derate assumptions used instead).
+

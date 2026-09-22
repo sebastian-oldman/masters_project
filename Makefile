@@ -1,7 +1,7 @@
 PY=.venv/bin/python
 TODAY=$(shell date +%F)
 
-.PHONY: env fetch fetch-large caiso snapshot catalog lab report clean-parts ch1 ch2
+.PHONY: env fetch fetch-large caiso snapshot catalog lab report clean-parts ch1 ch2 ch3
 
 env:                       ## create the virtual environment (Python 3.12) and install pins
 	/opt/homebrew/bin/python3.12 -m venv .venv
@@ -33,6 +33,9 @@ ch1:                       ## chapter 1 tables, figures, notebook and LaTeX tabl
 
 ch2:                       ## chapter 2 tables, figures, notebook and LaTeX tables
 	$(PY) scripts/run_chapter2.py && $(PY) scripts/make_ch2_tables.py && $(PY) scripts/build_notebook_ch2.py --execute
+
+ch3:                       ## chapter 3 supply side: generation, capacity, retirements, realization model, 2030 cases (about 6 minutes)
+	$(PY) scripts/run_chapter3.py && $(PY) scripts/make_ch3_tables.py && $(PY) scripts/build_notebook_ch3.py --execute
 
 report:                    ## build report/main.pdf with tectonic
 	cd report && tectonic main.tex

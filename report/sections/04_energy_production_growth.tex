@@ -1,3 +1,136 @@
 \chapter{Energy Production Growth in California}
 \label{ch:supply}
-% TODO
+
+This chapter builds the supply side of RQ2, which the proposal left thin. It records what California's generating fleet produced and imported from 2010 to 2025, what capacity it holds and is scheduled to lose, and, from the state's own planning record, how much of what is planned actually gets built and how late. The last section applies that empirical attrition to the current planned list to give probability-weighted supply for 2030 in three cases, symmetric with the confidence weighting the CEC applies to data center requests. Code is in \texttt{src/ch3\_supply.py} and \texttt{notebooks/03\_supply\_growth.ipynb}; the pipeline parses sixteen EIA-923 and sixteen EIA-860 annual files and eighteen EIA-860M monthly files directly from the raw archives.
+
+\section{Generation by resource and imports, 2010--2025}
+\label{sec:generation}
+
+In-state generation comes from the EIA-923 plant-level schedule, with each California plant's reported fuel and prime mover classified into twelve resource classes \citep{eia923}. The EIA-923 totals match the CEC's in-state totals to within one percent in every year for which both exist. Net imports come from the CEC's total-system series, which is statewide and includes the utilities outside CAISO \citep{cec_almanac_gen}; the CEC has not yet published 2025 imports, and its 2021 page repeats the 2020 table, so the multi-year table is used for the import series and the CAISO-only net interchange from Chapter~\ref{ch:current} is shown as a footprint-limited proxy for 2019 to 2025.
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig3_01_generation_by_resource}
+\caption{California electricity supply, 2010--2025: in-state generation by resource (EIA-923) stacked with CEC statewide net imports (2012--2024), the CAISO-only net imports of Chapter~\ref{ch:current} as a proxy, and the shares of solar plus wind, natural gas and imports.}
+\label{fig:generation}
+\end{figure}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{In-state generation by resource and net imports, selected years (TWh). Batteries and pumped storage are net of charging. Source: EIA-923, CEC Energy Almanac, EIA-930.}
+\label{tab:generation}
+\input{tables/ch3_generation}
+\end{table}
+
+In-state generation was 204~TWh in 2010 and 205~TWh in 2025, but its composition inverted (Figure~\ref{fig:generation}, Table~\ref{tab:generation}). Natural gas fell from 109 to 75~TWh, from 53 to 36 percent of in-state generation, and solar rose from under 1 to 55~TWh, so solar and wind together went from 3 to 34 percent. Nuclear halved with the closure of San Onofre, and hydro swung between 14~TWh in the 2015 drought and 42~TWh in 2017. Statewide net imports fell from 103~TWh in 2012, a third of the total system, to 62~TWh in 2024, 22 percent. The total system therefore shrank from 302 to 278~TWh between 2012 and 2024 while in-state generation grew, which is the same flat-demand picture that Chapter~\ref{ch:current} found at the CAISO level, now with the import share falling.
+
+\section{Capacity, storage and curtailment}
+\label{sec:capacity}
+
+Operable nameplate capacity by technology comes from the EIA-860 annual generator files, classified the same way \citep{eia860}; battery energy capacity comes from the EIA-860 energy storage file, which begins in 2016; curtailment is CAISO's monthly wind and solar curtailment series \citep{caiso_curtailment}.
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig3_02_capacity_storage_curtailment}
+\caption{Operable capacity by technology in California (EIA-860, left), battery power and energy capacity (EIA-860 energy storage file, middle) and CAISO wind and solar curtailment by year (right; 2026 covers January to August).}
+\label{fig:capacity}
+\end{figure}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Operable nameplate capacity by technology, battery energy capacity and CAISO curtailment, selected years. Source: EIA-860, CAISO.}
+\label{tab:capacity}
+\input{tables/ch3_capacity}
+\end{table}
+
+Capacity rose from 73~GW in 2010 to 107~GW in 2025 (Figure~\ref{fig:capacity}, Table~\ref{tab:capacity}). Solar added 24~GW and batteries 15~GW, the latter almost entirely since 2020 and holding 51~GWh of energy across 281 units by 2025; gas capacity fell only from 45 to 40~GW and remains the largest block. The battery fleet is what moved the net peak later in the evening in Chapter~\ref{ch:current}. Curtailment of wind and solar rose from 0.2~TWh in 2015 to 3.8~TWh in 2025, and reached 4.9~TWh in the first eight months of 2026 alone, so the midday surplus that Chapter~\ref{ch:current} measured in prices is now also visible as discarded energy of the order of the output of a gigawatt of solar.
+
+\section{Retirement schedule}
+\label{sec:retirements}
+
+Planned retirements come from the EIA-860M operating list of July 2026, which carries a planned retirement date for each unit that has reported one \citep{eia860m}, overlaid with the compliance schedule of the State Water Board's once-through-cooling policy as amended in August 2023 \citep{swrcb_otc2023}. The two agree where both exist: Alamitos units 3 to 5 and Huntington Beach unit 2 report December 2026 and the policy requires compliance by December 31, 2026; Ormond Beach reports January 2027 against the same policy date; Scattergood units 1 and 2 report 2029 against December 31, 2029. Three cases carry no EIA date: LADWP's Haynes units 1, 2 and 8 and Harbor unit 5, which the policy requires to comply by December 31, 2029, and Diablo Canyon, whose compliance date SB~846 extended to October 31, 2030 and whose continued operation beyond that depends on federal licence renewal and further state action. The policy dates are used for those units in case C below, and Diablo Canyon is carried as a scenario.
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig3_03_retirement_schedule}
+\caption{Scheduled retirements in California by year: EIA-860M planned retirement dates by technology, with the once-through-cooling compliance dates hatched for the units that report no EIA date.}
+\label{fig:retirements}
+\end{figure}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Once-through-cooling units and other scheduled retirements through 2030. Source: EIA-860M July 2026, State Water Board OTC Policy Table 1.}
+\label{tab:retirements}
+\resizebox{\textwidth}{!}{\input{tables/ch3_retirements}}
+\end{table}
+
+Scheduled retirements through 2030 total 6.5~GW: 3.4~GW with EIA dates, almost all of it the coastal gas steam units of 2026, 2027 and 2029, plus 0.8~GW of LADWP units at their policy dates and the 2.3~GW of Diablo Canyon. Beyond 2030 the EIA record holds almost nothing, which reflects how retirement dates are reported rather than the age of the fleet.
+
+\section{A supply-side realization model}
+\label{sec:realization}
+
+The CEC discounts data center requests by a confidence level for each tier. The supply side deserves the same treatment, and the EIA-860M monthly files make it possible to estimate one from California's own record. For every California unit in the Planned sheet of the January file of each year from 2016 to 2022, the outcome by the December 2025 file is recorded: operating (or operated and since retired), cancelled (the file's cumulative Canceled or Postponed sheet), still planned, or dropped from the survey without a cancellation record, which is treated as cancelled. Units that appear in more than one January list contribute one observation per vintage, and standard errors are clustered by unit. The sample is 925 unit-vintages of 513 distinct units and 64~GW of planned capacity.
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig3_04_realization_model}
+\caption{The realization model. Top left: outcome by December 2025 of each January planned list, capacity-weighted. Top right: completion by technology, seven vintages pooled. Bottom left: predicted completion within a 4.5-year window from the logistic model for a 50~MW unit. Bottom right: time from the planned to the actual commercial date, as Kaplan-Meier with cancellations censored and as cumulative incidence with cancellation as a competing risk.}
+\label{fig:realization}
+\end{figure}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Outcome by December 2025 of the California planned lists of January 2016 to 2022, by vintage and by construction status at the vintage.}
+\label{tab:vintages}
+\resizebox{\textwidth}{!}{\input{tables/ch3_realization_vintage}}
+\end{table}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Outcome by technology, seven vintages pooled (technologies with at least ten unit-vintages).}
+\label{tab:realtech}
+\resizebox{\textwidth}{!}{\input{tables/ch3_realization_tech}}
+\end{table}
+
+Across the seven vintages, 69 percent of units and 65 percent of planned megawatts were operating by December 2025 (Table~\ref{tab:vintages}); by vintage the capacity-weighted completion rate ranges from 50 percent for January 2018 to 76 percent for January 2020, with the 2021 and 2022 lists still carrying 3 to 4~GW of unresolved projects. Technology matters less than one might expect among the resources that dominate the list: solar completed 71 percent of its planned megawatts, batteries 76 and wind 78 (Table~\ref{tab:realtech}). Natural gas completed 44 percent and geothermal 6 percent, the latter on 23 unit-vintages. Construction status at the vintage is the strongest single signal: units already under construction completed 77 percent of their megawatts, units whose approvals had not been initiated 54 percent.
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Logistic model of completion by December 2025 (unit-vintage observations; standard errors clustered by unit; reference categories solar and approvals not initiated).}
+\label{tab:logit}
+\input{tables/ch3_logit}
+\end{table}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Delay from the planned to the actual commercial date, seven vintages pooled.}
+\label{tab:delay}
+\input{tables/ch3_delay}
+\end{table}
+
+The logistic model (Table~\ref{tab:logit}) puts numbers on these patterns while holding the others fixed. Each additional year of planned lead time cuts the odds of completion within the window by more than half (odds ratio 0.46, $p < 0.001$); each additional year of observation raises them by 17 percent ($p = 0.005$), which is the mechanical effect of giving late projects time to finish; being under construction at the vintage doubles the odds ($p = 0.055$); gas and geothermal have lower odds than solar at conventional or near-conventional significance, and size adds a little (odds ratio 1.17 per log-unit of megawatts, $p = 0.09$). The in-sample AUC is 0.78. The delay curves (Table~\ref{tab:delay}) describe the projects that do finish and the ones that do not: among completed units the median delay from the planned to the actual commercial date is 3 months, a quarter are on time or early and a quarter are more than a year late. Treating cancellation as a competing risk, 53 percent of planned units are operating within 12 months of their planned date, 62 percent within 24 and 70 percent within 60, while 23 percent have been cancelled or dropped by then; the Kaplan-Meier curve with cancellations censored, an upper bound, reaches about 88 percent at six years.
+
+\section{Probability-weighted supply for 2030}
+\label{sec:cases}
+
+The July 2026 EIA-860M planned list for California holds 229 units and 20.1~GW with planned commercial dates through 2030: 9.9~GW of batteries, 7.9~GW of solar, 1.6~GW in two pumped-storage projects whose approvals have not been initiated, 0.3~GW of wind and 0.2~GW of gas engines. Each unit is weighted by the model's completion probability for a window ending December 2030, given its technology, size, lead time and construction status. The weighted list is 13.2~GW, two thirds of the nominal one: 71 percent of the battery and solar megawatts survive, 78 percent of wind, 31 percent of gas and 13 percent of the pumped storage. By status, 88 percent of the megawatts already under construction survive against 36 percent of those whose approvals have not been initiated.
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{ELCC values and derates used for peak contribution, with realised 2023--2025 capacity factors used for energy. Source: CPUC/E3-Astrape 2023 MTR ELCC study, EIA-923 and EIA-860; assumptions as stated.}
+\label{tab:elcc}
+\resizebox{\textwidth}{!}{\input{tables/ch3_elcc}}
+\end{table}
+
+Energy is capacity times the realised 2023 to 2025 capacity factor of each class (batteries and pumped storage contribute no net energy, and for gas the fleet-average factor overstates the energy of the peaking units that retire). Peak contribution uses effective load carrying capability: the CPUC's 2028 tranche values from the E3 and Astrape mid-term reliability study for solar (8.8 percent), in-state wind (14.7), four-hour batteries (76.5) and pumped storage (88.7) \citep{cpuc_elcc2023,cpuc_elcc_memo2023}, and stated derates for firm resources and hydro (Table~\ref{tab:elcc}). Three cases are reported (Figure~\ref{fig:cases}, Table~\ref{tab:cases}): everything on the list builds; the model-weighted list; and the model-weighted list minus the retirements of Section~\ref{sec:retirements}, with Diablo Canyon at its October 2030 policy date and a sensitivity in which it continues.
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig3_05_cases_2030}
+\caption{Capacity by technology for the existing fleet and the three 2030 cases (left), and energy at realised capacity factors and ELCC-derated peak contribution by case (right).}
+\label{fig:cases}
+\end{figure}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Planned supply for 2030 in three cases: capacity by technology (MW), energy at realised capacity factors and ELCC-derated peak contribution.}
+\label{tab:cases}
+\resizebox{\textwidth}{!}{\input{tables/ch3_cases_2030}}
+\end{table}
+
+If everything builds, California's nameplate capacity reaches 128~GW in 2030, 236~TWh a year at realised capacity factors and 78~GW of ELCC-derated peak contribution. The model-weighted case gives 121~GW, 231~TWh and 74~GW. Subtracting 6.5~GW of retirements leaves 114~GW, 204~TWh and 68~GW, or 117~GW, 222~TWh and 71~GW if Diablo Canyon continues. Net of retirements, the supply side therefore adds about 7 to 9~GW of nameplate and 0 to 3~GW of ELCC-derated peak contribution by 2030 relative to the December 2025 fleet, and its energy falls if Diablo Canyon closes, because almost everything being added is solar and batteries whose peak value is a fraction of nameplate. Against that stand the 4~GW of managed net peak growth in the adopted forecast and the 20.7~GW of data center requests located in California from Chapter~\ref{ch:growth}. Setting the two probability-weighted sides against each other is the subject of the next chapter.
