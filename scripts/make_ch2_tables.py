@@ -122,10 +122,13 @@ def main() -> int:
         for r in g.itertuples():
             note = str(r.note) if isinstance(r.note, str) and r.note not in ("", "nan") else ""
             target.append(f"{esc(v)} & {esc(lab)} & {esc(r.utility)} & {esc(r.tier)} & {r.mw:,.0f} & " + r"\texttt{" + esc(short_src(r.source)).replace(r"\_", r"\_\allowbreak{}") + "} & " + esc((src_page(r.source) + ("; " if src_page(r.source) and note else "") + note)[:80]) + r" \\")
-        if g.utility.nunique() > 1 and "Dec 2025" in lab:
+        if g.utility.nunique() > 1 and ("Dec 2025" in lab or "Summer 2025" in lab):
             for u, gu in g.groupby("utility"):
-                target.append(f"{esc(v)} & {esc(lab)} & {esc(u)} & total, three tiers & {gu.mw.sum():,.0f} & sum of the rows above & \\\\")
+                if len(gu) > 1:
+                    target.append(f"{esc(v)} & {esc(lab)} & {esc(u)} & utility total & {gu.mw.sum():,.0f} & sum of the rows above & \\\\")
         target.append(f"{esc(v)} & {esc(lab)} & all & total ({'active' if 'SCE database' in lab else 'all rows'}) & {g[g.tier != 'Canceled'].mw.sum():,.0f} & sum of the rows above & {'excludes canceled' if 'SCE database' in lab else ''} \\\\")
+        if "SCE database" in lab:
+            target.append(f"{esc(v)} & {esc(lab)} & all & total, all records including canceled & {g.mw.sum():,.0f} & sum of the rows above & \\\\")
         target.append(r"\midrule")
     rows_b.append(r"2026-09 & Cal Advocates comments on the Aug 2026 workshop & PG\&E & memo: WPAs filed at the CPUC & 650 & cec\_tn272807 p.3-4 & about 650 MW filed; 3,880 MW stated as signed \\")
     hdr = [r"\begin{tabular}{lp{3.2cm}lp{3.4cm}rp{4.2cm}p{5cm}}", r"\toprule", r"Vintage & Source vintage & Utility & Tier or stage & MW & Source (manifest id, page) & Note \\", r"\midrule"]

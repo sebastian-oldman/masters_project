@@ -1,7 +1,7 @@
 PY=.venv/bin/python
 TODAY=$(shell date +%F)
 
-.PHONY: env fetch fetch-large caiso snapshot catalog lab report clean-parts ch1 ch2 ch3
+.PHONY: env fetch fetch-large caiso snapshot catalog lab report clean-parts ch1 ch2 ch3 provenance
 
 env:                       ## create the virtual environment (Python 3.12) and install pins
 	/opt/homebrew/bin/python3.12 -m venv .venv
@@ -42,3 +42,6 @@ report:                    ## build report/main.pdf with tectonic
 
 clean-parts:               ## remove interrupted downloads
 	find data/raw -name '*.part' -delete
+
+provenance:                ## appendix tables mapping every figure to its processed files, raw sources and code
+	$(PY) scripts/make_provenance_appendix.py

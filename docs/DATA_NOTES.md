@@ -345,3 +345,21 @@ LaTeX tables. Numbers not printed on a figure are listed here with their source;
   Ad-hoc code must do the same (the `TypeError: argument of type 'method' is not iterable` in a check on 2026-09-22 was a throwaway
   snippet indexing a duplicated id, not the pipeline).
 
+## Provenance appendix (2026-09-22)
+
+`scripts/make_provenance_appendix.py` (`make provenance`) writes `report/tables/provenance_ch1..3.tex`, one row per figure: content,
+processed files, raw manifest ids and the producing code; it fails if a named figure or processed file is missing. The appendix
+`report/sections/07_appendix_provenance.tex` is the last chapter of the report so a reader of the PDF can trace each figure to its
+data without the repository. Third pass on chapters 1-2: the only patch failure on 2026-09-22 (an assertion on the forecast sentence
+in the chapter 2 text, whose wording differed by one word) was re-applied with the exact sentence; verified: the sentence now reads
+"July 2027 at $95 to $98 billion and July 2028 at $115 to $133 billion, bands $51 to $259 billion", the notebook carries the same
+wording and the transcription table cell, and the five new tables (`ch1_svp`, `ch1_gas_comparability`, `ch2_tier_vintages_detail`,
+`_b`, `_c`) exist and compile. Residual text-only numbers are the derived ratios and source-document facts listed in the previous
+section.
+
+## Cross-chapter number check (2026-09-22, final)
+
+Every quantified number in each chapter text was searched in the text of all report figures (PDF text layer) and all LaTeX tables.
+- chapter 1: 81 numbers, 77 found; text-only: 1.8, 242, 3.70, 9331619 (EPRI's own figures 9,331,619 MWh and 3.70%; rounded values 242 = 241.9, 1.8 = 1.78, 117 = 116.6, 9.9 = 9,922 MW, 278 = 216 + 62; and the derived differences 3,100 and 8,000).
+- chapter 2: 81 numbers, 79 found; text-only: 3100, 8000 (EPRI's own figures 9,331,619 MWh and 3.70%; rounded values 242 = 241.9, 1.8 = 1.78, 117 = 116.6, 9.9 = 9,922 MW, 278 = 216 + 62; and the derived differences 3,100 and 8,000).
+- chapter 3: 70 numbers, 67 found; text-only: 117, 278, 9.9 (EPRI's own figures 9,331,619 MWh and 3.70%; rounded values 242 = 241.9, 1.8 = 1.78, 117 = 116.6, 9.9 = 9,922 MW, 278 = 216 + 62; and the derived differences 3,100 and 8,000).
