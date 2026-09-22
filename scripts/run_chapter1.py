@@ -159,13 +159,13 @@ def main() -> int:
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 4))
     d = pst[pst.node.isin(c1.DLAPS)].pivot(index="year", columns="label", values="hours_negative")
-    d.plot.bar(ax=axes[0], rot=0); axes[0].set_ylabel("Hours with day-ahead LMP < $0"); axes[0].set_title("Negative-price hours per year by DLAP\n(2023 = Jul-Dec only; 2026 = Jan-Sep 22 only)")
+    d.plot.bar(ax=axes[0], rot=0); axes[0].set_ylim(0, 1350); axes[0].legend(title=None, fontsize=8, loc="upper left"); axes[0].set_ylabel("Hours with day-ahead LMP < $0"); axes[0].set_title("Negative-price hours per year by DLAP\n(2023 = Jul-Dec only; 2026 = Jan-Sep 22 only)")
     for node, lab in c1.DLAPS.items():
         g = nbm[node].unstack("year")
         for y in (2024, 2025, 2026):
             if y in g.columns:
                 axes[1].plot(g.index, g[y], marker="o", ms=3, label=f"{lab} {y}", alpha=0.85 if y != 2026 else 0.6)
-    axes[1].set_xlabel("Month"); axes[1].set_ylabel("Negative-price hours"); axes[1].set_title("Negative-price hours by month"); axes[1].legend(fontsize=6.5, ncol=3)
+    axes[1].set_xlabel("Month"); axes[1].set_ylabel("Negative-price hours"); axes[1].set_title("Negative-price hours by month"); axes[1].set_ylim(0, 430); axes[1].legend(fontsize=6.5, ncol=3, loc="upper right")
     save(fig, "fig1_06_negative_price_hours")
 
     # ------------------------------------------------------------------ 3. carbon intensity
@@ -196,7 +196,7 @@ def main() -> int:
         g = diurnal[(diurnal.year == 2025) & (diurnal.season == s)]
         axes[2].plot(g.hour, g.intensity_g_per_kWh, ls, label=f"2025 {s}")
     g = diurnal[(diurnal.year == 2019)].groupby("hour")["intensity_g_per_kWh"].mean(); axes[2].plot(g.index, g.values, color="grey", lw=2, alpha=0.6, label="2019 all seasons")
-    axes[2].set_xlabel("Hour of day (local)"); axes[2].set_title("Average diurnal intensity"); axes[2].legend(fontsize=7)
+    axes[2].set_xlabel("Hour of day (local)"); axes[2].set_title("Average diurnal intensity"); axes[2].set_ylim(0, 430); axes[2].legend(fontsize=7, ncol=3, loc="upper center")
     save(fig, "fig1_07_carbon_intensity")
 
     # ------------------------------------------------------------------ 4. existing data center load, four ways

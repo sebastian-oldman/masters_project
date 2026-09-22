@@ -92,12 +92,10 @@ def main() -> int:
                              (kbi, len(y), "C3", f"post-ChatGPT trend: {100*res['cagr_post']:.0f}%/yr [{100*res['cagr_post_lo']:.0f}, {100*res['cagr_post_hi']:.0f}]")):
         X = c2.trend_X(hi - lo); beta, *_ = np.linalg.lstsq(X, y[lo:hi], rcond=None)
         ax.plot(s.index[lo:hi], np.exp(X @ beta) / 1000, color=col, lw=2, label=lab)
-    for b in bp["breaks_bic"]:
-        ax.axvline(s.index[b], color="C2", ls=":", lw=1.2)
-    ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1)
-    ax.text(c2.CHATGPT, 1.3, " ChatGPT\n Nov 2022", color="grey", fontsize=8, va="bottom")
-    ax.text(s.index[bp["breaks_bic"][0]], 40, " Bai-Perron breaks (BIC):\n " + ", ".join(s.index[b].strftime("%b %Y") for b in bp["breaks_bic"]), color="C2", fontsize=7.5, va="bottom")
-    ax.set_yscale("log"); ax.set_ylabel("Billion dollars per year (log scale)"); ax.set_title(f"Log-linear trends and breaks (Chow F = {res['chow_F']:.0f}, p < 0.001)"); ax.legend(fontsize=7.5, loc="upper left")
+    for k, b in enumerate(bp["breaks_bic"]):
+        ax.axvline(s.index[b], color="C2", ls=":", lw=1.2, label=("BP breaks (BIC): " + ", ".join(s.index[bb].strftime("%b %Y") for bb in bp["breaks_bic"])) if k == 0 else None)
+    ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1, label="ChatGPT launch, Nov 2022")
+    ax.set_yscale("log"); ax.set_ylabel("Billion dollars per year (log scale)"); ax.set_title(f"Log-linear trends and breaks (Chow F = {res['chow_F']:.0f}, p < 0.001)"); ax.legend(fontsize=7.5, loc="upper center", bbox_to_anchor=(0.5, -0.10), ncol=2, frameon=False)
     ax = axes[1]
     ax.plot(s.index[-60:], s.iloc[-60:] / 1000, color="k", lw=1.2, label="observed")
     for f, col, lab in ((fa, "C0", f"ARIMA{ia['order']} with drift"), (fe, "C1", "ETS (A,Ad,N)")):
@@ -106,6 +104,7 @@ def main() -> int:
         ax.fill_between(f.index, f["lo95"] / 1000, f["hi95"] / 1000, color=col, alpha=0.12)
     ax.set_ylabel("Billion dollars per year"); ax.set_title("24-month forecasts with 80% and 95% prediction bands"); ax.legend(fontsize=8, loc="upper left")
     ax.xaxis.set_major_locator(mdates.YearLocator()); ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    fig.subplots_adjust(bottom=0.27, wspace=0.22)
     save(fig, "fig2_02_census_breaks_and_forecast")
 
     # ------------------------------------------------------------ 3. California proxies
@@ -133,6 +132,7 @@ def main() -> int:
     comp = pd.DataFrame(rows); comp.to_csv(PROCESSED / "ch2_break_test_comparison.csv", index=False)
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 7.2))
+    fig.subplots_adjust(wspace=0.36, hspace=0.30)  # room for the twin-axis label between the top panels
     ax = axes[0, 0]; ax.plot(st.index, st["employment"] / 1000, color="C0", label="employment (thousands, left)"); ax.set_ylabel("Employment (thousands)")
     ax2 = ax.twinx(); ax2.plot(st.index, st["qtrly_estabs"], color="C1", label="establishments (right)"); ax2.set_ylabel("Establishments"); ax2.grid(False)
     ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1); ax.set_title("California NAICS 518210 (data processing, hosting), BLS QCEW, private"); ax.legend(loc="upper left", fontsize=8); ax2.legend(loc="lower right", fontsize=8)
@@ -142,8 +142,8 @@ def main() -> int:
     ax.axvline(c2.CHATGPT, color="grey", ls="--", lw=1); ax.set_title("Epoch AI Frontier Data Centers Hub, cumulative facility power"); ax.set_ylabel("GW"); ax.legend(fontsize=8, loc="upper left")
     ax = axes[1, 1]; ax.axis("off")
     cell = []
-    short = {"Census data center construction": "Census US DC construction", "QCEW 518210 California employment": "QCEW CA employment", "QCEW 518210 California establishments": "QCEW CA establishments",
-             "QCEW 518210 California wages": "QCEW CA wages", "CBRE Silicon Valley MW under construction": "CBRE SV under construction", "Epoch frontier sites, United States cumulative MW": "Epoch US cumulative MW",
+    short = {"Census data center construction": "Census US construction", "QCEW 518210 California employment": "QCEW CA employment", "QCEW 518210 California establishments": "QCEW CA establishments",
+             "QCEW 518210 California wages": "QCEW CA wages", "CBRE Silicon Valley MW under construction": "CBRE SV construction", "Epoch frontier sites, United States cumulative MW": "Epoch US cumulative MW",
              "Epoch frontier sites, California cumulative MW": "Epoch CA cumulative MW"}
     for _, r in comp.iterrows():
         nm = short.get(r["series"].split(" (")[0], r["series"][:26])
@@ -151,8 +151,14 @@ def main() -> int:
             cell.append([nm, f"{r['chow_p']:.3f}", f"{100*r['cagr_pre']:.0f}% -> {100*r['cagr_post']:.0f}%", str(r.get("bp_break1", "")), f"{int(r['bp_m_bic'])}/{int(r['bp_m_lwz'])}/{int(r['bp_m_seq'])} (last {str(r.get('bp_breaks_bic', '')).split(', ')[-1]})" if r.get("bp_m_bic", 0) else "0/0/0"])
         else:
             cell.append([nm, "n/a", "n/a", "n/a", "no CA site (0 of 87)"])
-    tb = ax.table(cellText=cell, colLabels=["series", "Chow p", "growth pre -> post", "BP 1 break", "m BIC/LWZ/seq. (last)"], loc="center", cellLoc="left", colWidths=[0.30, 0.09, 0.19, 0.12, 0.30])
-    tb.auto_set_font_size(False); tb.set_fontsize(6.2); tb.scale(1, 1.6); ax.set_title("Break tests: known break = first period after Nov 2022; BP = Bai-Perron", fontsize=9)
+    tb = ax.table(cellText=cell, colLabels=["series", "Chow\np", "growth\npre -> post", "BP\nbreak", "m: BIC / LWZ / seq.\n(last break)"], loc="center", cellLoc="left", colWidths=[0.28, 0.08, 0.16, 0.11, 0.37])
+    tb.auto_set_font_size(False); tb.set_fontsize(5.8); tb.scale(1, 1.6)
+    for ci in range(5):
+        tb[0, ci].set_height(tb[0, ci].get_height() * 1.8); tb[0, ci].get_text().set_ha("center"); tb[0, ci].set_text_props(ha="center")
+    for (ri, ci), c_ in tb.get_celld().items():
+        if ri == 0:
+            c_.set_text_props(fontsize=5.8, weight="bold")
+        c_.PAD = 0.03; ax.set_title("Break tests: known break = first period after Nov 2022; BP = Bai-Perron", fontsize=9)
     save(fig, "fig2_03_california_proxies")
 
     # ------------------------------------------------------------ 4. tier vintages
@@ -173,7 +179,7 @@ def main() -> int:
             return None
         seen.add(t); return t
     cols = {"Signed agreement": "#1b7837", "Active application": "#5aae61", "Inquiry": "#a6dba0", "Agreements + applications (no inquiries)": "#7fbf7b", "All tiers": "#bdbdbd", "Canceled": "#d9534f"}
-    vint = [("2024-12", "Dec 2024\n(PG&E+SCE, no inquiries)"), ("2025-08", "Summer 2025\n(PG&E, SCE split;\n5 others unsplit)"), ("2025-12", "Dec 2025\n(7 utilities by tier)")]
+    vint = [("2024-12", "Dec 2024\n(PG&E+SCE,\nno inquiries)"), ("2025-08", "Summer 2025\n(PG&E, SCE split;\n5 others unsplit)"), ("2025-12", "Dec 2025\n(7 utilities by tier)")]
     xs = np.arange(len(vint))
     for i, (v, lab) in enumerate(vint):
         d = tv[(tv.vintage == v) & (~tv.label.str.contains("SCE database|PG&E earnings"))]
