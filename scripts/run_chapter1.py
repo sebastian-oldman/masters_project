@@ -55,6 +55,20 @@ def main() -> int:
         fm0.to_parquet(fmp0)
     h, flagged = c1.clean_demand_against_caiso(h, ci0, fuelmix_hourly=fm0)
     flagged.to_csv(PROCESSED / "ch1_eia930_flagged_hours.csv")
+    # EIA-930 has no CISO interchange for 2024-07-02..2024-11-03 (any variant) and no hydro for parts of
+    # 2019-2020: fill from CAISO's own five-minute series via per-year linear calibration and log it.
+    h["imports"] = -h["interchange"]
+    h, log_imp = c1.fill_from_caiso(h, "imports", fm0["imports"])
+    h["interchange"] = -h["imports"]
+    hydro_caiso = fm0["hydro_total"]
+    h, log_hyd = c1.fill_from_caiso(h, "hydro", hydro_caiso)
+    logs = [log_imp, log_hyd]
+    for col, src in (("solar", "solar"), ("wind", "wind"), ("gas", "natural_gas"), ("nuclear", "nuclear")):
+        if src in fm0:
+            h, lg = c1.fill_from_caiso(h, col, fm0[src]); logs.append(lg)
+    h["net_load"] = h["demand"] - h["solar"].fillna(0) - h["wind"].fillna(0)
+    pd.concat(logs).to_csv(PROCESSED / "ch1_eia930_fill_log.csv", index=False)
+    print(f"  filled {int(log_imp.n_filled.sum())} interchange hours, {int(log_hyd.n_filled.sum())} hydro hours and {int(sum(l.n_filled.sum() for l in logs[2:]))} fuel hours from CAISO series")
     h = c1.add_storage_adjusted(h, fm0)
     h.to_parquet(PROCESSED / "ciso_hourly_2019_2025_clean.parquet")
     print(f"  flagged {len(flagged)} EIA-930 hours as reporting artifacts (nulled)")
@@ -193,12 +207,16 @@ def main() -> int:
     pts = c1.kollar_grady_california(); pts.to_csv(PROCESSED / "ch1_kollar_grady_points_california_flag.csv", index=False)
     n_ca, n_sc = int(pts.in_california.sum()), int(pts.santa_clara_12km.sum())
     e23 = float(svp.loc[svp.fact_sheet_year == 2023, "energy_GWh_est"].iloc[0]) / 1000
-    bu = c1.bottom_up_estimate(n_ca, n_sc, 0.55 * e23)
+    epoch = pd.read_csv(c1.raw_path("epoch_data_centers"))
+    n_epoch_ca = int(epoch["Address"].astype(str).str.contains(r", CA\b|California", regex=True).sum())
+    bu = c1.bottom_up_estimate(n_ca, n_sc, svp_dc_peak_MW=0.55 * 746.0, n_epoch_ca=n_epoch_ca)
     est = c1.dc_load_estimates(retail_2024, 2024)
     est = pd.concat([est, pd.DataFrame([dict(method="Count-based bottom-up: Kollar-Grady facilities x avg load (Epoch: no CA sites)",
                                               low_TWh=bu["low_TWh"], central_TWh=bu["central_TWh"], high_TWh=bu["high_TWh"],
-                                              basis=f"{n_ca} Kollar-Grady facility points inside California ({n_sc} within 12 km of Santa Clara); average load per facility 3.0 MW (low), {bu['svp_avg_load_MW_per_facility']:.1f} MW (SVP-anchored central: 55% of SVP energy over 58 data centers), 6.5 MW (high); Epoch AI Frontier Data Centers Hub lists no California site",
-                                              source="kollar_grady_2025_zenodo; svp_assembly_hearing_2026_01_28; epoch_data_centers",
+                                              basis=(f"{n_ca} Kollar-Grady facility points inside California ({n_sc} within 12 km of Santa Clara) plus {n_epoch_ca} Epoch AI frontier sites in California; "
+                                                     f"average peak per facility {bu['avg_peak_MW_per_facility_svp_anchor']:.1f} MW (SVP anchor: 55% of a 746 MW system peak over 58 data centers) scaled 0.7/1.0/1.3; "
+                                                     f"utilization 0.50/0.67/0.80 (SVP observed 64-67% of requested capacity); energy = count x peak x utilization x 8760"),
+                                              source="kollar_grady_2025_zenodo; epoch_data_centers; svp_assembly_hearing_2026_01_28; cec_tn264908",
                                               retail_sales_TWh=retail_2024, retail_year=2024)])], ignore_index=True)
     for k in ("low", "central", "high"):
         est[f"{k}_share_pct"] = est[f"{k}_TWh"] / retail_2024 * 100
@@ -208,7 +226,7 @@ def main() -> int:
     (PROCESSED / "ch1_bottom_up_inputs.json").write_text(json.dumps(bu, indent=1))
 
     fig, ax = plt.subplots(figsize=(8.5, 3.9))
-    ylab = ["EPRI 2024 state table\n(2023 consumption)", "CEC: 1,000 MW existing peak\nx load factor 0.80-0.95", "Count-based bottom-up:\nKollar-Grady CA facilities x avg load", "Silicon Valley Power cluster only\n(53-60% of SVP energy)"]
+    ylab = ["EPRI 2024 state table\n(2023 consumption)", "CEC: 1,000 MW existing peak\nx load factor 0.80-0.95", "Count-based bottom-up: 321 Kollar-Grady\nfacilities x avg peak x utilization 0.5-0.8", "Silicon Valley Power cluster only\n(53-60% of SVP energy)"]
     for i, r in est.iterrows():
         ax.barh(i, r.high_TWh - r.low_TWh, left=r.low_TWh, height=0.5, color=["C0", "C1", "C2", "C3"][i], alpha=0.35)
         ax.plot([r.central_TWh], [i], "k|", ms=18, mew=2)

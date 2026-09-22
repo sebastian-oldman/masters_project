@@ -153,3 +153,22 @@ California 810 MW and Southern California 355 MW of colocation inventory). The S
   design; SB 57 chaptered 2025-10-11; SB 886 chaptered 2026-09-21 (tariffs by 2028-01-01); AB 222 held 2025-08-29;
   PG&E Rule 30 interim approved 2025-07-24; PG&E pipeline 1.5 GW (Feb 2025) -> 10 GW (Jul 2025) -> >12 GW (Q2 2026);
   SCE public database Jan 2026: 8,298 MW requested, 3,137 MW canceled.
+
+## Chapter 1 audit corrections (2026-09-21, second pass)
+
+- **EIA-930 interchange gap.** No CISO interchange value exists in the reported, imputed or adjusted columns from
+  2024-07-02 to 2024-11-03 (2,232 hours), plus 24-96 hours in 2021, 2023 and 2025. Hydro is missing for 2,196 hours
+  of 2019 and 5,675 of 2020. Reading only the Adjusted columns had silently undercounted 2024 net imports (23.4 TWh);
+  the loader now coalesces adjusted -> imputed -> reported, and remaining gaps are filled from CAISO's own five-minute
+  imports and hydro (hourly means) through a per-year linear calibration fitted on overlapping hours (imports:
+  correlation 0.986-0.995, EIA = 0.9 x CAISO + ~0.9 GW). Corrected 2024 net imports: 31.7 TWh (14 percent of demand).
+  Fill log: `ch1_eia930_fill_log.csv`.
+- **Carbon intensity.** CAISO nets export emissions against imports, so net CO2 is negative in 374 hours of 2024 and
+  425 of 2025. Those hours were previously dropped; intensity is now floored at zero and the hours kept. Annual
+  energy-weighted intensity: 2024 201 g/kWh, 2025 188 g/kWh (was 207 and 195).
+- **Bottom-up estimate** now separates facility count (321 Kollar-Grady points in California; Epoch has 0 California
+  addresses of 87, checked programmatically) x average peak per facility (SVP anchor 7.1 MW, scaled 0.7/1.0/1.3) x
+  utilization (0.50/0.67/0.80): 7.0-20.7 TWh (2.8-8.4 percent of 2024 retail sales).
+- **Exploration-time errors** seen while building the chapter (eGRID path guess, EIA-861 header lookup, pandas fillna
+  with an ndarray, CAISO '0:05' timestamps, a broken string in the table generator) were all fixed in
+  `src/ch1_baseline.py` and `scripts/make_ch1_tables.py`; none affects the outputs, which are produced by `make ch1`.

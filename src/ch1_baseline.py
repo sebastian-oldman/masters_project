@@ -59,8 +59,31 @@ _FUEL_MAP = {  # output column -> substrings matched against EIA-930 "(Adjusted)
 }
 
 
-def _pick(cols: list[str], subs: list[str]) -> list[str]:
-    return [c for c in cols if "(Adjusted)" in c and any(s in c for s in subs)]
+VARIANTS = (" (Adjusted)", " (Imputed)", "")  # preference order: EIA adjusted, then imputed, then as reported
+
+
+def _pick(cols: list[str], subs: list[str], variant: str = " (Adjusted)") -> list[str]:
+    """Columns for a fuel group in one reporting variant ('' = raw column with no suffix)."""
+    out = []
+    for c in cols:
+        if not any(sub in c for sub in subs):
+            continue
+        base = c.replace("  ", " ")
+        if variant:
+            if variant.strip() in c:
+                out.append(c)
+        else:
+            if "(Adjusted)" not in c and "(Imputed)" not in c:
+                out.append(c)
+    return out
+
+
+def _coalesce(frames):
+    """Element-wise first non-null across a list of Series (preference order)."""
+    out = frames[0].copy()
+    for f in frames[1:]:
+        out = out.where(out.notna(), f)
+    return out
 
 
 def load_eia930_ciso(first_year: int = 2019, last_year: int = 2025, ba: str = "CISO") -> pd.DataFrame:
@@ -71,34 +94,25 @@ def load_eia930_ciso(first_year: int = 2019, last_year: int = 2025, ba: str = "C
         if yr < first_year or yr > last_year:
             continue
         cols = pd.read_csv(f, nrows=0).columns.tolist()
-        want = ["Balancing Authority", "UTC Time at End of Hour", "Demand (MW) (Adjusted)", "Net Generation (MW) (Adjusted)",
-                "Total Interchange (MW) (Adjusted)", "Demand (MW)", "Demand (MW) (Imputed)"]
-        fuel_cols = {k: _pick(cols, v) for k, v in _FUEL_MAP.items()}
-        usecols = [c for c in want if c in cols] + sum(fuel_cols.values(), [])
+        totals = {"demand": "Demand (MW)", "net_generation": "Net Generation (MW)", "interchange": "Total Interchange (MW)"}
+        total_cols = [c for k, base in totals.items() for v in VARIANTS for c in [base + v] if c in cols]
+        fuel_cols = {k: {v: _pick(cols, subs, v) for v in VARIANTS} for k, subs in _FUEL_MAP.items()}
+        usecols = ["Balancing Authority", "UTC Time at End of Hour"] + total_cols + sorted({c for k in fuel_cols.values() for cs in k.values() for c in cs})
         parts = []
         for chunk in pd.read_csv(f, usecols=usecols, chunksize=400_000, low_memory=False):
             parts.append(chunk[chunk["Balancing Authority"] == ba])
-        d = pd.concat(parts)
-        out = pd.DataFrame({
-            "time_utc": pd.to_datetime(d["UTC Time at End of Hour"], format="%m/%d/%Y %I:%M:%S %p", utc=True),
-            "demand": pd.to_numeric(d["Demand (MW) (Adjusted)"], errors="coerce"),
-            "net_generation": pd.to_numeric(d["Net Generation (MW) (Adjusted)"], errors="coerce"),
-            "interchange": pd.to_numeric(d["Total Interchange (MW) (Adjusted)"], errors="coerce"),
-        })
-        # fall back to raw / imputed demand where adjusted is missing
-        raw = pd.to_numeric(d.get("Demand (MW)"), errors="coerce") if "Demand (MW)" in d else None
-        imp = pd.to_numeric(d.get("Demand (MW) (Imputed)"), errors="coerce") if "Demand (MW) (Imputed)" in d else None
-        if imp is not None:
-            out["demand"] = out["demand"].fillna(pd.Series(imp.values, index=out.index))
-        if raw is not None:
-            out["demand"] = out["demand"].fillna(pd.Series(raw.values, index=out.index))
-        for k, cs in fuel_cols.items():
-            out[k] = d[cs].apply(pd.to_numeric, errors="coerce").sum(axis=1, min_count=1).values if cs else np.nan
+        d = pd.concat(parts).reset_index(drop=True)
+        out = pd.DataFrame({"time_utc": pd.to_datetime(d["UTC Time at End of Hour"], format="%m/%d/%Y %I:%M:%S %p", utc=True)})
+        for k, base in totals.items():  # adjusted, else imputed, else as reported
+            series = [pd.to_numeric(d[base + v], errors="coerce") for v in VARIANTS if base + v in d]
+            out[k] = _coalesce(series).values if series else np.nan
+        for k, byvar in fuel_cols.items():
+            series = [d[cs].apply(pd.to_numeric, errors="coerce").sum(axis=1, min_count=1) for v, cs in byvar.items() if cs]
+            out[k] = _coalesce(series).values if series else np.nan
         frames.append(out)
     df = pd.concat(frames).drop_duplicates("time_utc").sort_values("time_utc").set_index("time_utc")
     df.index = df.index.tz_convert(TZ)
     df.index.name = "hour_ending_local"
-    df = df[(df.index.year >= first_year) & (df.index.year <= last_year)] if False else df
     start = df.index - pd.Timedelta(hours=1)
     df["year"] = start.year
     df["month"] = start.month
@@ -299,8 +313,12 @@ def load_caiso_outlook_hourly(first_year: int = 2019, last_year: int = 2025) -> 
     d = pd.concat(out)
     d["t"] = pd.to_datetime(d["date"]) + pd.to_timedelta(d["hour"], unit="h")
     d = d.set_index("t").sort_index()
-    d["intensity_g_per_kWh"] = d["co2_total_tph"] / d["demand_MW"] * 1000.0
-    d.loc[(d["demand_MW"] <= 5000) | (d["intensity_g_per_kWh"] < 0), "intensity_g_per_kWh"] = np.nan
+    # CAISO reports import CO2 net of exports, so net CO2 can be negative in export-heavy hours;
+    # intensity is floored at zero rather than dropping those hours (they are counted in net_co2_negative).
+    d["net_co2_negative"] = d["co2_total_tph"] < 0
+    d["co2_total_clipped_tph"] = d["co2_total_tph"].clip(lower=0)
+    d["intensity_g_per_kWh"] = d["co2_total_clipped_tph"] / d["demand_MW"] * 1000.0
+    d.loc[d["demand_MW"] <= 5000, "intensity_g_per_kWh"] = np.nan
     d["year"] = d.index.year
     d["month"] = d.index.month
     d["season"] = d["month"].map(SEASON)
@@ -311,7 +329,8 @@ def carbon_summary(ci: pd.DataFrame) -> pd.DataFrame:
     g = ci.dropna(subset=["intensity_g_per_kWh"]).groupby("year")
     s = pd.DataFrame({
         "hours": g["intensity_g_per_kWh"].count(),
-        "energy_weighted_g_per_kWh": g["co2_total_tph"].sum() / g["demand_MW"].sum() * 1000,
+        "hours_net_co2_negative": g["net_co2_negative"].sum(),
+        "energy_weighted_g_per_kWh": g["co2_total_clipped_tph"].sum() / g["demand_MW"].sum() * 1000,
         "hourly_mean_g_per_kWh": g["intensity_g_per_kWh"].mean(),
         "p5_g_per_kWh": g["intensity_g_per_kWh"].quantile(0.05),
         "p95_g_per_kWh": g["intensity_g_per_kWh"].quantile(0.95),
@@ -427,8 +446,10 @@ def load_caiso_fuelmix_hourly(first_year: int = 2019, last_year: int = 2025) -> 
             continue
         d["hour"] = pd.to_numeric(d["Time"].astype(str).str.split(":").str[0], errors="coerce")
         d = d.dropna(subset=["hour"])
-        cols = [c for c in ["Solar", "Wind", "Batteries", "Imports", "Natural Gas", "Large Hydro", "Nuclear"] if c in d.columns]
+        cols = [c for c in ["Solar", "Wind", "Batteries", "Imports", "Natural Gas", "Large Hydro", "Small hydro", "Nuclear", "Geothermal"] if c in d.columns]
         h = d.groupby(d["hour"].astype(int))[cols].mean(numeric_only=True)
+        hyd = [c for c in d.columns if "hydro" in c.lower()]  # 'Large Hydro' + 'Small hydro', or a single 'Hydro' in older files
+        h["hydro_total"] = d.groupby(d["hour"].astype(int))[hyd].mean(numeric_only=True).sum(axis=1, min_count=1) if hyd else np.nan
         h["date"] = pd.Timestamp(day)
         out.append(h.reset_index())
     d = pd.concat(out)
@@ -513,16 +534,20 @@ def kollar_grady_california() -> pd.DataFrame:
     return pts
 
 
-def bottom_up_estimate(n_ca: int, n_svp_cluster: int, svp_dc_energy_TWh: float, svp_dc_count: int = 58) -> dict:
-    """Count-based bottom-up: California facility count x average load per facility.
+def bottom_up_estimate(n_ca: int, n_svp_cluster: int, svp_dc_peak_MW: float, svp_dc_count: int = 58,
+                       util=(0.50, 0.67, 0.80), size_scale=(0.70, 1.00, 1.30), n_epoch_ca: int = 0) -> dict:
+    """Count-based bottom-up: facilities x average peak capacity per facility x utilization (load factor).
 
-    Average load per facility is anchored on Silicon Valley Power (58 data centers, 55% of SVP energy);
-    ranges combine facility size and utilization: low = 3 MW average load, high = 6.5 MW, central = SVP anchor.
+    Average peak per facility is anchored on Silicon Valley Power (58 data centers taking 55% of a 746 MW
+    system peak); size_scale brackets it by -30%/+30%. Utilization brackets SVP's observed 64-67% of
+    capacity (the origin of the CEC's 67% factor) with 50% and 80%.
     """
-    svp_avg_MW = svp_dc_energy_TWh * 1e6 / 8760 / svp_dc_count
-    return {"n_california_facilities": n_ca, "n_within_12km_of_santa_clara": n_svp_cluster, "svp_data_centers": svp_dc_count,
-            "svp_avg_load_MW_per_facility": svp_avg_MW,
-            "low_TWh": n_ca * 3.0 * 8760 / 1e6, "central_TWh": n_ca * svp_avg_MW * 8760 / 1e6, "high_TWh": n_ca * 6.5 * 8760 / 1e6}
+    avg_peak = svp_dc_peak_MW / svp_dc_count
+    lo, c, hi = (n_ca * avg_peak * sc * u * 8760 / 1e6 for sc, u in zip(size_scale, util))
+    return {"n_california_facilities_kollar_grady": n_ca, "n_within_12km_of_santa_clara": n_svp_cluster,
+            "n_epoch_california_sites": n_epoch_ca, "svp_data_centers": svp_dc_count, "svp_dc_peak_MW": svp_dc_peak_MW,
+            "avg_peak_MW_per_facility_svp_anchor": avg_peak, "size_scale_low_central_high": list(size_scale),
+            "utilization_low_central_high": list(util), "low_TWh": lo, "central_TWh": c, "high_TWh": hi}
 
 
 def _to_hour_ending(s: pd.Series) -> pd.Series:
@@ -557,13 +582,30 @@ def clean_demand_against_caiso(h: pd.DataFrame, caiso_hourly: pd.DataFrame, tol:
 def add_storage_adjusted(h: pd.DataFrame, fm: pd.DataFrame) -> pd.DataFrame:
     """Add demand_ex_storage and net_load_ex_storage: EIA-930 demand minus battery charging
     (CAISO fuel-mix 'Batteries' is negative when charging), i.e. end-use load as CAISO reports it."""
-    b = fm["batteries"].copy()
-    b.index = b.index.tz_localize(TZ, ambiguous="NaT", nonexistent="NaT") if b.index.tz is None else b.index
-    b = b[~b.index.isna()]
-    b.index = b.index + pd.Timedelta(hours=1)
-    b = b[~b.index.duplicated()]
+    b = _to_hour_ending(fm["batteries"])
     out = h.join(b.rename("battery_caiso"), how="left")
     charging = (-out["battery_caiso"]).clip(lower=0).fillna(0)
     out["demand_ex_storage"] = out["demand"] - charging
     out["net_load_ex_storage"] = out["net_load"] - charging
     return out
+
+
+def fill_from_caiso(h: pd.DataFrame, target: str, source: pd.Series, min_overlap: int = 2000) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Fill gaps in an EIA-930 series from a CAISO series through a per-year linear calibration
+    (EIA = a x CAISO + b, fitted on hours where both exist). Returns (filled frame, fill log)."""
+    src = _to_hour_ending(source).reindex(h.index)
+    out = h.copy()
+    log = []
+    for y, idx in h.groupby("year").groups.items():
+        e = h.loc[idx, target]
+        c = src.loc[idx]
+        both = e.notna() & c.notna()
+        missing = e.isna() & c.notna()
+        if both.sum() < min_overlap or missing.sum() == 0:
+            log.append({"year": y, "target": target, "n_missing": int(e.isna().sum()), "n_filled": 0, "slope": np.nan, "intercept": np.nan, "corr": np.nan})
+            continue
+        a, b = np.polyfit(c[both].values, e[both].values, 1)
+        out.loc[idx[missing.values], target] = a * c[missing].values + b
+        log.append({"year": y, "target": target, "n_missing": int(e.isna().sum()), "n_filled": int(missing.sum()),
+                    "slope": float(a), "intercept": float(b), "corr": float(np.corrcoef(c[both], e[both])[0, 1])})
+    return out, pd.DataFrame(log)
