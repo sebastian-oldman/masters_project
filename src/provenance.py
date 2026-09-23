@@ -65,3 +65,63 @@ def stamp(fig, fig_name: str, fontsize: float = 5.8) -> None:
     width_chars = max(90, int(bb.width * 24))
     txt = textwrap.fill(source_line(fig_name), width=width_chars)
     fig.text(bb.x0 / w_in, bb.y0 / h_in - 0.012, txt, ha="left", va="top", fontsize=fontsize, color="0.3", linespacing=1.25)
+
+
+# ---------------------------------------------------------------- resolving the raw-source labels of ROWS to manifest ids
+_CED_FORMS = ["cec_tn268722", "cec_tn268725", "cec_tn268726", "cec_tn268727"]
+_REGIME_SOURCES = ["cec_dc_methodology_memo_2026", "cec_tn272026", "cec_assembly_hearing_2026_01_28", "cec_tn268459", "ercot_tac_2026_03_large_load_status", "ercot_monthly_2025_11",
+                   "ercot_ops_overview_2026_06", "ercot_house_hearing_2026_04_09", "ercot_nprr1267_status_report_proposal", "pjm_lar_summary_2025_11_24", "pjm_2026_load_forecast_report",
+                   "pjm_2026_load_report_tables", "eia_press585_dc_pilot_surveys", "texas_sb6_2025_enrolled", "caiso_comments_ferc_rm26_4_2025_11", "nerc_rm26_4_accelerated_plan_2026_03",
+                   "ferc_news_2026_04_16_large_load", "ferc_news_2026_06_18_show_cause"]
+_EIA930 = r"^eia930_balance_20(19|2[0-5])_(jan_jun|jul_dec)$"
+# label as written in ROWS -> regex patterns (start with ^) or exact ids; "@figX" means the labels of another figure
+RAW_LABEL_IDS = {
+    "eia930_balance_2019_jan_jun .. 2025_jul_dec": [_EIA930], "eia930 balance files": [_EIA930], "eia930_balance_2019 .. 2025 (CISO adjusted demand)": [_EIA930], "ch1 EIA-930 imports": [_EIA930],
+    "caiso_outlook demand and fuelsource (fills, artifact filter)": ["caiso_outlook_demand", "caiso_outlook_fuelsource"], "caiso_outlook fuelsource (Batteries)": ["caiso_outlook_fuelsource"],
+    "caiso_outlook co2 and demand daily files": ["caiso_outlook_co2", "caiso_outlook_demand"],
+    "caiso_oasis dam_lmp monthly files (PRC_LMP DAM, DLAP nodes)": ["caiso_dam_lmp_monthly_dlap", "caiso_dam_lmp_monthly_hubs"], "caiso_oasis dam_lmp monthly files": ["caiso_dam_lmp_monthly_dlap", "caiso_dam_lmp_monthly_hubs"], "caiso_oasis dam_lmp": ["caiso_dam_lmp_monthly_dlap", "caiso_dam_lmp_monthly_hubs"],
+    "eia861_2019 .. 2024": [r"^eia861_20(19|2[0-4])$"], "svp_fact_sheet_2017 .. 2023": [r"^svp_fact_sheet_20(1[7-9]|2[0-3])$"],
+    "eia923_2010 .. 2025": [r"^eia923_20(1\d|2[0-5])$"], "eia860_2010 .. 2025": [r"^eia860_20(1\d|2[0-5])$"],
+    "eia860m_2016_01 .. 2022_01": [r"^eia860m_20(1[6-9]|2[0-2])_01$"], "eia860m_2016_12 .. 2025_12": [r"^eia860m_20(1[6-9]|2[0-5])_12$"],
+    "qcew_518210_2014q1 .. 2026q1": [r"^qcew_518210_20(1[4-9]|2[0-6])q[1-4]$"], "cbre_*_infogram tables via cbre_california_market_series.csv": [r"^cbre_.*infogram"],
+    "cec_tn268722 .. 268727 (CED 2025 forms)": _CED_FORMS, "CED 2025 forms as above": _CED_FORMS + ["cec_tn268124", "cec_tn268824"],
+    "chapter 3 outputs (eia860m_2026_07, eia860m_2025_12, cpuc_e3_astrape_incremental_elcc_2023, eia923, cec_elec_energy_generation_page)": ["eia860m_2026_07", "eia860m_2025_12", "cpuc_e3_astrape_incremental_elcc_2023", "cec_elec_energy_generation_page", r"^eia923_20(1\d|2[0-5])$"],
+    "as fig4_02": ["@fig4_02"], "ERCOT decks and monthlies (see fig4_05)": ["@fig4_05"],
+    "ercot_monthly_2025_07 .. 2026_06": [r"^ercot_monthly_(2025_(0[7-9]|1[0-2])|2026_0[1-6])$"], "ercot_ops_overview_2026_04 .. 2026_08": [r"^ercot_ops_overview_2026_0[4-8]$"],
+    "duke_rethinking_load_growth_2025_mirror (method, CAISO values)": ["duke_rethinking_load_growth_2025_mirror"],
+    "the regime sources of Table ch4_crosswalk (CEC, ERCOT, PJM, EIA, Texas SB 6, FERC RM26-4 filings)": _REGIME_SOURCES,
+}
+
+
+def resolve_label(label: str, manifest_ids, _depth=0) -> list[str]:
+    """Manifest ids behind one raw-source label of ROWS. Exact ids resolve to themselves; the patterns above expand; unknown labels raise."""
+    import re
+    ids = set(manifest_ids)
+    if label in ids:
+        return [label]
+    if label not in RAW_LABEL_IDS:
+        raise KeyError(f"raw-source label not resolvable: {label!r}")
+    out = []
+    for pat in RAW_LABEL_IDS[label]:
+        if pat.startswith("@"):
+            if _depth > 2:
+                raise RecursionError(label)
+            _, r = row(pat[1:]); [out.extend(resolve_label(l, manifest_ids, _depth + 1)) for l in r[3]]
+        elif pat.startswith("^"):
+            hits = sorted(i for i in ids if re.match(pat, i))
+            if not hits:
+                raise KeyError(f"pattern {pat!r} of label {label!r} matches no manifest id")
+            out.extend(hits)
+        elif pat in ids:
+            out.append(pat)
+        else:
+            raise KeyError(f"id {pat!r} of label {label!r} not in the manifest")
+    return sorted(dict.fromkeys(out))
+
+
+def figure_manifest_ids(fig_name: str, manifest_ids) -> list[str]:
+    _, r = row(fig_name)
+    out = []
+    for lab in r[3]:
+        out.extend(resolve_label(lab, manifest_ids))
+    return sorted(dict.fromkeys(out))

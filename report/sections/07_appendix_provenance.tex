@@ -27,3 +27,10 @@ Every figure in this report is drawn by a script from files in \texttt{data/proc
 \caption{Chapter~\ref{ch:together} figures: processed files, raw sources and code.}
 \resizebox{\textwidth}{!}{\input{tables/provenance_ch4}}
 \end{table}
+
+\chapter{Manifest Rows Behind the Figures}
+\label{app:manifest}
+
+Each figure's source line names manifest ids. This appendix prints the manifest row behind every id that any figure names: owner, access date, SHA-256 and URL, as recorded in \texttt{data/raw/manifest\_frozen\_2026-09-22.csv} at the data freeze. Files that come in dated series (the EIA-930 half-year files, the EIA-923, EIA-860 and EIA-860M vintages, the QCEW quarters, the ERCOT newsletters, the CBRE Infogram tables) are listed on one line each with their count and the URL of the first file; the CAISO Today's Outlook ids stand for directories of daily files whose own manifest sits beside them. The machine-readable list is \texttt{data/processed/ch5\_manifest\_rows\_used.csv}, and the appendix build fails if any source label in a figure does not resolve to a manifest row.
+
+{\scriptsize\input{tables/manifest_rows_used}}

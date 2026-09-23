@@ -141,7 +141,7 @@ def main() -> int:
     axes[0].set_ylabel("Hour of day (local, interval start)")
     fig.colorbar(im, ax=axes, shrink=0.8, label=f"count of top-100 net-load hours (common scale, 0-{vmax})")
     fig.suptitle("When the 100 highest net-load hours occur, CAISO, by year (panel titles: median start hour, share in July-September, share between 17:00 and 21:00)", y=1.12, fontsize=9.5)
-    fig.savefig(FIGURES / "fig1_04_top100_net_load_timing.png", bbox_inches="tight"); fig.savefig(FIGURES / "fig1_04_top100_net_load_timing.pdf", bbox_inches="tight"); plt.close(fig); print("  figure fig1_04_top100_net_load_timing")
+    stamp(fig, "fig1_04_top100_net_load_timing"); fig.savefig(FIGURES / "fig1_04_top100_net_load_timing.png", bbox_inches="tight"); fig.savefig(FIGURES / "fig1_04_top100_net_load_timing.pdf", bbox_inches="tight"); plt.close(fig); print("  figure fig1_04_top100_net_load_timing")
 
     # ------------------------------------------------------------------ 2. prices
     print("2. Day-ahead prices")

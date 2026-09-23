@@ -1,0 +1,48 @@
+\begin{longtable}{>{\raggedright\arraybackslash}p{2.3cm}>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}p{2.8cm}>{\raggedright\arraybackslash}p{6.0cm}}
+\caption{Assumption register: value or range, source, test and result for every assumption behind the results. Generated from the chapter outputs.}\label{tab:register}\\
+\toprule
+Assumption & Value or range & Source & How it was tested and what the test showed \\
+\midrule
+\endfirsthead
+\toprule
+Assumption & Value or range & Source & How it was tested and what the test showed \\
+\midrule
+\endhead
+Tier confidence levels & Planning 0.70 / 0.33 / 0.00; Local Reliability 1.00 / 0.50 / 0.10 (agreement / application / inquiry); MC triangular 0.50 / 0.70 / 1.00, 0.10 / 0.33 / 0.50, 0.00 / 0.03 / 0.10 & cec\_\allowbreak{}dc\_\allowbreak{}methodology\_\allowbreak{}memo\_\allowbreak{}2026 Table 2; ERCOT chain and PJM rule as yardsticks & Replication: with SVP exempt the levels reproduce the memo's 2040 endpoints (4,855 vs 4,855 MW; 7,381 vs 7,381). ERCOT chain gives 37 / 6 / 2\% over 60 months. One-at-a-time: agreements energy gap 53 to 58 TWh, peak gap 6.6 to 7.3 GW between its 5th and 95th percentiles; Sobol total index 0.01 (energy), 0.02 (peak); applications energy gap 52 to 58 TWh, peak gap 6.5 to 7.3 GW between its 5th and 95th percentiles; Sobol total index 0.01 (energy), 0.02 (peak); inquiries energy gap 55 to 56 TWh, peak gap 6.8 to 7.1 GW between its 5th and 95th percentiles; Sobol total index 0.00 (energy), 0.00 (peak) \\
+\addlinespace
+SVP exemption from the confidence levels & SVP's 1,038 MW at full confidence & cec\_\allowbreak{}dc\_\allowbreak{}methodology\_\allowbreak{}memo\_\allowbreak{}2026 p. 9 & Without the exemption the parameters give 4,505 MW instead of the memo's 4,855 MW in 2040 (difference 350 MW); with it the endpoints match to within 1 MW \\
+\addlinespace
+Utilization factor & 0.67 (CEC); MC triangular 0.46 / 0.67 / 0.70 & cec\_\allowbreak{}dc\_\allowbreak{}methodology\_\allowbreak{}memo\_\allowbreak{}2026 p. 8 (upper end of SVP's observed range); ERCOT observed 0.46 to 0.64; PJM 0.70 & Yardsticks bracket the value; one-at-a-time energy gap 52 to 57 TWh, peak gap 6.4 to 7.2 GW between its 5th and 95th percentiles; Sobol total index 0.01 (energy), 0.02 (peak) \\
+\addlinespace
+Ramp: share of realized capacity on line by 2030 & CEC profile 36\% (Planning), 60\% (Local Reliability); PJM 36-month rule 100\%; MC triangular 0.30 / 0.55 / 1.00 & cec\_\allowbreak{}tn268124 annual peaks (component by year); pjm\_\allowbreak{}lar\_\allowbreak{}summary\_\allowbreak{}2025\_\allowbreak{}11\_\allowbreak{}24 & Replicated 2030 components 1,549 and 3,896 MW vs published 1,583 and 4,135; one-at-a-time energy gap 49 to 63 TWh, peak gap 6.0 to 8.1 GW between its 5th and 95th percentiles; Sobol total index 0.06 (energy), 0.14 (peak) \\
+\addlinespace
+Data center load factor (energy per MW of peak) & 0.88; MC triangular 0.80 / 0.88 / 0.95 & chapter 1 range; cec\_\allowbreak{}dc\_\allowbreak{}methodology\_\allowbreak{}memo\_\allowbreak{}2026 p. 11 (85 to 90\%) & One-at-a-time energy gap 54 to 56 TWh, peak gap 6.9 to 6.9 GW between its 5th and 95th percentiles; Sobol total index 0.00 (energy), 0.00 (peak) \\
+\addlinespace
+Data center load flat and coincident with the system peak & coincidence 1.0 & cec\_\allowbreak{}dc\_\allowbreak{}methodology\_\allowbreak{}memo\_\allowbreak{}2026 p. 11 (85 to 90\% of annual maximum at the CAISO peak) & Not varied in the draws; at the CEC's 85\% the median data center peak contribution of 2,292 MW would fall by 344 MW \\
+\addlinespace
+2030 data center energy annualized at the end-2030 level & energy = end-2030 MW x 8,760 h x load factor & construction of the case & With the CEC ramp profile the calendar-2030 average is 86\% of the end-2030 level, so the case overstates calendar-2030 data center energy by about 14\% \\
+\addlinespace
+Generation completion (planned units) & per-unit logit probability p\_\allowbreak{}2030 from chapter 3 (229 units, 20.1 GW; weighted 13.2 GW) & eia860m\_\allowbreak{}2016\_\allowbreak{}01 .. 2022\_\allowbreak{}01 vintages, eia860m\_\allowbreak{}2016\_\allowbreak{}12 .. 2025\_\allowbreak{}12 outcomes, eia860m\_\allowbreak{}2026\_\allowbreak{}07 planned list & Three logit specifications agree on the ranking (Table \ref{tab:specs}); realized fraction 5th to 95th percentile 0.58 to 0.73; one-at-a-time energy gap 57 to 54 TWh, peak gap 7.7 to 6.2 GW between its 5th and 95th percentiles; Sobol total index 0.00 (energy), 0.07 (peak) \\
+\addlinespace
+Capacity factors of the existing fleet & 2023-2025 means by resource; hydro drawn from its 2010-2025 range; solar and wind within 10\% & eia923\_\allowbreak{}2010 .. 2025, eia860\_\allowbreak{}2010 .. 2025 & Hydro: energy gap 66 to 46 TWh, peak gap 6.9 to 6.9 GW between its 5th and 95th percentiles; Sobol total index 0.11 (energy), 0.00 (peak). Solar and wind: energy gap 61 to 50 TWh, peak gap 6.9 to 6.9 GW between its 5th and 95th percentiles; Sobol total index 0.03 (energy), 0.00 (peak) \\
+\addlinespace
+ELCC values & CPUC/E3-Astrape 2023 Tranche 6 for solar 0.088, wind 0.147, batteries 0.765, pumped storage 0.887; firm resources 0.90 to 0.95 and hydro 0.45 to 0.55 by assumption & cpuc\_\allowbreak{}e3\_\allowbreak{}astrape\_\allowbreak{}incremental\_\allowbreak{}elcc\_\allowbreak{}2023; stated assumptions & Not drawn; deterministic check on the weighted new capacity: battery ELCC 0.60 or 0.90 instead of 0.765 moves the peak gap by +1.2 or -0.9 GW; a gas derate of 0.90 instead of 0.95 on new gas moves it by +0.00 GW (existing-fleet ELCC cancels in the incremental gap) \\
+\addlinespace
+Scheduled retirements & 6.5 GW through 2030 at EIA-860M dates and OTC compliance dates, of which Diablo Canyon 2.3 GW & eia860m\_\allowbreak{}2026\_\allowbreak{}07; swrcb\_\allowbreak{}otc\_\allowbreak{}policy\_\allowbreak{}2023 & Diablo Canyon as a Bernoulli(0.5) switch: energy gap 64 to 46 TWh, peak gap 8.0 to 5.8 GW between its 5th and 95th percentiles; Sobol total index 0.25 (energy), 0.39 (peak); NRC licences renewed April 2 2026, SB 846 stops at 2030 (gov\_\allowbreak{}ca\_\allowbreak{}diablo\_\allowbreak{}license\_\allowbreak{}2026\_\allowbreak{}04\_\allowbreak{}02, nrc\_\allowbreak{}diablo\_\allowbreak{}canyon\_\allowbreak{}rod\_\allowbreak{}2026) \\
+\addlinespace
+Net imports in 2030 & triangular 62.16 / 62.16 / 99.21 TWh & cec\_\allowbreak{}elec\_\allowbreak{}energy\_\allowbreak{}generation\_\allowbreak{}page (CEC statewide net imports 2012-2024) & One-at-a-time energy gap 65 to 37 TWh, peak gap 6.9 to 6.9 GW between its 5th and 95th percentiles; Sobol total index 0.24 (energy), 0.00 (peak) \\
+\addlinespace
+Non-data-center demand growth & IEPR case drawn with equal weights: low = Planning, mid = Baseline, high = Local Reliability & cec\_\allowbreak{}tn268727, cec\_\allowbreak{}tn268722, cec\_\allowbreak{}tn268725 (CED 2025 forms); cec\_\allowbreak{}tn268124; cec\_\allowbreak{}tn268824 & One-at-a-time energy gap 38 to 60 TWh, peak gap 5.3 to 7.8 GW between its 5th and 95th percentiles; Sobol total index 0.28 (energy), 0.35 (peak); the Local Reliability plus known loads case is reported separately (Table \ref{tab:ch4growth}) \\
+\addlinespace
+Planning reserve margin & uniform 0.15 to 0.17 & assumption (CPUC resource adequacy range); no raw file & One-at-a-time energy gap 55 to 55 TWh, peak gap 6.8 to 7.0 GW between its 5th and 95th percentiles; Sobol total index 0.00 (energy), 0.00 (peak) \\
+\addlinespace
+ERCOT phase-transition hazards & Planning studies approved 1.56\%/month; Under ERCOT review 0.75\%/month; No studies submitted 2.12\%/month; Approved to energize 3.05\%/month & ercot\_\allowbreak{}tac\_\allowbreak{}2026\_\allowbreak{}03\_\allowbreak{}large\_\allowbreak{}load\_\allowbreak{}status; ercot\_\allowbreak{}monthly\_\allowbreak{}2025\_\allowbreak{}11; ERCOT status snapshots (Table tab:ercotrates) & Hazards doubled: 72 / 25 / 12\% energized in 60 months; 0.5\%/month cancellation: 33 / 5 / 1\%; no-studies hazard is an upper bound \\
+\addlinespace
+Headroom thresholds and seasons & maximum winter (Nov-Feb) and non-winter demand across 2019-2025; Duke's energy criterion & duke\_\allowbreak{}rethinking\_\allowbreak{}load\_\allowbreak{}growth\_\allowbreak{}2025\_\allowbreak{}mirror; eia930\_\allowbreak{}balance\_\allowbreak{}2019 .. 2025 & 0.5\% headroom 3,798 MW; Dec-Feb winter 4,023; 2022-2025 only 3,322; single threshold 13,578; per-year hours criterion in Table \ref{tab:headroomyear} \\
+\addlinespace
+Emissions of a flexible load & curtail or shift the highest-intensity 5, 10 or 25\% of hours; CAISO accounting intensity & caiso\_\allowbreak{}outlook co2 and demand daily files & 2025: flat 183 t/GWh; curtail 25\% 146; shift 25\% 121; smaller shares in Table \ref{tab:emissions} \\
+\addlinespace
+Regime scores & 0 to 3 per criterion under a stated rubric & ch4\_\allowbreak{}regime\_\allowbreak{}rubric.csv; the crosswalk cells & Descriptive cells published next to the scores so a reader can rescore (Tables \ref{tab:crosswalk} and \ref{tab:scores}) \\
+\addlinespace
+\bottomrule
+\end{longtable}
