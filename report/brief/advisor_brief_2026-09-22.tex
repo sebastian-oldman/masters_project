@@ -1,0 +1,68 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx,booktabs,float}
+\usepackage[hidelinks]{hyperref}
+\graphicspath{{../../figures/}}
+\setlength{\parskip}{4pt}
+\title{Progress memo: Mapping the Consumption Gap}
+\author{Sebastian Oldman, for Prof. Cedric Westphal}
+\date{September 22, 2026 (data frozen on this date)}
+\begin{document}
+\maketitle
+
+\section*{Where the project stands}
+All five phases of the plan are built: the grid baseline, data center growth, supply growth, the 2030 gap with headroom and the regime comparison, and the discussion. The full report (89 pages) is in the Overleaf project; this memo answers your questions from September 22 with the corrected numbers and points to the figure that carries each answer. Everything quoted here appears in a figure or table of the report, and each figure names the files it was built from.
+
+\section*{Your questions, answered}
+
+\paragraph{Is CAISO the only long-distance transport of energy in California? Is it a monopoly?}
+No. CAISO is the nonprofit balancing authority and market operator for about 80 percent of the state's load: in the CEC's adopted forecast, 213 of California's 263~TWh of energy to serve load in 2025 and 46.5 of 57.6~GW of coincident peak sit inside CAISO. The rest belongs to other balancing authorities, chiefly the Los Angeles Department of Water and Power, the Balancing Authority of Northern California (SMUD and neighbours), the Turlock and Imperial irrigation districts and a slice of WAPA. CAISO does not own generation or transmission; it dispatches plants owned by utilities and independent producers over lines owned by PG\&E, SCE, SDG\&E and others, and its day-ahead and real-time markets now extend into neighbouring states. Retail service is by investor-owned utilities, community choice aggregators and municipal utilities. The report uses CAISO for hourly load, prices and carbon (that is where hourly data exist) and statewide data for generation, capacity and the forecast, and says which boundary applies at each point.
+
+\paragraph{The carbon intensity drops from where to where?}
+From 257 to 186~g CO$_2$ per kWh, annual energy-weighted averages of 2019 and 2025 (the peak was 277 in 2020). Your intuition about the day is right and the effect is larger than the annual drop: in 2025 the spring midday intensity was 7 to 12~g/kWh against 150 to 170 in the evening, summer midday 40 to 53 against 150 to 180, winter 137 against 240 to 250 (report Figure 2.7). Midday is solar with gas off; the evening is gas and imports. That spread is also why a flexible data center load matters: shifting the highest-intensity quarter of its hours into the lowest-intensity quarter cuts its emissions by a third (Figure 5.7).
+
+\paragraph{Data centers at 3 to 4 percent of California's power, and the Oregon 25 percent.}
+The two are consistent. The Oregon figure comes from the ECOnorthwest and University of Virginia report of September 2026: 111 data centers used more than 14~TWh, 23 percent of Oregon's retail sales in 2025, in a state whose total sales are a quarter of California's. California's 7 to 9~TWh sit on 240~TWh of retail sales, so a similar absolute amount is a small share. The Oregon-like number exists in California at the city scale: Silicon Valley Power, the Santa Clara municipal utility, reports data centers at 53 to 60 percent of its 4.5~TWh of sales (Figure 2.8, Table 2.7). The report presents the state figure as a range of four estimates because there is no metered total.
+
+\paragraph{No uptick in California after 2022?}
+Not in the physical indicators, and that is the finding rather than a puzzle. The national Census series is construction spending and it broke upward in March 2022 (61 percent a year after the break). California's employment in computing infrastructure and hosting (QCEW 518210) has been flat since 2022, Silicon Valley colocation construction has stayed between 125 and 168~MW, and Epoch AI's satellite-tracked hub lists 75 large United States AI sites with none in California. What rose in California is requests to connect: the CEC's like-for-like count of signed agreements plus applications at PG\&E and SCE went from 6,771~MW in December 2024 to 11,219~MW in December 2025, and the full three-tier count reached 20,677~MW in the state. The uptick is on paper. The physical build is going to Texas, Arizona, Virginia and Ohio, where power and land are available, and California's share of national capacity is falling (Figures 3.1 to 3.4).
+
+\paragraph{The SCE numbers.}
+SCE is the only utility that publishes its request list project by project, twice so far (August 2025 and January 2026). Between the two snapshots the active requests fell from 6,201 to 5,162~MW while the cumulative cancelled amount rose from 709 to 3,137~MW: 2.4~GW of requests were cancelled in five months even as new ones arrived. The list also shows advancement, since inquiries fell from 5,934 to 1,773~MW as 3,100~MW moved into the application tier. So the pipeline churns in both directions, and about 38 percent of everything SCE has ever recorded is now cancelled. That churn is the empirical reason to discount requests rather than count them (Figure 3.4, Table 3.12).
+
+\paragraph{Forty percent of peak; what share of the total?}
+Because a data center runs flat, the energy comparison is the stronger one and the report carries both (Table 3.9). If all 20,677~MW ran flat at full capacity they would draw 181~TWh a year, 84 percent of CAISO's 216 to 224~TWh of annual demand and 69 percent of the state's 263~TWh; at the CEC's 67 percent utilization and an 88 percent load factor, 107~TWh, or three times the state's forecast energy growth to 2030. The signed tier alone, 5,086~MW, would draw 45~TWh flat, a fifth of CAISO's demand. The CEC's own probability-weighted central case, by contrast, is 12~TWh in 2030, 4 percent of the state's 298~TWh forecast for that year.
+
+\paragraph{California-only headline, or other states?}
+The headline stays California-only (20,677~MW, with the 2,600~MW that Valley Electric reported for Nevada as a memo line and the CEC's 23,277~MW total beside it). No consistent 50-state series exists, which is itself a finding of the regime comparison. Two other regions enter as data: ERCOT publishes its queue monthly by phase (63~GW of requests in December 2024, 467~GW by July 2026, against 9.5~GW approved to energize and about 4~GW observed), and PJM publishes an explicit firm and non-firm rule (33.7~GW of large-load adjustments in its 2030 forecast). Oregon can be added as a comparison row from the ECOnorthwest report if you would like it.
+
+\paragraph{``How far should the confidence factors carry above the cancellation signals?''}
+What I meant: the CEC assigns fixed probabilities that a request in each tier is built (70, 33 and 0 percent in its central case), while the SCE cancellations and ERCOT's slow phase transitions suggest lower values. The statistical content is in Chapter 5 of the report: the CEC's probabilities are treated as uncertain inputs bracketed by the CEC's own two cases, by rates estimated from ERCOT's monthly queue (37, 6 and 2 percent over five years) and by PJM's firm-only rule, and 10,000 Monte Carlo draws propagate them together with the supply side. The answer is that the question matters less than it seemed: the three tier probabilities together explain about 3 percent of the variance of the 2030 energy gap. Imports, the state's own load forecast, hydro and Diablo Canyon explain most of it (Figure 5.3).
+
+\section*{Corrections to my September 22 email}
+\begin{itemize}
+\item The CAISO record peak of 52,061~MW was set on September 6, 2022, not in October 2023.
+\item ``Midday averaged out at 6~GW and evening unchanged at 22~GW'' is the spring profile (12:00 to 14:00 net load 6.4~GW in 2025 from 10.6 in 2019; 20:00 net load 22.4~GW). Across all seasons the midday mean fell from 15.3 to 10.1~GW and the evening from 26.4 to 25.6~GW.
+\item ``Requests increased from 6,771 to 23,277~MW'' compares two different counts. Like for like (agreements plus applications, PG\&E and SCE) the increase is 6,771 to 11,219~MW; the 23,277~MW is all three tiers at seven utilities and includes Nevada.
+\item Midday prices in 2025 averaged USD 13 per MWh at the SCE point and USD 24 to 26 at the PG\&E point (11:00 to 14:00); evening prices (18:00 to 20:00) averaged USD 49 to 56. The ranges I quoted mixed years and nodes.
+\end{itemize}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig2_04_tier_vintages}
+\caption{The pipeline against the grid (report Figure 3.4).}
+\end{figure}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig4_02_gap_distributions}
+\caption{The 2030 gap, 10,000 draws (report Figure 5.2).}
+\end{figure}
+
+\section*{How the work is organized for you}
+The Overleaf project holds the report (\texttt{main.tex}), this memo (\texttt{brief.tex}) and the 21-slide deck (\texttt{defense.tex}); switch the main document in the Overleaf menu to compile each. The report opens with a one-page summary for the reader, a glossary and the answers to the four research questions, then one chapter per phase, then the discussion and two provenance appendices. I will keep the project current and add a dated ``what changed'' note at the top before each meeting. The repository, raw data and processed files stay on my side; the manifest of sources with URLs and checksums is Appendix B of the report if you ever want to see where a number came from.
+
+\section*{Meetings}
+Wednesdays at noon on campus suits me, progress-dependent as you suggest, with Zoom on Tuesdays or Thursdays when something cannot wait. I will send a short update the day before each meeting.
+
+\section*{Next steps}
+Revise the discussion with your comments; add Oregon and the CEC's 2026 IEPR vintage when it appears; keep the monthly snapshots of the ERCOT queue and the CEC docket running so that California's own transition rates can be estimated next year; prepare the defense.
+\end{document}

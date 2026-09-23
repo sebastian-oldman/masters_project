@@ -760,3 +760,8 @@ STATIC += [
     Source("gov_ca_diablo_license_2026_04_02", "context", "Office of the Governor of California", "Governor Newsom welcomes approval of Diablo Canyon license renewals (Apr 2 2026; SB 846 limits operation to 2030 absent legislative action) (HTML)",
            "https://www.gov.ca.gov/2026/04/02/governor-newsom-welcomes-approval-of-diablo-canyon-license-renewals-delivering-on-californias-commitment-to-a-clean-and-reliable-grid/", filename="gov_ca_diablo_license_2026_04_02.html", tags=["html"], optional=True),
 ]
+
+STATIC += [
+    Source("opb_oregon_data_centers_2026_09", "context", "Oregon Public Broadcasting", "Oregon data centers by the numbers: 111 facilities consume nearly a quarter of the state's power (ECOnorthwest and University of Virginia report, Sep 17 2026) (HTML; comparison point raised by the advisor)",
+           "https://www.opb.org/article/2026/09/17/oregon-data-centers-consume-quarter-state-power-report/", filename="opb_oregon_data_centers_2026_09_17.html", tags=["html"], optional=True),
+]

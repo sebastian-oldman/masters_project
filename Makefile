@@ -1,7 +1,7 @@
 PY=.venv/bin/python
 TODAY=$(shell date +%F)
 
-.PHONY: env fetch fetch-large caiso snapshot catalog lab report clean-parts ch1 ch2 ch3 ch4 provenance freeze release defense
+.PHONY: env fetch fetch-large caiso snapshot catalog lab report clean-parts ch1 ch2 ch3 ch4 provenance freeze release defense overleaf brief
 
 env:                       ## create the virtual environment (Python 3.12) and install pins
 	/opt/homebrew/bin/python3.12 -m venv .venv
@@ -59,3 +59,9 @@ defense:                   ## build the defense deck report/defense/defense.pdf 
 
 release:                   ## export report, defense deck, processed CSVs, figures, tables, notebooks and frozen manifest to release/
 	$(PY) scripts/export_release.py --date $(FREEZE)
+
+brief:                     ## build the advisor progress memo report/brief/advisor_brief_<date>.pdf
+	cd report/brief && tectonic advisor_brief_$(FREEZE).tex
+
+overleaf:                  ## package report, memo and deck as an Overleaf-ready zip in release/
+	$(PY) scripts/export_overleaf.py --date $(FREEZE)

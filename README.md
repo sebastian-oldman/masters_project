@@ -60,6 +60,7 @@ The snapshot is scheduled through a user-level LaunchAgent installed on 2026-09-
 - **Every figure carries its source line** (processed files, manifest ids, code, freeze date), stamped on the image by `src/provenance.py` and printed under the figure in the report; Appendix A repeats the map as tables and Appendix B prints the manifest rows (owner, access date, SHA-256, URL) behind every id a figure names (`make provenance`, which also builds the assumption register of the discussion chapter and fails if a source label does not resolve to a manifest row).
 - **Release:** `make release` exports the report, the defense deck, every processed CSV and JSON, the figures, the LaTeX tables, the executed notebooks, the frozen manifest and the docs to `release/consumption_gap_2026-09-22/` with a `CONTENTS.md` of SHA-256 checksums, and zips it.
 - **Defense deck:** `make defense` builds `report/defense/defense.pdf` (beamer, 21 slides) from the same figures.
+- **For the advisor:** `make brief` builds the dated progress memo in `report/brief/`, and `make overleaf` packages report, memo and deck as one Overleaf-ready zip in `release/` (figures and bibliography shared; no raw data needed to read or compile).
 - **Plan:** `docs/PLAN.md` is the phase roadmap the chapters were built against.
 
 ## Provenance rules

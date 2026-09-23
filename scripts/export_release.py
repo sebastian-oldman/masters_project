@@ -24,7 +24,7 @@ def main() -> int:
     if out.exists():
         shutil.rmtree(out)
     groups = {
-        "report": [ROOT / "report" / "main.pdf"] + ([ROOT / "report" / "defense" / "defense.pdf"] if (ROOT / "report" / "defense" / "defense.pdf").exists() else []),
+        "report": [ROOT / "report" / "main.pdf"] + ([ROOT / "report" / "defense" / "defense.pdf"] if (ROOT / "report" / "defense" / "defense.pdf").exists() else []) + sorted((ROOT / "report" / "brief").glob("advisor_brief_*.pdf")),
         "data_processed": sorted(PROCESSED.glob("ch*_*.csv")) + sorted(PROCESSED.glob("ch*_*.json")) + sorted(PROCESSED.glob("ch4_mc_draws.parquet")) + sorted(PROCESSED.glob("cec_*.csv")) + sorted(PROCESSED.glob("cbre_*.csv")),
         "figures": sorted(FIGURES.glob("fig*_*.png")) + sorted(FIGURES.glob("fig*_*.pdf")),
         "tables": sorted((ROOT / "report" / "tables").glob("*.tex")),
