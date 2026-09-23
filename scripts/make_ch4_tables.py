@@ -158,6 +158,17 @@ def main() -> int:
     order = [("flat", 0.0)] + [(s_, sh) for sh in (0.05, 0.10, 0.25) for s_ in ("curtail", "shift")]
     rows = [f"{s_} & {100*sh:.0f} & " + " & ".join(f"{pv.loc[(s_, sh), y]:.0f}" for y in pv.columns) + f" & {100*(1 - pv.loc[(s_, sh), 2025]/pv.loc[('flat', 0.0), 2025]):.0f} \\\\" for s_, sh in order]
     tab("lr" + "r" * len(pv.columns) + "r", "Strategy & Share of hours (\\%) & " + " & ".join(str(int(y)) for y in pv.columns) + " & Change vs flat, 2025 (\\%)", rows, "ch4_emissions")
+
+    # data centers as a share of California's electricity
+    sh = pd.read_csv(PROCESSED / "ch4_dc_share_trajectory.csv")
+    keep = sh[sh.series.str.startswith("History") | sh.series.str.startswith("Upper") | sh.year.isin([2025, 2030, 2035, 2040])]
+    rows = []
+    for r in keep.itertuples():
+        tot = f"{r.dc_total_mid_twh:,.1f}" if r.dc_total_low_twh == r.dc_total_high_twh else f"{r.dc_total_low_twh:,.1f}--{r.dc_total_high_twh:,.1f}"
+        shr = f"{r.share_mid_pct:.1f}" if r.share_low_pct == r.share_high_pct else f"{r.share_low_pct:.1f}--{r.share_high_pct:.1f}"
+        rows.append(f"{esc(r.series)} & {int(r.year)} & {r.dc_added_twh:,.1f} & {tot} & {r.denominator_twh:,.1f} & {esc(r.denominator)} & {shr} \\\\")
+    write("ch4_dc_share", [r"\begin{tabular}{p{5.2cm}rrrrp{4.6cm}r}", r"\toprule", r"Series & Year & Added & Data centers & Denominator & Denominator basis & Share \\",
+                           r" & & (TWh) & total (TWh) & (TWh) & & (\%) \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
     return 0
 
 

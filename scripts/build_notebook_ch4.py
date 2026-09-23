@@ -128,6 +128,11 @@ Duke's method: add a constant load L to every hour, count as curtailment any exc
 CAISO hourly accounting intensity (chapter 1, valid hours). A 1 MW load is either flat, curtailed to zero in the highest-intensity 5, 10 or 25 percent of hours (energy lost), or shifted, with the same energy moved from those hours to the lowest-intensity hours (load doubles there)."""),
     code("""em = table("ch4_emissions_flat_vs_flexible"); em.pivot_table(index=["strategy", "share_hours"], columns="year", values="t_per_gwh").round(1)"""),
     code("""show("fig4_06_emissions_flat_vs_flexible")"""),
+    md("""## Data centers as a share of California's electricity
+
+The trajectory that the Oregon report draws for Oregon (23 percent of retail sales in 2025, about 25 TWh or 31 to 32 percent by 2030), drawn for California from the record: the 2023 and 2024 history, the adopted CED 2025 Planning and Local Reliability data center additions on top of the existing 7 to 9 TWh, over statewide energy to serve load, and the 2030 upper bounds."""),
+    code("""sh = table("ch4_dc_share_trajectory"); sh.round(2)"""),
+    code("""show("fig4_08_dc_share_of_electricity")"""),
     md("""**Reading.** A flat load carried 183 t CO2 per GWh in 2025 (239 in 2023). Curtailing it in the highest-intensity quarter of hours lowers the intensity of what it still consumes by 20 percent; shifting the same energy into the lowest-intensity quarter of hours, which had a mean accounting intensity of 44 g/kWh in 2025, lowers it by 34 percent to 121 t per GWh."""),
 ]
 

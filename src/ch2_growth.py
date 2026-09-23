@@ -564,3 +564,18 @@ def ced2025_caiso_peaks() -> pd.DataFrame:
     a = pd.read_excel(raw_path("cec_tn268124"), sheet_name="annual_peaks")
     a = a[(a["TAC"].astype(str).str.upper() == "CAISO") & (a["COINCIDENT"] == True)]  # noqa: E712
     return a
+
+
+def sce_largest_requests(n: int = 5, source_id: str = "cec_tn268459") -> pd.DataFrame:
+    """The largest requests in SCE's public data center database (CEC groupings 1 to 3: signed agreement, active
+    application, active inquiry), with status, city and requested energization year. Project names are not published."""
+    d = pd.read_excel(raw_path(source_id))
+    d.columns = [str(c).strip() for c in d.columns]
+    rp = [c for c in d.columns if "Requested Peak" in c][0]
+    d["requested_mw"] = pd.to_numeric(d[rp], errors="coerce")
+    act = d[d["CEC Grouping"].isin([1, 2, 3])].copy()
+    act["tier"] = act["CEC Grouping"].map({1: "Signed agreement", 2: "Active application", 3: "Inquiry"})
+    out = act.sort_values("requested_mw", ascending=False).head(n)
+    return pd.DataFrame({"rank": range(1, len(out) + 1), "requested_mw": out["requested_mw"].values, "tier": out["tier"].values, "status": out["Status"].astype(str).values,
+                         "city": out["City"].astype(str).values, "requested_energization_year": out["Requested Energization Year"].values,
+                         "active_projects": len(act), "active_mw": float(act["requested_mw"].sum()), "source": source_id})

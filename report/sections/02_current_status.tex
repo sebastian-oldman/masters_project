@@ -164,3 +164,74 @@ The statewide estimate and the assumed conversion agree at 7 to 9~TWh, roughly 3
 \paragraph{Utility pipeline statements.} PG\&E told the CEC in February 2025 that it had ``a large pipeline of applications to interconnect new data centers'' with about 1.5~GW in final engineering or construction and more than half expected within four years \citep{pge_iepr2025}. In July 2025 it announced a 10~GW pipeline over ten years, of which 17 projects totaling about 1.5~GW were in final engineering for operation between 2026 and 2030, and estimated that each gigawatt of new data center demand could lower other customers' bills by one to two percent \citep{pge_press2025}. Its second-quarter 2026 earnings release describes ``an overall pipeline of over 12 gigawatts'' \citep{pge_8k2026}. PG\&E has, however, filed a request for confidentiality over its project-level data center data in the IEPR docket every month since August 2025 \citep{pge_confidentiality}, so its pipeline is public only in aggregate. Southern California Edison took the opposite path. It reported 80~MW of existing data center demand in February 2025 with 200~MW of near-term and 400~MW of mid-term growth \citep{sce_iepr2025}, and it files a public project-level database. The January 2026 vintage lists 115 entries with 8,299~MW of requested peak: 76~MW under signed agreements, 3,313~MW in applications, 1,772~MW in inquiries, and 3,137~MW already canceled \citep{sce_database2026}. The CEC's own summer 2025 tally put SCE's requests at 5,828~MW and PG\&E's at 11,668~MW \citep{cec_prelim2025}. The canceled share in SCE's file, 38 percent of everything ever requested, is the first direct California evidence on attrition and is used in Chapter~\ref{ch:together}.
 
 \paragraph{CPUC large-load proceedings.} The proposal could not confirm a CPUC large-load tariff docket; the record now can. On April~9, 2026 the CPUC opened Rulemaking 26-04-009 on Advanced Electric Rate Design, which states that ``in coordination with the Senate Bill 57 assessment, this proceeding will consider rate design issues for data centers and other large load customers'' \citep[p.~1]{cpuc_oir2026}. Senate Bill 57 (Padilla), chaptered on October~11, 2025, requires the CPUC to assess whether costs of serving new data center loads shift to other customers and to report to the Legislature by January~1, 2027 \citep{sb57}. Senate Bill 886 (Padilla), the California Technology Innovation and Ratepayer Protection Act, was chaptered on September~21, 2026 and requires the CPUC, on or before January~1, 2028, to establish new tariffs or update electric rules for the interconnection and service of participating large customers, and to ensure those tariffs ``prevent the creation of stranded costs for, or cost shifts to, nonparticipating customers'' \citep{sb886,kqed2026}. Assembly Bill 222, which would have required data center energy reporting and efficiency metrics, was held in the Senate Appropriations Committee on August~29, 2025 \citep{ab222}. On the interconnection side, the CPUC approved an interim PG\&E Electric Rule~30 on July~24, 2025 to streamline transmission-level service for large customers that fund the required infrastructure up front \citep{cpuc_rule30}. The sequence is consistent: the state has moved from studying the cost question (SB~57) to mandating a tariff answer (SB~886) within a year, while the forecast that drives procurement still excludes the load the tariff is meant to price.
+
+\section{The current status in the workshop format, 2025 to 2026}
+\label{sec:workshop}
+
+The Finnish study that motivated this project presented its grid baseline as five charts for the current year: hourly consumption against generation, hourly prices, hourly emission factors, monthly imports and exports, and wind output against installed capacity \citep{manner2026}. Figures~\ref{fig:ws_load} to \ref{fig:ws_vre} repeat them for CAISO from the sources of this chapter, so that the two grids can be read side by side. Table~\ref{tab:wsstats} carries the minimum, maximum and mean of every hourly series with the hour at which each extreme occurred, and Table~\ref{tab:impexp} the monthly imports and exports. The 2026 hourly series run from January~1 to September~20, the last complete day in the EIA-930 file at the freeze; the same artifact filter as in Section~\ref{sec:baseline} removed 10 hours.
+
+\begin{table}[H]
+\centering\scriptsize
+\caption{Minimum, maximum and mean of the hourly series in the workshop-format figures, with the local hour of each extreme. Prices are wholesale day-ahead energy prices. The CO$_2$ factors are CAISO's accounting: the consumption factor divides net CO$_2$ (imports net of exports) by demand, the production factor divides the CO$_2$ of the sources inside CAISO by in-CAISO generation.}
+\label{tab:wsstats}
+\resizebox{\textwidth}{!}{\input{tables/ch1_workshop_stats}}
+\end{table}
+
+\paragraph{Consumption and generation.} Over the 6,301 valid hours from January~1 to September~20, 2026, CAISO demand ran from 18,748 to 49,959~MW with a mean of 27,202~MW; net generation inside CAISO ran from 4,703 to 44,050~MW with a mean of 19,329~MW, and net imports averaged 4,405~MW (Figure~\ref{fig:ws_load}). The distance between the two lines is the import dependence that the Finnish chart also shows. It is widest in January and February and narrowest in the summer afternoons, when solar output is highest; the demand maximum and the generation maximum fell in the same hour, 18:00 on September~9, 2026.
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig1_09_consumption_2026}
+\caption{Hourly CAISO demand and net generation inside CAISO, January~1 to September~20, 2026, with the minimum, maximum and mean of each series and of net imports. Source: EIA-930 balance files, adjusted series, artifact filter of Section~\ref{sec:baseline}.}
+\label{fig:ws_load}
+\par\vspace{-2pt}\input{tables/figsrc_fig1_09}
+\end{figure}
+
+\paragraph{Prices.} Day-ahead prices at the three default load aggregation points averaged 36.8, 32.0 and 35.3~USD/MWh (PG\&E, SCE and SDG\&E) over the 15,119 hours from January 2025 to September~22, 2026, with minimums between $-36.8$ and $-40.5$ and maximums between 210.5 and 217.1~USD/MWh (Figure~\ref{fig:ws_price}). These are wholesale energy prices before transmission, distribution and retail charges, so their level is not comparable with the Finnish consumer price with taxes; the pattern is. The lowest prices of both years came in March, the highest in the same hour as the 2026 demand maximum, 18:00 to 19:00 on September~9, 2026, and the negative hours of Section~\ref{sec:prices} cluster in spring.
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig1_10_prices_2025_2026}
+\caption{Hourly day-ahead prices at the PG\&E, SCE and SDG\&E default load aggregation points, January 2025 to September~22, 2026, in USD per MWh and US cents per kWh, with the minimum, maximum and mean of each series. Source: CAISO OASIS PRC\_LMP.}
+\label{fig:ws_price}
+\par\vspace{-2pt}\input{tables/figsrc_fig1_10}
+\end{figure}
+
+\paragraph{Emissions.} The consumption-side factor of Section~\ref{sec:carbon}, CAISO's net CO$_2$ accounting divided by demand, averaged 162.6~g/kWh over January~1 to September~20, 2026 and ranged from $-128.9$ to 395.2~g/kWh; the production-side factor, the CO$_2$ of the sources inside CAISO divided by in-CAISO generation, averaged 116.4~g/kWh and ranged from 13.5 to 356.9~g/kWh (Figure~\ref{fig:ws_emis}). The consumption factor sits above the production factor in every month because imports are carried at CAISO's default factor; it falls below zero in the export-heavy spring hours, and both factors are lowest in the middle of the day and highest in the summer nights. The Finnish factors that Manner showed for the same months averaged 29 to 31~g/kWh \citep{manner2026}, a fifth to a quarter of the CAISO values.
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig1_11_emissions_2026}
+\caption{Hourly CO$_2$ intensity of CAISO demand (consumption, accounting basis) and of generation inside CAISO (production basis), January~1 to September~20, 2026, with the minimum, maximum and mean of each. Source: CAISO Today's Outlook CO$_2$, demand and fuel-mix files.}
+\label{fig:ws_emis}
+\par\vspace{-2pt}\input{tables/figsrc_fig1_11}
+\end{figure}
+
+\paragraph{Imports and exports.} The neighbour-level interchange of EIA-930 separates gross imports from gross exports, which the net series of Section~\ref{sec:baseline} cannot. Over the twelve months of 2025 CAISO imported 42.0~TWh and exported 6.0~TWh, a net 35.9~TWh over the 8,712 hours present, against the 36.1~TWh net imports of Table~\ref{tab:annual} computed from the balance file with its gaps filled; from January to August 2026 the figures are 30.1, 5.1 and 25.0~TWh (Figure~\ref{fig:ws_impexp}, Table~\ref{tab:impexp}). Imports peaked at 5,547~GWh in December 2025 and were lowest at 2,622~GWh in July 2025; exports were lowest at 115~GWh in December 2025 and highest at 1,026~GWh in May 2026, the spring months in which the negative prices occur. The hourly sum over neighbours reproduces the balance file's net interchange to within 1~MW on average (note to Table~\ref{tab:impexp}).
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig1_12_imports_exports_monthly}
+\caption{Gross imports into and exports from CAISO by month, January 2025 to August 2026, from the EIA-930 interchange with each neighbouring balancing authority; months with at least 95 percent of their hours present. Source: EIA-930 interchange files.}
+\label{fig:ws_impexp}
+\par\vspace{-2pt}\input{tables/figsrc_fig1_12}
+\end{figure}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Gross imports, gross exports and net imports of CAISO by month (GWh) with the hours present, January 2025 to September 2026. Source: EIA-930 interchange files.}
+\label{tab:impexp}
+\input{tables/ch1_imports_exports_monthly}\\[2pt] \input{tables/ch1_imports_exports_note}
+\end{table}
+
+\paragraph{Wind and solar against installed capacity.} The CAISO balancing authority held 9,994~MW of wind and 25,810~MW of solar nameplate in operation in July 2026 (Table~\ref{tab:installed}); the state of California alone holds 6,479~MW of wind, because much of CAISO's wind sits in neighbouring states \citep{eia860m}. From January~1 to September~20, 2026 wind averaged 2,582~MW, 26 percent of nameplate, with a maximum of 7,126~MW or 71 percent; solar averaged 6,548~MW, 25 percent of nameplate, with a maximum of 20,852~MW or 81 percent (Figure~\ref{fig:ws_vre}). The Finnish wind fleet ran at 24 percent of its 9,405~MW over the same months \citep{manner2026}, so the two systems have wind fleets of the same size and the same capacity factor; the difference is California's solar, which is two and a half times its wind.
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Operating wind and solar nameplate capacity in July 2026, inside the CAISO balancing authority and inside the state of California. Source: EIA-860M July 2026, Operating sheet.}
+\label{tab:installed}
+\input{tables/ch1_installed_wind_solar}
+\end{table}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\textwidth]{fig1_13_wind_solar_2026}
+\caption{Hourly wind (top) and solar (bottom) generation in CAISO, January~1 to September~20, 2026, against the installed nameplate capacity of the CAISO balancing authority in July 2026, with the minimum, mean and maximum of each. Sources: EIA-930 balance files; EIA-860M July 2026.}
+\label{fig:ws_vre}
+\par\vspace{-2pt}\input{tables/figsrc_fig1_13}
+\end{figure}

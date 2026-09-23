@@ -307,6 +307,80 @@ def main() -> int:
     (PROCESSED / "ch2_rq1_denominators.json").write_text(json.dumps(denom, indent=1))
     print(json.dumps(denom, indent=1))
     print("done")
+    # ------------------------------------------------------------ 6. the workshop format: current capacity, statistics of projects, data centers against electric cars
+    print("6. The workshop format: current capacity, statistics of projects, data centers against electric cars")
+    a_row = est[est.group.str.startswith("A.")].iloc[0]; d_row = est[est.group.str.startswith("D.")].iloc[0]
+    svp_share = float(d_row.central_TWh / a_row.central_TWh); svp_lo, svp_hi = float(d_row.low_TWh / a_row.central_TWh), float(d_row.high_TWh / a_row.central_TWh)
+    top = c2.sce_largest_requests(5); top.to_csv(PROCESSED / "ch2_sce_largest_requests.csv", index=False)
+    big = top.iloc[0]
+    stat_rows = [
+        ("Existing data center peak demand, CEC (Dec 2025)", ex_cec_peak, "MW", "cec_dc_methodology_memo_2026 pp. 2, 18"),
+        ("Existing data center average load, chapter 1 range (low)", ex_low, "MW", "ch1_dc_load_estimates.csv (A and B)"),
+        ("Existing data center average load, chapter 1 range (high)", ex_high, "MW", "ch1_dc_load_estimates.csv (A and B)"),
+        ("Statewide data center electricity use 2023, EPRI", a_row.central_TWh, "TWh", "epri_powering_intelligence_2024"),
+        ("Silicon Valley Power cluster 2023 (central)", d_row.central_TWh, "TWh", "svp_fact_sheet_2023; svp_assembly_hearing_2026_01_28"),
+        ("SVP cluster share of the statewide 2023 estimate (central)", 100 * svp_share, "%", "ratio of the two rows above"),
+        ("SVP cluster share of the statewide 2023 estimate (low)", 100 * svp_lo, "%", "ratio"), ("SVP cluster share of the statewide 2023 estimate (high)", 100 * svp_hi, "%", "ratio"),
+        ("Signed agreements, Dec 2025", tiers["Signed agreements"], "MW", "cec_assembly_hearing_2026_01_28 p. 7"),
+        ("Active applications located in California, Dec 2025", tiers["Active applications, California"], "MW", "cec_assembly_hearing_2026_01_28 p. 7 minus VEA 2,600 MW (cec_dc_methodology_memo_2026 Table 1)"),
+        ("Inquiries, Dec 2025", tiers["Inquiries"], "MW", "cec_assembly_hearing_2026_01_28 p. 7"),
+        ("Total requests located in California, Dec 2025", total, "MW", "sum"), ("VEA applications located in Nevada (memo line)", vea_nv, "MW", "cec_dc_methodology_memo_2026 Table 1"),
+        ("CAISO record instantaneous peak (Sep 6 2022)", caiso_record_mw, "MW", "caiso_key_statistics_2026_08"),
+        ("Total requests / existing data center peak", total / ex_cec_peak, "x", "ratio"), ("Total requests / CAISO record peak", 100 * total / caiso_record_mw, "%", "ratio"),
+        ("Total requests / existing average load (low)", total / ex_high, "x", "ratio"), ("Total requests / existing average load (high)", total / ex_low, "x", "ratio"),
+        ("Largest single request in the SCE public database (Jan 2026)", float(big.requested_mw), "MW", f"cec_tn268459: {big.tier.lower()}, {big.status}, {big.city}, requested energization {int(big.requested_energization_year)}"),
+    ]
+    pd.DataFrame(stat_rows, columns=["item", "value", "unit", "source"]).to_csv(PROCESSED / "ch2_project_statistics.csv", index=False)
+    # data centers against electric cars: annual energy of a flat load and the CEC utilization case, in electric-car years
+    EV_MWH = 3.0  # assumption from Manner's slide: 20 kWh per 100 km over 15,000 km a year; no California per-vehicle figure is in the record
+    util, lf = 0.67, 0.88  # CEC utilization factor and the chapter 4 load factor
+    ev_rows = []
+    for lab, mw in ((f"Largest single SCE request ({big.city}, {big.tier.lower()})", float(big.requested_mw)), ("Signed agreements, California", tiers["Signed agreements"]), ("All December 2025 tiers, California", total)):
+        flat = mw * 8760 / 1e6; cec = mw * util * lf * 8760 / 1e6
+        ev_rows.append(dict(item=lab, mw=mw, twh_flat=flat, twh_cec_utilization=cec, ev_million_flat=flat * 1e6 / EV_MWH / 1e6, ev_million_cec=cec * 1e6 / EV_MWH / 1e6,
+                            basis=f"flat: MW x 8,760 h; CEC case: MW x {util} utilization x {lf} load factor x 8,760 h; {EV_MWH:.0f} MWh per electric car per year (Manner 2026: 20 kWh/100 km, 15,000 km/y; assumption)"))
+    ev = pd.DataFrame(ev_rows); ev.to_csv(PROCESSED / "ch2_ev_equivalents.csv", index=False)
+
+    # Fig 2.5 current capacity and statistics of projects
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.4), gridspec_kw={"width_ratios": [1, 1.7]})
+    ax = axes[0]
+    ax.bar([0], [d_row.central_TWh], color="#e8711a", width=0.5, label=f"Silicon Valley Power cluster (58 data centers, 55% of SVP's 2023 sales): {d_row.central_TWh:.2f} TWh")
+    ax.bar([0], [a_row.central_TWh - d_row.central_TWh], bottom=[d_row.central_TWh], color="#9ecae1", width=0.5, label=f"rest of California: {a_row.central_TWh - d_row.central_TWh:.2f} TWh")
+    ax.text(0, a_row.central_TWh + 0.25, f"{a_row.central_TWh:.2f} TWh in 2023 (EPRI)\n= {a_row.central_share_pct:.1f}% of state retail sales", ha="center", fontsize=8.5, fontweight="bold")
+    ax.text(0.29, d_row.central_TWh / 2, f"SVP cluster: {100*svp_share:.0f}%\n({100*svp_lo:.0f}-{100*svp_hi:.0f}%) of the\nstate estimate", ha="left", va="center", fontsize=7.8, color="#b35400")
+    ax.text(0.52, 0.985, f"Existing peak demand:\n~{ex_cec_peak:,.0f} MW (CEC, Dec 2025)\nAverage load: {ex_low:,.0f}-{ex_high:,.0f} MW\n(chapter 1 range)", transform=ax.transAxes, ha="center", va="top", fontsize=8, bbox=dict(boxstyle="round", fc="white", ec="0.7"))
+    ax.set_xticks([0]); ax.set_xticklabels(["California data centers, 2023 energy"], fontsize=8.5); ax.set_ylabel("TWh per year"); ax.set_ylim(0, a_row.central_TWh * 1.75); ax.set_xlim(-0.75, 1.05)
+    ax.set_title("Current data center capacity", fontsize=10); ax.legend(fontsize=7.2, loc="upper center", bbox_to_anchor=(0.5, -0.09), frameon=False)
+    ax = axes[1]
+    items = [("Signed agreements", tiers["Signed agreements"], "#1b5e20"), ("Active applications\n(located in California)", tiers["Active applications, California"], "#4caf50"), ("Inquiries", tiers["Inquiries"], "#a5d6a7"),
+             ("Total requests located\nin California, Dec 2025", total, "#2e7d32"), (f"Largest single request,\nSCE public database", float(big.requested_mw), "#81c784"),
+             ("Existing data center\npeak demand (CEC)", ex_cec_peak, "#e8711a"), ("CAISO record peak\n(Sep 6, 2022)", caiso_record_mw, "#9e9e9e")]
+    ys = np.arange(len(items))[::-1]
+    for y, (lab, v, col) in zip(ys, items):
+        ax.barh(y, v, color=col, height=0.62); ax.text(v + 600, y, f"{v:,.0f} MW", va="center", fontsize=8.5)
+    ax.set_yticks(ys); ax.set_yticklabels([i[0] for i in items], fontsize=8); ax.set_xlabel("MW"); ax.set_xlim(0, caiso_record_mw * 1.22)
+    ax.text(0.99, 0.30, f"{total:,.0f} / ~{ex_cec_peak:,.0f} = {total/ex_cec_peak:.1f}x the existing data center peak\n{total:,.0f} / {caiso_record_mw:,.0f} = {100*total/caiso_record_mw:.1f}% of the CAISO record peak\n"
+            f"{total/ex_high:.0f}-{total/ex_low:.0f}x the existing average load\nVEA's {vea_nv:,.0f} MW in Nevada excluded (CEC total {total + vea_nv:,.0f} MW)\nLargest SCE request: {big.requested_mw:,.0f} MW, {big.city}, {big.tier.lower()}, {int(big.requested_energization_year)}",
+            transform=ax.transAxes, ha="right", va="center", fontsize=8, bbox=dict(boxstyle="round", fc="white", ec="0.7"))
+    ax.set_title("Statistics of the projects: energization requests by stage, December 2025 tiers", fontsize=10)
+    fig.subplots_adjust(bottom=0.2, wspace=0.55)
+    save(fig, "fig2_05_project_statistics")
+
+    # Fig 2.6 data centers against electric cars
+    fig, ax = plt.subplots(figsize=(10, 4.6))
+    ys = np.arange(len(ev))[::-1]; hgt = 0.36
+    ax.barh(ys + hgt / 2, ev.twh_flat, height=hgt, color="#c1272d", label="flat load: MW x 8,760 h")
+    ax.barh(ys - hgt / 2, ev.twh_cec_utilization, height=hgt, color="#f4a582", label=f"CEC case: MW x {util} utilization x {lf} load factor x 8,760 h")
+    for y, r in zip(ys, ev.itertuples()):
+        ax.text(r.twh_flat + 2, y + hgt / 2, f"{r.twh_flat:,.1f} TWh = {r.ev_million_flat:,.1f} million electric cars", va="center", fontsize=8)
+        ax.text(r.twh_cec_utilization + 2, y - hgt / 2, f"{r.twh_cec_utilization:,.1f} TWh = {r.ev_million_cec:,.1f} million electric cars", va="center", fontsize=8)
+    ax.axvline(a_row.central_TWh, color="k", lw=1, ls="--"); ax.text(a_row.central_TWh + 1.5, ys.max() + 0.72, f"all existing California data centers, 2023: {a_row.central_TWh:.1f} TWh (EPRI)", fontsize=7.5, va="center")
+    ax.set_yticks(ys); ax.set_yticklabels([f"{r.item}\n{r.mw:,.0f} MW" for r in ev.itertuples()], fontsize=8.5); ax.set_xlabel("TWh per year"); ax.set_xlim(0, ev.twh_flat.max() * 1.55); ax.set_ylim(ys.min() - 0.6, ys.max() + 1.0)
+    ax.set_title(f"Data centers against electric cars: annual energy of the requests in electric-car years\n({EV_MWH:.0f} MWh per car per year: 20 kWh per 100 km over 15,000 km a year, the assumption of Manner 2026)", fontsize=9.4)
+    ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.14), ncol=2, frameon=False)
+    fig.subplots_adjust(bottom=0.24, left=0.27)
+    save(fig, "fig2_06_data_centers_vs_evs")
+
     return 0
 
 

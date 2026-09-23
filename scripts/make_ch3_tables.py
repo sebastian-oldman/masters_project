@@ -110,6 +110,16 @@ def main() -> int:
     el = pd.read_csv(PROCESSED / "ch3_elcc_values.csv"); cf = pd.read_csv(PROCESSED / "ch3_capacity_factors.csv").set_index("resource")
     rows = [f"{esc(r.resource)} & {r.elcc:.3f} & {cf.loc[r.resource, 'capacity_factor']:.3f} & {esc(r.basis)} \\\\" for r in el.itertuples()]
     write("ch3_elcc", [r"\begin{tabular}{lrrp{9cm}}", r"\toprule", r"Technology & ELCC or derate & Capacity factor 2023--2025 & Basis \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+
+    # workshop format: production by technology, 2025 and the 2030 cases
+    pp = pd.read_csv(PROCESSED / "ch3_production_projection.csv")
+    piv = pp.pivot(index="resource", columns="column", values="twh")
+    cols = ["2025 (EIA-923, in-state generation)"] + [c for c in piv.columns if c.startswith("2030")]
+    order = ["Nuclear", "Hydro", "Solar", "Wind", "Geothermal", "Biomass", "Natural gas", "Other thermal"]
+    rows = [f"{esc(r)} & " + " & ".join(f"{piv.loc[r, c]:,.1f}" for c in cols) + r" \\" for r in order]
+    rows.append(r"\midrule Total & " + " & ".join(f"{piv[c].sum():,.1f}" for c in cols) + r" \\")
+    head = " & ".join(esc(c.replace("2030 ", "2030 ").replace(" (EIA-923, in-state generation)", " (EIA-923)")) for c in cols)
+    write("ch3_production_projection", [r"\begin{tabular}{l" + "r" * len(cols) + "}", r"\toprule", f"Technology (TWh) & {head} " + r"\\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
     return 0
 
 

@@ -327,6 +327,53 @@ def main() -> int:
     ax.text(0.02, 0.97, f"2025: flat {f25:.0f}; curtail 25% of hours {c25:.0f} ({100*(1-c25/f25):.0f}% lower);\nshift the same energy {s25:.0f} ({100*(1-s25/f25):.0f}% lower)", transform=ax.transAxes, va="top", fontsize=6.8, bbox=BOX)
     save(fig, "fig4_06_emissions_flat_vs_flexible")
     print("done")
+    # ------------------------------------------------------------ 9. data centers as a share of California's electricity: history, the forecast cases and the bound
+    print("9. Data centers as a share of California's electricity, 2023 to 2040")
+    est = pd.read_csv(PROCESSED / "ch1_dc_load_estimates.csv")
+    a_row = est[est.group.str.startswith("A.")].iloc[0]; b_row = est[est.group.str.startswith("B.")].iloc[0]
+    ex_lo, ex_mid, ex_hi = float(min(a_row.low_TWh, b_row.low_TWh)), float(b_row.central_TWh), float(max(a_row.high_TWh, b_row.high_TWh))
+    dce_s = pd.read_csv(PROCESSED / "ch4_ced2025_data_center_energy.csv"); scen_s = pd.read_csv(PROCESSED / "ch4_ced2025_scenarios.csv")
+    sw = scen_s[scen_s.metric == "energy_statewide_GWh"].pivot(index="year", columns="scenario", values="value") / 1e3
+    srows = []
+    for sc in ("Planning", "Local Reliability"):
+        d = dce_s[dce_s.scenario == sc].set_index("year").data_center_gwh / 1e3
+        for y, v in d.items():
+            tot = float(sw.loc[y, sc])
+            srows.append(dict(series=f"CED 2025 {sc}: existing plus forecast additions", year=int(y), dc_added_twh=float(v), dc_total_low_twh=ex_lo + v, dc_total_mid_twh=ex_mid + v, dc_total_high_twh=ex_hi + v,
+                              denominator_twh=tot, denominator=f"statewide energy to serve load, {sc} (Form 1.5a)", share_low_pct=100 * (ex_lo + v) / tot, share_mid_pct=100 * (ex_mid + v) / tot, share_high_pct=100 * (ex_hi + v) / tot))
+    for lab, r_, y in (("History: EPRI statewide estimate 2023", a_row, 2023), ("History: CEC ~1,000 MW converted, 2024 sales", b_row, 2024)):
+        srows.append(dict(series=lab, year=y, dc_added_twh=0.0, dc_total_low_twh=float(r_.low_TWh), dc_total_mid_twh=float(r_.central_TWh), dc_total_high_twh=float(r_.high_TWh), denominator_twh=float(r_.retail_sales_TWh),
+                          denominator=f"EIA-861 California retail sales {int(r_.denominator_year)}", share_low_pct=float(r_.low_share_pct), share_mid_pct=float(r_.central_share_pct), share_high_pct=float(r_.high_share_pct)))
+    dcases = pd.read_csv(PROCESSED / "ch4_demand_cases_2030.csv")
+    pl30 = float(sw.loc[2030, "Planning"]); dc30 = float(dce_s[(dce_s.scenario == "Planning") & (dce_s.year == 2030)].data_center_gwh.iloc[0]) / 1e3
+    for lab, key in (("Upper bound 2030: every MW builds, flat load", "Upper bound: every"), ("Upper bound 2030 at CEC utilization", "Upper bound at CEC")):
+        v = float(dcases[dcases.case.str.startswith(key)].dc_energy_twh_2030.iloc[0]); den_lo, den_mid, den_hi = (pl30 - dc30 + v + e - ex_mid for e in (ex_lo, ex_mid, ex_hi))
+        srows.append(dict(series=lab, year=2030, dc_added_twh=v, dc_total_low_twh=ex_lo + v, dc_total_mid_twh=ex_mid + v, dc_total_high_twh=ex_hi + v, denominator_twh=den_mid,
+                          denominator="Planning 2030 non-data-center energy plus the bound", share_low_pct=100 * (ex_lo + v) / den_lo, share_mid_pct=100 * (ex_mid + v) / den_mid, share_high_pct=100 * (ex_hi + v) / den_hi))
+    share = pd.DataFrame(srows); share.to_csv(PROCESSED / "ch4_dc_share_trajectory.csv", index=False)
+    fig, ax = plt.subplots(figsize=(10, 5.4))
+    for sc, col in (("Planning", "#1f77b4"), ("Local Reliability", "#d62728")):
+        s_ = share[share.series.str.startswith(f"CED 2025 {sc}")].sort_values("year")
+        ax.fill_between(s_.year, s_.share_low_pct, s_.share_high_pct, color=col, alpha=0.15)
+        ax.plot(s_.year, s_.share_mid_pct, color=col, lw=2, marker="o", ms=4, label=f"CED 2025 {sc}: existing {ex_lo:.1f}-{ex_hi:.1f} TWh plus the forecast data center additions, over statewide energy to serve load")
+        for y in (2030, 2040):
+            r_ = s_[s_.year == y].iloc[0]; ax.annotate(f"{r_.share_mid_pct:.1f}%\n({r_.dc_total_mid_twh:.0f} of {r_.denominator_twh:.0f} TWh)", (y, r_.share_mid_pct), textcoords="offset points", xytext=(0, 9 if sc == "Local Reliability" else -24), ha="center", fontsize=7.8, color=col)
+    hist = share[share.series.str.startswith("History")]
+    ax.errorbar(hist.year, hist.share_mid_pct, yerr=[hist.share_mid_pct - hist.share_low_pct, hist.share_high_pct - hist.share_mid_pct], fmt="s", color="k", ms=6, capsize=3, label="history: EPRI 2023 estimate and the CEC ~1,000 MW converted, over EIA-861 retail sales")
+    for r_ in hist.itertuples():
+        ax.annotate(f"{r_.share_low_pct:.1f}-{r_.share_high_pct:.1f}%" if r_.share_low_pct != r_.share_high_pct else f"{r_.share_mid_pct:.1f}%", (r_.year, r_.share_high_pct), textcoords="offset points", xytext=(0, 6), ha="center", fontsize=7.8)
+    ub = share[share.series.str.startswith("Upper bound")]
+    ax.scatter(ub.year, ub.share_mid_pct, marker="^", s=70, color="#c1272d", zorder=5, label="upper bound 2030: every requested MW on line, flat load (top) or at the CEC's utilization (bottom)")
+    for r_ in ub.itertuples():
+        ax.annotate(f"{r_.share_mid_pct:.0f}%: {r_.dc_total_mid_twh:.0f} TWh of {r_.denominator_twh:.0f}", (2030, r_.share_mid_pct), textcoords="offset points", xytext=(8, -3), fontsize=7.8, color="#c1272d")
+    ax.set_xlim(2022.5, 2040.8); ax.set_ylim(0, max(ub.share_mid_pct.max() * 1.12, 20)); ax.set_ylabel("data center share of California electricity (%)"); ax.set_xlabel("year")
+    ax.set_xticks(list(range(2023, 2041, 1))); ax.set_xticklabels([str(y) if y % 2 == 1 else "" for y in range(2023, 2041)], fontsize=8)
+    ax.set_title("Data centers as a share of California's electricity: history, the adopted forecast cases and the upper bound", fontsize=10)
+    ax.legend(fontsize=7.5, loc="upper center", bbox_to_anchor=(0.5, -0.12), frameon=False)
+    fig.subplots_adjust(bottom=0.27)
+    save(fig, "fig4_08_dc_share_of_electricity")
+    print("   2030 shares: " + "; ".join(f"{r.series.split(':')[0]} {r.share_mid_pct:.1f}%" for r in share[share.year == 2030].itertuples()))
+
     return 0
 
 

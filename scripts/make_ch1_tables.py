@@ -86,6 +86,28 @@ def main() -> int:
     ann = pd.read_csv(PROCESSED / "ch1_gas_series_comparability_monthly.csv", index_col=0); ann.index = pd.to_datetime(ann.index); ay = ann.groupby(ann.index.year)[["eia930_gas_TWh", "caiso_fuelmix_gas_TWh", "eia_minus_caiso_gas_TWh"]].sum()
     rows.append(r"\midrule"); rows += [f"{int(y)} total & {r.eia930_gas_TWh:.1f} & {r.caiso_fuelmix_gas_TWh:.1f} & {r.eia_minus_caiso_gas_TWh:+.1f} & -- & -- \\\\" for y, r in ay.loc[2023:2025].iterrows()]
     write("ch1_gas_comparability", "\n".join([r"\begin{tabular}{lrrrrr}", r"\toprule", r"Month & EIA-930 CISO gas (TWh) & CAISO fuel-mix gas (TWh) & EIA minus CAISO (TWh) & CAISO gas share of demand (\%) & Implied gas CO$_2$ factor, CAISO accounting (kg/MWh) \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"]))
+
+    # workshop format: minimum, maximum and mean of the 2025-2026 hourly series; monthly gross imports and exports
+    ws = pd.read_csv(PROCESSED / "ch1_workshop_stats.csv")
+    rows = []
+    for r in ws.itertuples():
+        fmt = (lambda v: f"{v:,.0f}") if r.unit == "MW" else (lambda v: f"{v:,.1f}")
+        rows.append(f"{esc(r.series)} & {esc(r.period)} & {esc(r.unit)} & {int(r.hours):,} & {fmt(r.min)} & {esc(str(r.min_time)[:16])} & {fmt(r.max)} & {esc(str(r.max_time)[:16])} & {fmt(r.mean)} \\\\")
+    write("ch1_workshop_stats", "\n".join([
+        r"\begin{tabular}{llllrlrlr}", r"\toprule",
+        r"Series & Period & Unit & Hours & Minimum & at & Maximum & at & Mean \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"]))
+    ie = pd.read_csv(PROCESSED / "ch1_imports_exports_monthly.csv")
+    rows = [f"{int(r.year)}-{int(r.month):02d} & {r.imports_GWh:,.0f} & {r.exports_GWh:,.0f} & {r.net_imports_GWh:,.0f} & {int(r.hours)} / {int(r.calendar_hours)}{'' if r.complete else ' (incomplete)'} \\\\" for r in ie.itertuples()]
+    tot = [f"\\midrule 2025 total & {ie[ie.year==2025].imports_GWh.sum():,.0f} & {ie[ie.year==2025].exports_GWh.sum():,.0f} & {ie[ie.year==2025].net_imports_GWh.sum():,.0f} & {int(ie[ie.year==2025].hours.sum())} \\\\",
+           f"2026 to date & {ie[ie.year==2026].imports_GWh.sum():,.0f} & {ie[ie.year==2026].exports_GWh.sum():,.0f} & {ie[ie.year==2026].net_imports_GWh.sum():,.0f} & {int(ie[ie.year==2026].hours.sum())} \\\\"]
+    write("ch1_imports_exports_monthly", "\n".join([
+        r"\begin{tabular}{lrrrl}", r"\toprule", r"Month & Gross imports & Gross exports & Net imports & Hours present \\", r" & (GWh) & (GWh) & (GWh) & \\", r"\midrule", *rows, *tot, r"\bottomrule", r"\end{tabular}"]))
+    rec = json.loads((PROCESSED / "ch1_run_record.json").read_text())["workshop_format"]; ck = rec["interchange_check"]
+    write("ch1_imports_exports_note", r"\parbox{\textwidth}{\footnotesize Check: the hourly sum of the neighbour flows against the balance file's net interchange over " + f"{ck['hours_compared']:,}" + r" hours of 2025--2026: mean absolute difference " + f"{ck['mean_abs_diff_MW']:.0f}" + r"~MW, correlation " + f"{ck['correlation']:.4f}" + ".}")
+    inst = pd.read_csv(PROCESSED / "ch1_installed_wind_solar_2026_07.csv")
+    rows = [f"{esc(r.technology.capitalize())} & {r.ba_nameplate_mw:,.0f} & {int(r.ba_units):,} & {r.california_nameplate_mw:,.0f} & {int(r.california_units):,} \\\\" for r in inst.itertuples()]
+    write("ch1_installed_wind_solar", "\n".join([
+        r"\begin{tabular}{lrrrr}", r"\toprule", r"Technology & \multicolumn{2}{c}{CAISO balancing authority} & \multicolumn{2}{c}{State of California} \\", r" & nameplate (MW) & units & nameplate (MW) & units \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"]))
     return 0
 
 

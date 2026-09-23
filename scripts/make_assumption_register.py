@@ -48,6 +48,9 @@ def main() -> int:
     hm = hs.pivot(index="variant", columns="limit", values="headroom_mw")
     r29, r30 = float(prof[("Planning", 2029)]), float(prof[("Planning", 2030)])
     e25 = em[(em.year == 2025)].set_index(["strategy", "share_hours"]).t_per_gwh
+    sh = pd.read_csv(PROCESSED / "ch4_dc_share_trajectory.csv"); sh30 = sh[(sh.series.str.startswith("CED 2025 Planning")) & (sh.year == 2030)].iloc[0]
+    sh_lo, sh_hi = float(sh30.dc_total_low_twh - sh30.dc_added_twh), float(sh30.dc_total_high_twh - sh30.dc_added_twh)
+    ev_mwh = float(pd.read_csv(PROCESSED / "ch2_ev_equivalents.csv").twh_flat.iloc[0] * 1e6 / (pd.read_csv(PROCESSED / "ch2_ev_equivalents.csv").ev_million_flat.iloc[0] * 1e6))
     rows = [
         ("Tier confidence levels", f"Planning 0.70 / 0.33 / 0.00; Local Reliability 1.00 / 0.50 / 0.10 (agreement / application / inquiry); MC triangular {rng('p_agreement')}, {rng('p_application')}, {rng('p_inquiry')}",
          "cec_dc_methodology_memo_2026 Table 2; ERCOT chain and PJM rule as yardsticks",
@@ -82,6 +85,10 @@ def main() -> int:
         ("Emissions of a flexible load", "curtail or shift the highest-intensity 5, 10 or 25% of hours; CAISO accounting intensity", "caiso_outlook co2 and demand daily files",
          f"2025: flat {e25[('flat', 0.0)]:.0f} t/GWh; curtail 25% {e25[('curtail', 0.25)]:.0f}; shift 25% {e25[('shift', 0.25)]:.0f}; smaller shares in Table tab:emissions"),
         ("Regime scores", "0 to 3 per criterion under a stated rubric", "ch4_regime_rubric.csv; the crosswalk cells", "Descriptive cells published next to the scores so a reader can rescore (Tables tab:crosswalk and tab:scores)"),
+        ("Existing data center energy in the share trajectory", f"{sh_lo:.1f} to {sh_hi:.1f} TWh (EPRI 2023 estimate and the CEC ~1,000 MW converted at a 0.80 to 0.95 load factor)", "epri_powering_intelligence_2024; cec_dc_methodology_memo_2026; ch1_dc_load_estimates.csv",
+         f"Carried as a band: the 2030 Planning share runs from {sh30.share_low_pct:.1f} to {sh30.share_high_pct:.1f} percent across it (Table tab:dcshare); the denominators (retail sales for the history, energy to serve load for the forecast) are stated per row"),
+        ("Electric-car energy per year (workshop comparison only)", f"{ev_mwh:.0f} MWh per car per year (20 kWh per 100 km over 15,000 km)", "Manner 2026 slide 13 (manner2026); no California per-vehicle figure in the record",
+         "Used only to express the requests in car-years (Table tab:ev); it enters no gap, headroom or crosswalk result; halving or doubling it halves or doubles the car counts"),
     ]
     df = pd.DataFrame(rows, columns=["assumption", "value_or_range", "source", "test_and_result"])
     df.to_csv(PROCESSED / "ch5_assumption_register.csv", index=False)
@@ -92,7 +99,7 @@ def main() -> int:
              r"\toprule", r"Assumption & Value or range & Source & How it was tested and what the test showed \\", r"\midrule", r"\endhead"]
     for r in df.itertuples():
         t = esc(r.test_and_result)
-        for lab in ("tab:specs", "tab:ch4growth", "tab:ercotrates", "tab:headroomyear", "tab:emissions", "tab:crosswalk", "tab:scores"):
+        for lab in ("tab:specs", "tab:ch4growth", "tab:ercotrates", "tab:headroomyear", "tab:emissions", "tab:crosswalk", "tab:scores", "tab:dcshare", "tab:ev"):
             t = t.replace(esc(lab), "\\ref{" + lab + "}")
         lines.append(f"{esc(r.assumption)} & {esc(r.value_or_range)} & {esc(r.source)} & {t} \\\\" + "\n" + r"\addlinespace")
     lines += [r"\bottomrule", r"\end{longtable}"]

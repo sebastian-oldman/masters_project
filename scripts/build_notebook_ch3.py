@@ -79,6 +79,11 @@ The July 2026 planned list for California (229 units, 20.1 GW with planned dates
     code("""cases.groupby("case")[["capacity_mw", "energy_twh", "peak_contribution_mw"]].sum().round(1)"""),
     code("""cs = json.loads((PROCESSED / "ch3_cases_2030_summary.json").read_text()); {k: v for k, v in cs.items() if k != "weighted_share_by_resource"}"""),
     code("""show("fig3_05_cases_2030")"""),
+    md("""### The workshop format: production by technology, 2025 and the 2030 cases
+
+The stacked bars repeat Fingrid's projection chart for California: EIA-923 in-state generation in 2025 and the three 2030 cases at realised capacity factors, by technology."""),
+    code("""table("ch3_production_projection").pivot(index="resource", columns="column", values="twh").round(1)"""),
+    code("""show("fig3_06_production_projection")"""),
     md("""**Reading.** If everything on the July 2026 planned list builds, California's nameplate capacity reaches 128 GW in 2030, 236 TWh a year at realised capacity factors and 78 GW of ELCC-derated peak contribution. Weighting by the realization model removes a third of the planned additions (13.2 of 20.1 GW survive: 71 percent of batteries and solar, 78 percent of wind, 31 percent of gas, 13 percent of the two pumped-storage projects, whose approvals have not been initiated), giving 121 GW, 231 TWh and 74 GW. Subtracting 6.5 GW of scheduled retirements, of which Diablo Canyon is 2.3 GW, leaves 114 GW, 204 TWh and 68 GW; with Diablo Canyon continuing, 117 GW, 222 TWh and 71 GW. The supply side therefore adds about 10 to 13 GW of nameplate and 6 to 8 GW of peak contribution by 2030 net of retirements, against the 4 GW of managed net peak growth in the adopted forecast and the 20.7 GW of data center requests located in California from chapter 2. That comparison is the object of the next chapter."""),
 ]
 nb = nbf.v4.new_notebook(); nb["cells"] = cells

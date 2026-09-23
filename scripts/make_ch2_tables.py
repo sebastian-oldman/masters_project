@@ -135,6 +135,18 @@ def main() -> int:
     write("ch2_tier_vintages_detail", [*hdr, *rows_a[:-1], r"\bottomrule", r"\end{tabular}"])
     write("ch2_tier_vintages_detail_c", [*hdr, *rows_c[:-1], r"\bottomrule", r"\end{tabular}"])
     write("ch2_tier_vintages_detail_b", [*hdr, *rows_b, r"\bottomrule", r"\end{tabular}"])
+
+    # workshop format: statistics of the projects; data centers against electric cars
+    ps = pd.read_csv(PROCESSED / "ch2_project_statistics.csv")
+    def fmtv(v, u):
+        return f"{v:,.0f}" if u == "MW" else (f"{v:,.2f}" if u == "TWh" else f"{v:,.1f}")
+    rows = [f"{esc(r.item)} & {fmtv(r.value, r.unit)} & {esc(r.unit)} & {esc(r.source).replace(chr(92) + '_', chr(92) + '_' + chr(92) + 'allowbreak{}')} \\\\" for r in ps.itertuples()]
+    write("ch2_project_statistics", [r"\begin{tabular}{p{6.2cm}rlp{7.2cm}}", r"\toprule", r"Item & Value & Unit & Source \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+    ev = pd.read_csv(PROCESSED / "ch2_ev_equivalents.csv")
+    rows = [f"{esc(r.item)} & {r.mw:,.0f} & {r.twh_flat:,.1f} & {r.ev_million_flat:,.1f} & {r.twh_cec_utilization:,.1f} & {r.ev_million_cec:,.1f} \\\\" for r in ev.itertuples()]
+    write("ch2_ev_equivalents", [r"\begin{tabular}{lrrrrr}", r"\toprule", r"Requests & MW & \multicolumn{2}{c}{Flat load} & \multicolumn{2}{c}{CEC case (0.67 x 0.88)} \\",
+                                 r" & & TWh/y & million cars & TWh/y & million cars \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+    write("ch2_ev_equivalents_note", [r"\parbox{\textwidth}{\footnotesize " + esc(ev.basis.iloc[0]) + ".}"])
     return 0
 
 

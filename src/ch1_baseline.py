@@ -658,3 +658,91 @@ def fill_from_caiso(h: pd.DataFrame, target: str, source: pd.Series, min_overlap
         log.append({"year": y, "target": target, "n_missing": int(e.isna().sum()), "n_filled": int(missing.sum()),
                     "slope": float(a), "intercept": float(b), "corr": float(np.corrcoef(c[both], e[both])[0, 1])})
     return out, pd.DataFrame(log)
+
+
+# --------------------------------------------------------------------------------------
+# 7. The workshop format (Manner, IRTF SUSTAIN, July 2026): 2025-2026 hourly series, gross imports and
+#    exports by month, installed wind and solar, and min / max / mean summaries
+# --------------------------------------------------------------------------------------
+def load_eia930_interchange_ciso(first_year: int = 2025, last_year: int = 2026, ba: str = "CISO") -> pd.DataFrame:
+    """Hourly gross imports and exports of one balancing authority from the EIA-930 INTERCHANGE files, which report
+    the flow with each directly interconnected balancing authority (positive = flow out of `ba`). Exports sum the
+    positive neighbour flows and imports the negative ones, so their difference is the net interchange of the
+    BALANCE files (checked in run_chapter1 step 5). Files repeated across raw folders keep the later copy."""
+    frames = []
+    for f in sorted(glob.glob(str(RAW / "eia930" / "*" / "EIA930_INTERCHANGE_*.csv"))):
+        yr = int(re.search(r"_INTERCHANGE_(\d{4})_", f).group(1))
+        if yr < first_year or yr > last_year:
+            continue
+        parts = []
+        cols = ["Balancing Authority", "Directly Interconnected Balancing Authority", "Interchange (MW)", "UTC Time at End of Hour"]
+        for chunk in pd.read_csv(f, usecols=cols, chunksize=400_000, low_memory=False):
+            parts.append(chunk[chunk["Balancing Authority"] == ba])
+        d = pd.concat(parts)
+        d["mw"] = pd.to_numeric(d["Interchange (MW)"], errors="coerce")
+        d["time_utc"] = pd.to_datetime(d["UTC Time at End of Hour"], format="%m/%d/%Y %I:%M:%S %p", utc=True)
+        d["exports"] = d["mw"].clip(lower=0)
+        d["imports"] = -d["mw"].clip(upper=0)
+        g = d.groupby("time_utc")
+        frames.append(pd.DataFrame({"exports": g["exports"].sum(min_count=1), "imports": g["imports"].sum(min_count=1), "n_neighbours": g["mw"].count()}))
+    df = pd.concat(frames)
+    df = df[~df.index.duplicated(keep="last")].sort_index()
+    df.index = df.index.tz_convert(TZ)
+    df.index.name = "hour_ending_local"
+    df["net_imports"] = df["imports"] - df["exports"]
+    start = df.index - pd.Timedelta(hours=1)
+    df["year"] = start.year
+    df["month"] = start.month
+    return df[(df["year"] >= first_year) & (df["year"] <= last_year)]
+
+
+def monthly_imports_exports(ix: pd.DataFrame) -> pd.DataFrame:
+    """Monthly gross imports, exports and net imports (GWh), the hours behind them and a complete-month flag
+    (at least 95 percent of the calendar hours present; EIA-930 has a day of missing neighbour rows in some months)."""
+    g = ix.groupby(["year", "month"])
+    out = pd.DataFrame({"imports_GWh": g["imports"].sum() / 1e3, "exports_GWh": g["exports"].sum() / 1e3, "hours": g["imports"].count()})
+    out["net_imports_GWh"] = out["imports_GWh"] - out["exports_GWh"]
+    out["calendar_hours"] = [pd.Period(f"{y}-{m:02d}").days_in_month * 24 for y, m in out.index]
+    out["complete"] = out["hours"] >= 0.95 * out["calendar_hours"]
+    return out.reset_index()
+
+
+_860M_TECH = {"Onshore Wind Turbine": "wind", "Offshore Wind Turbine": "wind", "Solar Photovoltaic": "solar",
+              "Solar Thermal with Energy Storage": "solar", "Solar Thermal without Energy Storage": "solar"}
+
+
+def eia860m_ba_capacity(source_id: str = "eia860m_2026_07", ba: str = "CISO") -> pd.DataFrame:
+    """Operating nameplate wind and solar capacity (MW) inside one balancing authority and inside California, from
+    the Operating sheet of an EIA-860M monthly file. The balancing-authority total is the one to set against the
+    EIA-930 CISO generation series, which counts plants by balancing authority rather than by state."""
+    op = pd.read_excel(raw_path(source_id), sheet_name="Operating", header=2)
+    op["mw"] = pd.to_numeric(op["Nameplate Capacity (MW)"], errors="coerce")
+    op["label"] = op["Technology"].map(_860M_TECH)
+    op = op[op["label"].notna()]
+    rows = []
+    for label, sub in op.groupby("label"):
+        in_ba = sub[sub["Balancing Authority Code"] == ba]
+        in_ca = sub[sub["Plant State"] == "CA"]
+        rows.append({"technology": label, "ba": ba, "ba_nameplate_mw": float(in_ba["mw"].sum()), "ba_units": int(len(in_ba)),
+                     "california_nameplate_mw": float(in_ca["mw"].sum()), "california_units": int(len(in_ca)), "source": source_id})
+    return pd.DataFrame(rows)
+
+
+def hourly_stats(s: pd.Series, label: str, unit: str, period: str) -> dict:
+    """Minimum, maximum and mean of an hourly series with the hours behind them and the times of the extremes."""
+    s = s.dropna()
+    return {"series": label, "period": period, "unit": unit, "hours": int(len(s)), "min": float(s.min()), "min_time": str(s.idxmin()),
+            "max": float(s.max()), "max_time": str(s.idxmax()), "mean": float(s.mean())}
+
+
+def production_intensity(ci: pd.DataFrame, fm: pd.DataFrame, min_generation_mw: float = 1000.0) -> pd.Series:
+    """In-CAISO production emission factor (g CO2 per kWh): the CO2 that CAISO's accounting assigns to sources inside
+    CAISO (imports excluded) divided by the generation of the fuel-mix sources inside CAISO (imports and batteries
+    excluded), on hours that are valid in the CO2 file. The consumption-side counterpart is the accounting intensity
+    of section 3 (imports net of exports, divided by demand)."""
+    co2_cols = [c for c in ci.columns if c.endswith(" CO2") and c != "Imports CO2"]
+    gen_cols = [c for c in ("solar", "wind", "geothermal", "biomass", "biogas", "small_hydro", "large_hydro", "coal", "nuclear", "natural_gas", "other") if c in fm.columns]
+    num = ci[co2_cols].sum(axis=1, min_count=1)
+    den = fm[gen_cols].sum(axis=1, min_count=1).reindex(ci.index)
+    ok = ci["valid_hour"] & den.gt(min_generation_mw)
+    return (num / den * 1000.0).where(ok)

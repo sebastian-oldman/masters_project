@@ -32,6 +32,50 @@ def save(fig, name):
     fig.savefig(FIGURES / f"{name}.png", bbox_inches="tight"); fig.savefig(FIGURES / f"{name}.pdf", bbox_inches="tight"); plt.close(fig); print("  figure", name)
 
 
+def workshop_figure() -> None:
+    """Step 5, the workshop format: electricity production by technology, 2025 as generated and the three 2030 cases.
+    Reads the chapter outputs (ch3_eia923_generation_by_resource.csv, ch3_cases_2030.csv) so it can be re-run alone
+    with `--workshop-only`."""
+    print("5. The workshop format: electricity production by technology, 2025 and the three 2030 cases")
+    cases = pd.read_csv(PROCESSED / "ch3_cases_2030.csv")
+    totals = cases.groupby("case")[["capacity_mw", "energy_twh", "peak_contribution_mw"]].sum()
+    short = {"A. Everything builds": "A. Everything\nbuilds", "B. Model-weighted": "B. Model-\nweighted", "C. Model-weighted minus retirements": "C. Weighted\nminus\nretirements"}
+    net_imports_2025 = float(pd.read_csv(PROCESSED / "ch1_ciso_annual_summary.csv", index_col=0).loc[2025, "net_imports_TWh"])
+    g25 = pd.read_csv(PROCESSED / "ch3_eia923_generation_by_resource.csv"); g25 = g25[g25.year == 2025].set_index("resource").gwh / 1e3
+    GROUPS = {"Nuclear": ["Nuclear"], "Hydro": ["Hydro", "Pumped storage", "Large hydro", "Small hydro"], "Solar": ["Solar"], "Wind": ["Wind"], "Geothermal": ["Geothermal"],
+              "Biomass": ["Biomass"], "Natural gas": ["Natural gas"], "Other thermal": ["Coal and petcoke", "Oil", "Other"]}
+    PCOL = {"Nuclear": "#e8711a", "Hydro": "#9ecae1", "Solar": "#f2c200", "Wind": "#2e8b57", "Geothermal": "#a0522d", "Biomass": "#8c8c8c", "Natural gas": "#5b6b7a", "Other thermal": "#b0b8c1"}
+    prows = []
+    for grp, members in GROUPS.items():
+        prows.append(dict(column="2025 (EIA-923, in-state generation)", resource=grp, twh=float(sum(g25.get(m, 0.0) for m in members)), source="eia923_2025"))
+    for c_ in totals.index:
+        sub = cases[cases.case == c_].set_index("resource").energy_twh
+        for grp, members in GROUPS.items():
+            prows.append(dict(column=f"2030 {c_}", resource=grp, twh=float(sum(sub.get(m, 0.0) for m in members)), source="ch3_cases_2030.csv"))
+    prod = pd.DataFrame(prows); prod.to_csv(PROCESSED / "ch3_production_projection.csv", index=False)
+    bat25 = float(g25.get("Batteries", 0.0))
+    piv_p = prod.pivot(index="column", columns="resource", values="twh").reindex(["2025 (EIA-923, in-state generation)"] + [f"2030 {c_}" for c_ in totals.index])
+    fig, ax = plt.subplots(figsize=(10, 5.8))
+    xs = np.arange(len(piv_p)); bottom = np.zeros(len(piv_p))
+    for grp in GROUPS:
+        vals = piv_p[grp].values
+        ax.bar(xs, vals, bottom=bottom, color=PCOL[grp], width=0.58, label=grp, edgecolor="white", linewidth=0.5)
+        for x, v, b in zip(xs, vals, bottom):
+            if v >= 4:
+                ax.text(x, b + v / 2, f"{v:.0f}", ha="center", va="center", fontsize=8.5, color="white" if grp in ("Nuclear", "Wind", "Geothermal", "Natural gas", "Biomass") else "black", fontweight="bold")
+        bottom += vals
+    for x, b in zip(xs, bottom):
+        ax.text(x, b + 3, f"{b:.0f}", ha="center", fontsize=10, fontweight="bold")
+    labels = ["2025\nEIA-923 in-state\ngeneration"] + [f"2030\n{short[c_]}" for c_ in totals.index]
+    ax.set_xticks(xs); ax.set_xticklabels(labels, fontsize=8.5); ax.set_ylabel("TWh per year"); ax.set_ylim(0, bottom.max() * 1.32)
+    ax.set_title("Electricity production in California by technology: 2025 as generated and the three 2030 cases at realised capacity factors", fontsize=10)
+    ax.text(0.01, 0.98, f"2025 battery net output {bat25:+.1f} TWh (charging losses) is left out; batteries and pumped storage add no net energy in the 2030 cases\nnet imports are not production: {net_imports_2025:.1f} TWh net into CAISO in 2025 (chapter 1)",
+            transform=ax.transAxes, fontsize=7.6, va="top", bbox=dict(boxstyle="round", fc="white", ec="0.7"))
+    ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=4, frameon=False)
+    fig.subplots_adjust(bottom=0.24)
+    save(fig, "fig3_06_production_projection")
+
+
 def main() -> int:
     # ------------------------------------------------------------ 1. generation, imports, capacity, storage, curtailment
     print("1. Generation by resource, imports, capacity, storage, curtailment")
@@ -221,8 +265,11 @@ def main() -> int:
     ax.set_ylim(0, totals.energy_twh.max() * 1.25); ax2.set_ylim(0, totals.peak_contribution_mw.max() / 1000 * 1.25)
     save(fig, "fig3_05_cases_2030")
     print("done")
+    workshop_figure()
     return 0
 
 
 if __name__ == "__main__":
+    if "--workshop-only" in sys.argv:
+        workshop_figure(); raise SystemExit(0)
     raise SystemExit(main())

@@ -4,7 +4,7 @@ centers and the grid'. Re-runnable; reads raw data through src/ch1_baseline.py.
 
 Outputs
   data/processed/ch1_*.csv|parquet   tables (each with the manifest source ids used)
-  figures/fig1_*.png|pdf             figures referenced by report/sections/02_current_status.tex
+  figures/fig1_*.png|pdf             figures referenced by report/sections/02_current_status.tex (fig1_09 to fig1_13: the 2025-2026 view in the workshop format)
 """
 from __future__ import annotations
 
@@ -298,9 +298,142 @@ def main() -> int:
     ax.set_title("Evidence and assumptions for California data center electricity use: differing years and coverage", fontsize=10)
     save(fig, "fig1_08_existing_dc_load_estimates")
 
-    # ------------------------------------------------------------------ 5. run record
+    # ------------------------------------------------------------------ 5. the workshop format: the 2025-2026 view
+    print("5. The workshop format: 2026 hourly consumption and generation, 2025-2026 prices, 2026 emissions, monthly imports and exports, wind and solar")
+    import matplotlib.dates as mdates
+    TZ = c1.TZ
+    h26 = c1.load_eia930_ciso(2026, 2026)
+    ci26 = cached(PROCESSED / "caiso_co2_intensity_hourly_2026.parquet", lambda: c1.load_caiso_outlook_hourly(2026, 2026), "valid_hour")
+    fm26 = cached(PROCESSED / "caiso_fuelmix_hourly_2026.parquet", lambda: c1.load_caiso_fuelmix_hourly(2026, 2026), "n_intervals")
+    h26, flagged26 = c1.clean_demand_against_caiso(h26, ci26, fuelmix_hourly=fm26)
+    h26["imports"] = -h26["interchange"]
+    start26 = h26.index - pd.Timedelta(hours=1)
+    per_day = h26["demand"].groupby(start26.normalize()).count()
+    last_day = per_day[per_day >= 23].index.max()
+    w = h26[(start26.normalize() >= pd.Timestamp("2026-01-01", tz=TZ)) & (start26.normalize() <= last_day)].copy()
+    period26 = f"2026-01-01 to {last_day:%Y-%m-%d}"
+    w[["demand", "net_generation", "imports", "wind", "solar", "net_load", "gas", "hydro", "nuclear", "battery"]].to_csv(PROCESSED / "ch1_hourly_2026_workshop.csv")
+    stats = [c1.hourly_stats(w["demand"], "CAISO demand (electricity load)", "MW", period26),
+             c1.hourly_stats(w["net_generation"], "Net generation inside CAISO", "MW", period26),
+             c1.hourly_stats(w["imports"], "Net imports", "MW", period26),
+             c1.hourly_stats(w["wind"], "Wind generation", "MW", period26),
+             c1.hourly_stats(w["solar"], "Solar generation", "MW", period26)]
+    # prices: the three DLAPs, January 2025 to the last day in the OASIS cache
+    pw = p.loc["2025-01-01":, list(c1.DLAPS)]
+    period_p = f"2025-01-01 to {pw.index.max():%Y-%m-%d}"
+    for node, lab in c1.DLAPS.items():
+        stats.append(c1.hourly_stats(pw[node], f"Day-ahead price, {lab}", "USD/MWh", period_p))
+    # emissions: consumption accounting intensity and the in-CAISO production factor, 2026
+    prod26 = c1.production_intensity(ci26, fm26)
+    e26 = pd.DataFrame({"intensity_accounting_g_per_kWh": ci26["intensity_accounting_g_per_kWh"], "intensity_floored_g_per_kWh": ci26["intensity_floored_g_per_kWh"],
+                        "intensity_production_g_per_kWh": prod26, "valid_hour": ci26["valid_hour"]})
+    e26 = e26[(e26.index >= pd.Timestamp("2026-01-01")) & (e26.index < pd.Timestamp(last_day.tz_localize(None)) + pd.Timedelta(days=1))]
+    e26.to_csv(PROCESSED / "ch1_carbon_intensity_hourly_2026.csv")
+    period_e = f"2026-01-01 to {e26.index[e26.valid_hour].max():%Y-%m-%d}"
+    stats.append(c1.hourly_stats(e26["intensity_accounting_g_per_kWh"], "CO2 intensity of CAISO demand, accounting (imports net of exports)", "g/kWh", period_e))
+    stats.append(c1.hourly_stats(e26["intensity_production_g_per_kWh"], "CO2 intensity of generation inside CAISO (production factor)", "g/kWh", period_e))
+    # gross imports and exports by month from the neighbour-level interchange, checked against the BALANCE net
+    ix = cached(PROCESSED / "ciso_interchange_gross_2025_2026.parquet", lambda: c1.load_eia930_interchange_ciso(2025, 2026), "n_neighbours")
+    mie = c1.monthly_imports_exports(ix)
+    bal_net = pd.concat([h[h.year == 2025]["imports"], h26["imports"]])
+    chk = pd.DataFrame({"gross_net": ix["net_imports"], "balance_net": bal_net}).dropna()
+    net_check = {"hours_compared": int(len(chk)), "mean_abs_diff_MW": float((chk.gross_net - chk.balance_net).abs().mean()), "correlation": float(chk.corr().iloc[0, 1])}
+    mie.to_csv(PROCESSED / "ch1_imports_exports_monthly.csv", index=False)
+    # installed wind and solar (EIA-860M July 2026, CISO balancing authority and California)
+    inst = c1.eia860m_ba_capacity("eia860m_2026_07", "CISO"); inst.to_csv(PROCESSED / "ch1_installed_wind_solar_2026_07.csv", index=False)
+    inst_mw = inst.set_index("technology")["ba_nameplate_mw"]
+    st = pd.DataFrame(stats); st.to_csv(PROCESSED / "ch1_workshop_stats.csv", index=False)
+    print(f"   2026 hours {len(w)} through {last_day:%b %d}; {len(flagged26)} flagged; demand {w.demand.min():,.0f}-{w.demand.max():,.0f} MW, mean {w.demand.mean():,.0f}; "
+          f"interchange check over {net_check['hours_compared']} h: mean |diff| {net_check['mean_abs_diff_MW']:.0f} MW, r={net_check['correlation']:.4f}")
+    NAVY, TEAL, RED, GREEN = "#2b3a42", "#1a9e8f", "#c1272d", "#1b9e3b"
+    mfmt = mdates.DateFormatter("%b"); mloc = mdates.MonthLocator()
+
+    SHORT = {"CAISO demand (electricity load)": "Demand", "Net generation inside CAISO": "Net generation", "Net imports": "Net imports", "Wind generation": "Wind", "Solar generation": "Solar",
+             "Day-ahead price, PG&E DLAP": "PG&E DLAP", "Day-ahead price, SCE DLAP": "SCE DLAP", "Day-ahead price, SDG&E DLAP": "SDG&E DLAP",
+             "CO2 intensity of CAISO demand, accounting (imports net of exports)": "Consumption factor", "CO2 intensity of generation inside CAISO (production factor)": "Production factor"}
+
+    def stat_table(ax, rows, unit, bbox, fs=7.2):
+        cells = [[SHORT.get(r["series"], r["series"]), f"{r['min']:,.0f}", f"{r['max']:,.0f}", f"{r['mean']:,.0f}"] if unit == "MW" else
+                 [SHORT.get(r["series"], r["series"]), f"{r['min']:,.1f}", f"{r['max']:,.1f}", f"{r['mean']:,.1f}"] for r in rows]
+        t = ax.table(cellText=cells, colLabels=["Series", "Minimum", "Maximum", f"Average ({unit})"], loc="bottom", bbox=bbox, cellLoc="left", colLoc="left")
+        t.auto_set_font_size(False); t.set_fontsize(fs)
+        for (r_, c_), cell in t.get_celld().items():
+            cell.set_edgecolor("#bbbbbb"); cell.set_linewidth(0.5)
+            if r_ == 0: cell.set_text_props(weight="bold")
+        return t
+
+    # Fig 1.9 consumption 2026: hourly demand and net generation inside CAISO
+    fig, ax = plt.subplots(figsize=(10, 4.9))
+    ax.plot(w.index, w["demand"] / 1000, color=NAVY, lw=0.5, label="CAISO demand (electricity load)")
+    ax.plot(w.index, w["net_generation"] / 1000, color=TEAL, lw=0.5, label="Net generation inside CAISO\n(demand minus net imports; batteries net)")
+    ax.set_ylabel("GW"); ax.set_ylim(0, None); ax.xaxis.set_major_locator(mloc); ax.xaxis.set_major_formatter(mfmt); ax.set_xlim(w.index.min(), w.index.max())
+    ax.set_title(f"CAISO hourly consumption and in-CAISO net generation, January 1 to {last_day:%B %-d}, 2026 (EIA-930, adjusted series)", fontsize=10)
+    ax.legend(fontsize=7.5, loc="upper left", bbox_to_anchor=(0.0, -0.09), frameon=False)
+    stat_table(ax, [s for s in stats if s["series"] in ("CAISO demand (electricity load)", "Net generation inside CAISO", "Net imports")], "MW", [0.60, -0.44, 0.40, 0.26])
+    fig.subplots_adjust(bottom=0.34)
+    save(fig, "fig1_09_consumption_2026")
+
+    # Fig 1.10 prices 2025-2026: hourly day-ahead LMP at the three DLAPs
+    fig, ax = plt.subplots(figsize=(10, 4.9))
+    for i, (node, lab) in enumerate(c1.DLAPS.items()):
+        ax.plot(pw.index, pw[node], color=f"C{i}", lw=0.35, alpha=0.85, label=f"{lab} (day-ahead hourly LMP)")
+    ax.axhline(0, color="k", lw=0.6)
+    ax.set_ylabel("USD per MWh"); ax.xaxis.set_major_locator(mdates.MonthLocator(bymonth=(1, 4, 7, 10))); ax.xaxis.set_major_formatter(mdates.DateFormatter("%b\n%Y")); ax.set_xlim(pw.index.min(), pw.index.max())
+    sec = ax.secondary_yaxis("right", functions=(lambda x: x / 10.0, lambda x: x * 10.0)); sec.set_ylabel("US cents per kWh")
+    ax.set_title(f"Day-ahead hourly prices at the three default load aggregation points, January 2025 to {pw.index.max():%B %-d, %Y} (CAISO OASIS; wholesale energy price, before retail charges and taxes)", fontsize=9.2)
+    ax.legend(fontsize=7.5, loc="upper left", bbox_to_anchor=(0.0, -0.13), frameon=False)
+    stat_table(ax, [s for s in stats if s["unit"] == "USD/MWh"], "USD/MWh", [0.55, -0.46, 0.45, 0.26])
+    fig.subplots_adjust(bottom=0.36)
+    save(fig, "fig1_10_prices_2025_2026")
+
+    # Fig 1.11 emissions 2026: consumption accounting intensity and in-CAISO production factor
+    fig, ax = plt.subplots(figsize=(10, 4.9))
+    ax.plot(e26.index, e26["intensity_accounting_g_per_kWh"], color=NAVY, lw=0.5, label="Consumption: CAISO accounting CO2 (imports net of exports)\ndivided by CAISO demand")
+    ax.plot(e26.index, e26["intensity_production_g_per_kWh"], color=TEAL, lw=0.5, label="Production: CO2 of the sources inside CAISO\ndivided by in-CAISO generation")
+    ax.axhline(0, color="k", lw=0.6)
+    ax.set_ylabel("g CO2 per kWh"); ax.xaxis.set_major_locator(mloc); ax.xaxis.set_major_formatter(mfmt); ax.set_xlim(e26.index.min(), e26.index.max())
+    ax.set_title(f"CAISO hourly CO2 intensity, January 1 to {e26.index[e26.valid_hour].max():%B %-d}, 2026: consumption (accounting) and production factors (CAISO Today's Outlook)", fontsize=9.6)
+    ax.legend(fontsize=7.3, loc="upper left", bbox_to_anchor=(0.0, -0.09), frameon=False)
+    stat_table(ax, [s for s in stats if s["unit"] == "g/kWh"], "g/kWh", [0.52, -0.42, 0.48, 0.22])
+    fig.subplots_adjust(bottom=0.34)
+    save(fig, "fig1_11_emissions_2026")
+
+    # Fig 1.12 gross imports and exports by month, complete months only
+    mc = mie[mie.complete].copy(); mc["t"] = pd.to_datetime(mc.year.astype(str) + "-" + mc.month.astype(str).str.zfill(2) + "-15")
+    fig, ax = plt.subplots(figsize=(10, 4.6))
+    ax.plot(mc.t, mc.imports_GWh, color=RED, lw=2.2, marker="o", ms=3.5, label="Gross imports into CAISO")
+    ax.plot(mc.t, mc.exports_GWh, color=GREEN, lw=2.2, marker="o", ms=3.5, label="Gross exports from CAISO")
+    ax.plot(mc.t, mc.net_imports_GWh, color="grey", lw=1.2, ls="--", label="Net imports (imports minus exports)")
+    ax.set_ylabel("GWh per month"); ax.xaxis.set_major_locator(mloc); ax.xaxis.set_major_formatter(mdates.DateFormatter("%b\n%y")); ax.set_ylim(0, None)
+    y25 = mc[mc.year == 2025]; y26 = mc[mc.year == 2026]
+    ax.text(0.01, 0.97, f"2025: imports {y25.imports_GWh.sum()/1e3:,.1f} TWh, exports {y25.exports_GWh.sum()/1e3:,.1f} TWh, net {y25.net_imports_GWh.sum()/1e3:,.1f} TWh\n"
+            f"2026 Jan-{pd.Timestamp(y26.t.max()):%b}: imports {y26.imports_GWh.sum()/1e3:,.1f} TWh, exports {y26.exports_GWh.sum()/1e3:,.1f} TWh, net {y26.net_imports_GWh.sum()/1e3:,.1f} TWh",
+            transform=ax.transAxes, fontsize=8, va="top", bbox=dict(boxstyle="round", fc="white", ec="0.7"))
+    ax.set_title(f"CAISO gross imports and exports by month, January 2025 to {pd.Timestamp(mc.t.max()):%B %Y} (EIA-930 interchange with each neighbouring balancing authority; complete months)", fontsize=9.6)
+    ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.14), ncol=3, frameon=False)
+    fig.subplots_adjust(bottom=0.22)
+    save(fig, "fig1_12_imports_exports_monthly")
+
+    # Fig 1.13 wind and solar generation 2026 against installed nameplate capacity
+    fig, axes = plt.subplots(2, 1, figsize=(10, 6.6), sharex=True)
+    for ax, col, lab, color in ((axes[0], "wind", "Wind", "#3a7d44"), (axes[1], "solar", "Solar", "#d9a300")):
+        s = w[col]; cap = float(inst_mw[col]); r = [x for x in stats if x["series"] == f"{lab} generation"][0]
+        ax.plot(w.index, s / 1000, color=color, lw=0.5, label=f"{lab} generation in CAISO, hourly (EIA-930)")
+        ax.axhline(cap / 1000, color="k", lw=1.0, ls="--", label=f"installed {lab.lower()} nameplate in the CAISO balancing authority, July 2026: {cap:,.0f} MW (EIA-860M)")
+        ax.set_ylabel("GW"); ax.set_ylim(0, cap / 1000 * 1.12)
+        ax.text(0.995, 0.96, f"min {r['min']:,.0f} MW, mean {r['mean']:,.0f} MW ({100*r['mean']/cap:.0f}% of installed), max {r['max']:,.0f} MW ({100*r['max']/cap:.0f}% of installed)",
+                transform=ax.transAxes, fontsize=8, ha="right", va="top", bbox=dict(boxstyle="round", fc="white", ec="0.7"))
+        ax.legend(fontsize=7.5, loc="upper left", bbox_to_anchor=(0.0, -0.04 if col == "solar" else -0.02), frameon=False, ncol=1)
+    axes[1].xaxis.set_major_locator(mloc); axes[1].xaxis.set_major_formatter(mfmt); axes[1].set_xlim(w.index.min(), w.index.max())
+    axes[0].set_title(f"Hourly wind and solar generation in CAISO, January 1 to {last_day:%B %-d}, 2026, against installed nameplate capacity", fontsize=10)
+    fig.subplots_adjust(hspace=0.42, bottom=0.14)
+    save(fig, "fig1_13_wind_solar_2026")
+    workshop_record = {"period_2026": period26, "hours_2026": int(len(w)), "flagged_hours_2026": int(len(flagged26)), "price_period": period_p, "emissions_period": period_e,
+                       "interchange_check": net_check, "installed_ciso_mw": {k: float(v) for k, v in inst_mw.items()}}
+
+    # ------------------------------------------------------------------ 6. run record
     record = {"years": YEARS, "ciso_hours": int(len(h)), "ciso_valid_demand_hours": {int(y): int(v) for y, v in summ["hours"].items()}, "lmp_hours": int(len(p)), "co2_valid_hours": {int(y): int(v) for y, v in csum["hours"].items()},
-              "retail_sales_2024_TWh": retail_2024, "retail_sales_2023_TWh": retail_2023, "kollar_grady_california_points": n_ca, "outputs": sorted(x.name for x in PROCESSED.glob("ch1_*"))}
+              "retail_sales_2024_TWh": retail_2024, "retail_sales_2023_TWh": retail_2023, "kollar_grady_california_points": n_ca, "workshop_format": workshop_record, "outputs": sorted(x.name for x in PROCESSED.glob("ch1_*"))}
     (PROCESSED / "ch1_run_record.json").write_text(json.dumps(record, indent=1, default=str))
     print("done")
     return 0
