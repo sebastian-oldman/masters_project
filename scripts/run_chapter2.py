@@ -18,6 +18,7 @@ import pandas as pd  # noqa: E402
 
 from src import ch2_growth as c2  # noqa: E402
 from src.paths import PROCESSED, FIGURES  # noqa: E402
+from src.provenance import stamp  # noqa: E402
 
 plt.rcParams.update({"figure.dpi": 130, "savefig.dpi": 200, "font.size": 9, "axes.grid": True, "grid.alpha": 0.3,
                      "axes.spines.top": False, "axes.spines.right": False})
@@ -25,6 +26,7 @@ BOOT = 199
 
 
 def save(fig, name, **kw):
+    stamp(fig, name)
     fig.savefig(FIGURES / f"{name}.png", bbox_inches="tight", **kw)
     fig.savefig(FIGURES / f"{name}.pdf", bbox_inches="tight", **kw)
     plt.close(fig)

@@ -1,7 +1,7 @@
 PY=.venv/bin/python
 TODAY=$(shell date +%F)
 
-.PHONY: env fetch fetch-large caiso snapshot catalog lab report clean-parts ch1 ch2 ch3 ch4 provenance
+.PHONY: env fetch fetch-large caiso snapshot catalog lab report clean-parts ch1 ch2 ch3 ch4 provenance freeze release defense
 
 env:                       ## create the virtual environment (Python 3.12) and install pins
 	/opt/homebrew/bin/python3.12 -m venv .venv
@@ -48,3 +48,14 @@ clean-parts:               ## remove interrupted downloads
 
 provenance:                ## appendix tables mapping every figure to its processed files, raw sources and code
 	$(PY) scripts/make_provenance_appendix.py
+
+FREEZE=2026-09-22
+
+freeze:                    ## freeze the raw data: dated manifest copy and docs/DATA_FREEZE.md
+	$(PY) scripts/freeze_data.py --date $(FREEZE)
+
+defense:                   ## build the defense deck report/defense/defense.pdf with tectonic
+	cd report/defense && tectonic defense.tex
+
+release:                   ## export report, defense deck, processed CSVs, figures, tables, notebooks and frozen manifest to release/
+	$(PY) scripts/export_release.py --date $(FREEZE)

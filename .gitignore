@@ -1,6 +1,7 @@
 # raw and processed data are large and immutable; the manifest is the record
 data/raw/**
 !data/raw/manifest.csv
+!data/raw/manifest_frozen_*.csv
 data/processed/**
 data/snapshots/**
 !data/snapshots/**/manifest.csv
@@ -27,3 +28,10 @@ report/*.synctex.gz
 !data/processed/cec_data_center_tiers_transcription.csv
 !data/processed/cec_data_center_forecast_parameters.csv
 !data/processed/cbre_california_market_series.csv
+release/**
+report/defense/*.aux
+report/defense/*.log
+report/defense/*.nav
+report/defense/*.snm
+report/defense/*.toc
+report/defense/*.out

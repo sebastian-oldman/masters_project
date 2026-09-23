@@ -1,3 +1,37 @@
 \chapter{Introduction}
 \label{ch:intro}
-% TODO
+
+\section{The question}
+
+At the IRTF SUSTAIN workshop in July 2026, Jukka Manner showed that Finland operates about 285~MW of data centers while its public investment registry lists 7,777~MW more, phased from feasibility study to investment decision \citep{manner2026}. The registry makes the gap between what is planned and what exists visible in one place. The United States has no such registry. What is known about planned American data centers is scattered across state energy agencies, grid operators, utility filings and commercial trackers, each counting in its own units and at its own stage of maturity, and the same project can appear in several of them at once.
+
+California is the largest state without a registry and the one whose numbers travel furthest. In December 2025 its utilities reported 23,277~MW of data center energization requests to the California Energy Commission (CEC), sorted into three tiers: 5,086~MW with signed service agreements, 9,587~MW in active applications and 8,604~MW of inquiries \citep{cec_assembly2026,cec_dc_memo2026}. The CEC does not count those requests at face value. It applies a confidence level to each tier, a utilization factor and a ramp, and carries the result into the adopted demand forecast as 1,743~MW at the 2030 CAISO peak in its Planning forecast and 4,377~MW in its Local Reliability scenario \citep{ced2025_tables}. Whether those discounts are right is an empirical question that the state's own record, and the records of Texas and the Mid-Atlantic, can inform.
+
+\section{Research questions and scope}
+
+The proposal set four research questions, restated here for a California-only scope after Finland was dropped as a replication target and kept only as the motivating example:
+
+\begin{itemize}
+\item \textbf{RQ1.} How large is California's planned data center pipeline by stage, in absolute terms and relative to the grid it would connect to?
+\item \textbf{RQ2.} What is the gap between planned demand and supply through 2030, raw and probability-weighted, in annual energy and at the net peak?
+\item \textbf{RQ3.} How do the data and measurement regimes that count planned loads, the CEC tiers, ERCOT's interconnection phases, PJM's firm and non-firm vetting, the EIA pilot survey, Texas SB~6 and FERC Docket RM26-4, differ, and what would California's headline number be under each?
+\item \textbf{RQ4.} How much of the gap could load flexibility absorb, measured as the curtailment-enabled headroom of the existing system?
+\end{itemize}
+
+Alongside those, the report answers the questions asked during the work: how much of the state's electricity data centers use today, how high data center construction has climbed since the release of ChatGPT, where the grid stands now, and how California's generation has grown. Texas and PJM enter as data rather than as narrative. ERCOT publishes the only monthly, phase-level series of large-load requests large enough to estimate how a pipeline actually moves, and PJM publishes the only explicit firm and non-firm rule; both are used to test the CEC's discounts rather than to compare states.
+
+The geographic boundary is stated wherever it matters. Hourly load, prices and carbon intensity are CAISO's; generation, capacity, retirements and the demand forecast are statewide; the tiers are California-only, with the 2,600~MW that Valley Electric Association reported for Nevada carried as a memo line because it sits inside the CAISO balancing area but outside the state. The request data are the December 2025 vintage, the newest complete set at the data freeze.
+
+\section{Contribution}
+
+The contribution is an independent replication and audit of the CEC's method with transparent, tested assumptions rather than a new forecast. Five things are new. First, the CEC's published parameters are shown to reproduce its own forecast, including the exemption of Silicon Valley Power's queue that the methodology memo states but does not quantify, so the forecast can be rebuilt and varied by anyone (Chapter~\ref{ch:together}). Second, the supply side is discounted with the same discipline as the demand side, using a completion model estimated on every California generator planned since 2016 and the outcome of each by December 2025 (Chapter~\ref{ch:supply}). Third, the CEC's confidence levels are set against two external yardsticks: monthly phase-transition rates estimated from ERCOT's queue reports and the firm-only rule PJM applies (Chapter~\ref{ch:together}). Fourth, the gap is reported as a distribution with a stated upper bound, with a sensitivity analysis that names the assumptions that move it. Fifth, the Duke Nicholas Institute's headroom method is replicated on CAISO load and expressed as a share of the gap, and six counting regimes are scored on a common rubric with the same requests restated under each rule.
+
+Every number in the report can be followed back to a file. Raw downloads are immutable and recorded with their URL, access date and SHA-256 in a manifest; the processed outputs, figures and LaTeX tables are regenerated by one command per chapter; every figure carries its source line, naming the processed files, manifest ids and code that produced it; the appendix repeats those lines as tables; and the data are frozen on a stated date, the repository tagged, and the processed outputs exported with the report.
+
+\section{Related work in brief}
+
+The national picture is set by the Lawrence Berkeley National Laboratory's usage reports and EPRI's state table, which put data centers at a few percent of United States consumption in 2023 with California among the larger states \citep{epri2024}; Chapter~\ref{ch:current} uses EPRI's California share as one of four estimates of existing use. The CEC's own methodology memo, its preliminary and final forecast decks and the CED 2025 forms are the primary documents this report audits \citep{cec_dc_memo2026,cec_prelim2025,cec_tn272026,cec_ced2025}. On attrition, LBNL's interconnection-queue studies and NERC's large-load assessments document how few requests reach operation and how often the same project is submitted in several places; this report estimates California's own generator attrition from EIA-860M vintages instead of borrowing a national rate \citep{eia860m}. The Duke Nicholas Institute's headroom study supplies the flexibility method and the CAISO values that Chapter~\ref{ch:together} replicates \citep{duke2025}. The break-test and forecasting methods of Chapter~\ref{ch:growth} follow Chow and Bai and Perron \citep{chow1960,baiperron1998,baiperron2003}, and the sensitivity analysis uses Sobol indices as implemented in SALib \citep{sobol2001,salib2017}.
+
+\section{Structure of the report}
+
+Chapter~\ref{ch:current} measures the grid as it stands and the range of existing data center use. Chapter~\ref{ch:growth} measures data center growth, reproduces the Census construction chart with break tests, builds California proxies and answers RQ1 from the tier vintages. Chapter~\ref{ch:supply} builds the supply side: generation and imports since 2010, capacity, storage and curtailment, the retirement schedule, the realization model and probability-weighted supply for 2030. Chapter~\ref{ch:together} puts the two sides together for RQ2, replicates the headroom method for RQ4 and compares the counting regimes for RQ3. Chapter~\ref{ch:discussion} restates the contribution, sets out what the audit found about each of the CEC's assumptions, draws the policy implications and states the limits. Appendix~\ref{app:provenance} lists the provenance of every figure.

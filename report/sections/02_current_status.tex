@@ -28,12 +28,14 @@ Table~\ref{tab:annual} shows a grid whose annual demand has been flat since 2019
 \centering\includegraphics[width=0.85\textwidth]{fig1_01_load_duration_curves}
 \caption{Load duration curves over valid hours (counts in the legend), CAISO, 2019--2025. Hours flagged as reporting artifacts are excluded and interchange and hydro gaps are filled from CAISO series. Source: EIA-930 Adjusted demand.}
 \label{fig:ldc}
+\par\vspace{-2pt}\input{tables/figsrc_fig1_01}
 \end{figure}
 
 \begin{figure}[H]
 \centering\includegraphics[width=0.85\textwidth]{fig1_02_net_load_duration_curves}
 \caption{Net-load duration curves over valid hours, CAISO, 2019--2025. The dashed line subtracts the estimated net battery charging of the CAISO fleet from 2025 demand; it does not remove pumped storage and cannot recover gross charging in hours when part of the fleet discharges. Source: EIA-930, CAISO fuel mix.}
 \label{fig:nldc}
+\par\vspace{-2pt}\input{tables/figsrc_fig1_02}
 \end{figure}
 
 Figures~\ref{fig:ldc} and \ref{fig:nldc} make the contrast visible. The load duration curves are nearly indistinguishable across years. The net-load duration curves diverge at the low end: by 2024 and 2025 the lowest-net-load hours approach zero, and once battery charging, which is itself a response to the surplus, is removed from demand, utility solar and wind alone exceeded end-use demand in 80 hours of 2024 and 205 hours of 2025. This midday surplus is the physical basis for the flexibility question in Chapter~\ref{ch:together}.
@@ -42,6 +44,7 @@ Figures~\ref{fig:ldc} and \ref{fig:nldc} make the contrast visible. The load dur
 \centering\includegraphics[width=\textwidth]{fig1_03_seasonal_daily_profiles}
 \caption{Average daily profiles by season: demand (top) and net load (bottom), 2019, 2022 and 2025. Means over valid hours; descriptive averages, not weather-normalised, and demand includes storage charging and pumping. Source: EIA-930.}
 \label{fig:profiles}
+\par\vspace{-2pt}\input{tables/figsrc_fig1_03}
 \end{figure}
 
 The seasonal profiles in Figure~\ref{fig:profiles} show the mechanism. Demand profiles are similar across years, with a modest midday rise in 2025 that reflects storage charging. Net-load profiles deepen at midday and steepen in the evening: in spring the average net load between 12:00 and 14:00 fell from 10.6~GW in 2019 to 6.4~GW in 2025 while the 20:00 value stayed near 22~GW, and in summer the average net load between 12:00 and 14:00 fell from about 18~GW to under 10~GW (the values printed on the figure are the 12:00 to 14:00 and 20:00 means for 2019 and 2025).
@@ -57,6 +60,7 @@ The seasonal profiles in Figure~\ref{fig:profiles} show the mechanism. Demand pr
 \centering\includegraphics[width=\textwidth]{fig1_04_top100_net_load_timing}
 \caption{Month and hour of the 100 highest net-load hours, by year, on one common colour scale. Source: EIA-930.}
 \label{fig:top100}
+\par\vspace{-2pt}\input{tables/figsrc_fig1_04}
 \end{figure}
 
 Table~\ref{tab:top100} and Figure~\ref{fig:top100} identify the hours that set capacity needs. In every year at least 90 percent of the top 100 net-load hours fall in July through September and at least 78 percent between 17:00 and 21:00. Their median start time moved from 18:00 in 2019 and 2020 to 19:00 in 2021 and 2022 and to 20:00 from 2023 onward, the signature of solar pushing the net peak past sunset and of storage shaving the early evening. Solar contributes between 0.6 and 1.2~GW on average in these hours; gas contributes 17 to 23~GW and imports 4 to 9~GW. The implication for a flat load such as a data center is direct: each megawatt adds one for one to hours that solar does not serve, and the relevant capacity resources are storage, gas and imports.
@@ -77,12 +81,14 @@ Hourly day-ahead prices at the three investor-owned utility default load aggrega
 \centering\includegraphics[width=\textwidth]{fig1_05_price_duration_and_diurnal}
 \caption{Price duration curves (left) and average price by hour of day (right), 2024 and 2025; one colour per DLAP, dashed 2024 and solid 2025. The duration axis is truncated at $-60$ and 250~\$/MWh and the extremes are printed in the panel (2024 maxima of 628 to 649~\$/MWh). Source: CAISO OASIS.}
 \label{fig:pdc}
+\par\vspace{-2pt}\input{tables/figsrc_fig1_05}
 \end{figure}
 
 \begin{figure}[H]
 \centering\includegraphics[width=\textwidth]{fig1_06_negative_price_hours}
 \caption{Negative-price hours at the three DLAPs. Left: the complete years 2024 and 2025 and matched January~1 to September~22 windows for 2024, 2025 and 2026, with the share of hours in each window; 2023 (July to December only) is omitted from the comparison. Right: by month. Source: CAISO OASIS.}
 \label{fig:neg}
+\par\vspace{-2pt}\input{tables/figsrc_fig1_06}
 \end{figure}
 
 Negative day-ahead prices are now routine in Southern California (Table~\ref{tab:prices}, Figures~\ref{fig:pdc} and \ref{fig:neg}). The SCE aggregation point cleared below zero in 1,131 hours of 2024 and 877 hours of 2025, and in 890 hours of 2026 through September~22; SDG\&E's point saw 989 and 748 hours; PG\&E's 190 and 218. On the matched January~1 to September~22 window the SCE point had 1,045 negative hours in 2024, 775 in 2025 and 890 in 2026, 16, 12 and 14 percent of the hours in the window, so 2026 sits between the two complete years rather than above them (\texttt{ch1\_negative\_price\_hours\_windows.csv}). Between 72 and 94 percent of those hours fall between 10:00 and 16:00, concentrated in February through June, and the average price by hour of day drops to \$7--\$30 per MWh at midday against \$50--\$70 in the evening peak. The daily ICE block prices show almost no negative days, which is why the hourly series is required. This is the California-specific fact that Chapter~\ref{ch:together} uses: a data center able to place consumption in those hours faces a zero or negative marginal energy price, and one that cannot adds to the evening hours where prices and net load are highest.
@@ -103,6 +109,7 @@ CAISO's Today's Outlook reports five-minute CO$_2$ by source, with imports carri
 \centering\includegraphics[width=\textwidth]{fig1_07_carbon_intensity}
 \caption{Annual, duration-curve and diurnal views of the CAISO CO$_2$ accounting intensity. Left: headline series with negative hours kept, the floored sensitivity, the hourly 5th to 95th percentile band (variability, not a confidence interval), the eGRID reference and the December 2023 EIA-930 gas reporting change. Middle: hourly duration curves, axis cut at $-160$~g/kWh. Right: 2025 seasonal diurnal means against 2019. Source: CAISO Today's Outlook, eGRID 2023.}
 \label{fig:carbon}
+\par\vspace{-2pt}\input{tables/figsrc_fig1_07}
 \end{figure}
 
 \begin{table}[H]
@@ -137,6 +144,7 @@ No agency meters California's data center consumption, and the four items in Tab
 \centering\includegraphics[width=\textwidth]{fig1_08_existing_dc_load_estimates}
 \caption{Existing data center electricity use in California: one statewide estimate (A), one assumed conversion (B), one illustrative sensitivity (C) and one utility subset (D), with matching-year retail-sales shares. No metered statewide total exists.}
 \label{fig:dc}
+\par\vspace{-2pt}\input{tables/figsrc_fig1_08}
 \end{figure}
 
 \begin{enumerate}

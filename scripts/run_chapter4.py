@@ -21,6 +21,7 @@ import matplotlib.dates as mdates  # noqa: E402
 from src import ch4_gap as g  # noqa: E402
 from src import ch4_regimes as rg  # noqa: E402
 from src.paths import FIGURES, PROCESSED  # noqa: E402
+from src.provenance import stamp  # noqa: E402
 
 plt.rcParams.update({"figure.dpi": 130, "savefig.dpi": 200, "font.size": 9, "axes.grid": True, "grid.alpha": 0.3, "axes.spines.top": False, "axes.spines.right": False})
 BOX = dict(boxstyle="round,pad=0.3", fc="white", ec="grey", lw=0.5)
@@ -29,6 +30,7 @@ STATUS_COL = {"No studies submitted": "#ff7f0e", "Under ERCOT review": "#9467bd"
 
 
 def save(fig, name):
+    stamp(fig, name)
     fig.savefig(FIGURES / f"{name}.png", bbox_inches="tight"); fig.savefig(FIGURES / f"{name}.pdf", bbox_inches="tight"); plt.close(fig); print("  figure", name)
 
 

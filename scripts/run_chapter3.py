@@ -18,6 +18,7 @@ import pandas as pd  # noqa: E402
 
 from src import ch3_supply as c3  # noqa: E402
 from src.paths import FIGURES, PROCESSED  # noqa: E402
+from src.provenance import stamp  # noqa: E402
 
 plt.rcParams.update({"figure.dpi": 130, "savefig.dpi": 200, "font.size": 9, "axes.grid": True, "grid.alpha": 0.3, "axes.spines.top": False, "axes.spines.right": False})
 COL = {"Natural gas": "#8c8c8c", "Nuclear": "#7b3294", "Hydro": "#2c7bb6", "Large hydro": "#2c7bb6", "Small hydro": "#74add1", "Geothermal": "#b35806", "Biomass": "#8c510a",
@@ -27,6 +28,7 @@ CAP_ORDER = ["Nuclear", "Coal and petcoke", "Oil", "Other", "Natural gas", "Biom
 
 
 def save(fig, name):
+    stamp(fig, name)
     fig.savefig(FIGURES / f"{name}.png", bbox_inches="tight"); fig.savefig(FIGURES / f"{name}.pdf", bbox_inches="tight"); plt.close(fig); print("  figure", name)
 
 

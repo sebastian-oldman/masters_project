@@ -54,6 +54,14 @@ The snapshot is scheduled through a user-level LaunchAgent installed on 2026-09-
 | 2 Data center growth (Census chart, Chow and Bai-Perron breaks, ARIMA/ETS forecasts, California proxies, tier vintages, RQ1 table) | `make ch2` (= `scripts/run_chapter2.py`, `scripts/make_ch2_tables.py`, `scripts/build_notebook_ch2.py --execute`) | `data/processed/ch2_*`, `figures/fig2_*`, `report/tables/ch2_*.tex`, `notebooks/02_data_center_growth.ipynb`, `report/sections/03_data_center_growth.tex` |
 | 4 Putting it together (2030 demand cases under four counting rules on the IEPR low/mid/high non-data-center growth, ERCOT-calibrated stock-flow rates, 10,000-draw Monte Carlo gap with tornado and Sobol sensitivity, Duke-style headroom replication, regime crosswalk and headline by counting rule, flat-versus-flexible emissions) | `make ch4` (= `scripts/run_chapter4.py`, `scripts/make_ch4_tables.py`, `scripts/build_notebook_ch4.py --execute`) | `data/processed/ch4_*`, `figures/fig4_01` to `fig4_07`, `report/tables/ch4_*.tex`, `notebooks/04_gap_model.ipynb`, `notebooks/05_regimes_flexibility.ipynb`, `report/sections/05_putting_it_together.tex` |
 
+## Freeze, tag, release and defense
+
+- **Data freeze:** `make freeze` copies the manifest to `data/raw/manifest_frozen_2026-09-22.csv` and writes `docs/DATA_FREEZE.md`; nothing fetched after that date enters the report (see the rule there). The commit carrying the freeze is tagged `data-freeze-2026-09-22`.
+- **Every figure carries its source line** (processed files, manifest ids, code, freeze date), stamped on the image by `src/provenance.py` and printed under the figure in the report; Appendix A repeats the map as tables (`make provenance`).
+- **Release:** `make release` exports the report, the defense deck, every processed CSV and JSON, the figures, the LaTeX tables, the executed notebooks, the frozen manifest and the docs to `release/consumption_gap_2026-09-22/` with a `CONTENTS.md` of SHA-256 checksums, and zips it.
+- **Defense deck:** `make defense` builds `report/defense/defense.pdf` (beamer, 21 slides) from the same figures.
+- **Plan:** `docs/PLAN.md` is the phase roadmap the chapters were built against.
+
 ## Provenance rules
 
 1. Every raw file is downloaded by `src/fetch.py` from the URL recorded in `src/sources.py`,

@@ -58,6 +58,7 @@ Table~\ref{tab:totals} adds each of the data center cases to each of the three I
 \centering\includegraphics[width=\textwidth]{fig4_01_demand_scenarios_2030}
 \caption{Left: data center peak and energy added by 2030 under each counting rule. Right: the 2030 statewide coincident peak by IEPR case, non-data-center demand plus three of the data center cases, against the ELCC-derated supply of Chapter~\ref{ch:supply} (cases A, B and C) and the existing fleet.}
 \label{fig:ch4demand}
+\par\vspace{-2pt}\input{tables/figsrc_fig4_01}
 \end{figure}
 
 \paragraph{The ERCOT-calibrated stock-flow case.} ERCOT publishes the stock of large-load requests in each phase of its interconnection process, which makes it possible to estimate how fast projects actually move from one phase to the next. Monthly totals from January 2025 to March 2026, the monthly stocks of projects with approved planning studies and with approval to energize from May 2025 to March 2026, and six snapshots of the queue by status between March and July 2026 were transcribed from ERCOT's newsletters, its March 2026 TAC report, its December 2025 and June 2026 board decks, its April 2026 legislative decks and its April, June, July and August 2026 operational overviews (Figure~\ref{fig:ercot}, Section~\ref{sec:regimes}) \citep{ercot_tac2026,ercot_monthly2025,ercot_board2026,ercot_ops2026}. Approvals to energize reached 9,456~MW by July 2026, of which 4,370~MW was observed operating that month and 4,316~MW in August. From these, four monthly hazards are estimated (Table~\ref{tab:ercotrates}): 2.1 percent a month from no studies submitted to under review, an upper bound because cancellations leave the same stock; 0.75 percent from under review to studies approved; 1.6 percent from studies approved to approval to energize; and 3.1 percent from approval to energize to observed energization. A Markov chain with those hazards gives the probability that a project starting in each phase is energized within 60 months, the distance from the December 2025 vintage to December 2030: 37 percent for a project whose studies are approved, 6 percent for one under review and 2 percent for one without studies (Table~\ref{tab:ercotchain}). Mapping inquiries to no studies submitted, applications to under review and signed agreements to approved studies, and applying the CEC's utilization factor, gives 1,622~MW and 12.5~TWh in 2030, almost the same as the CEC central case. Doubling every hazard, which is what ERCOT's move to a batch process is meant to achieve, raises the three probabilities to 72, 25 and 12 percent; a 0.5 percent monthly cancellation hazard lowers them slightly. The rates were measured while ERCOT's queue quadrupled and its studies fell behind, so they describe study throughput as much as project viability, which is why the Monte Carlo treats the tier probabilities as uncertain over the CEC and ERCOT values rather than fixing them.
@@ -103,6 +104,7 @@ Table~\ref{tab:totals} adds each of the data center cases to each of the three I
 \centering\includegraphics[width=\textwidth]{fig4_02_gap_distributions}
 \caption{Distribution of the 2030 energy gap (left) and net-peak gap (right) over 10,000 draws, with the 5th, 50th and 95th percentiles and the upper-bound range, and by IEPR non-data-center growth case (bottom).}
 \label{fig:gapdist}
+\par\vspace{-2pt}\input{tables/figsrc_fig4_02}
 \end{figure}
 
 \section{Sensitivity}
@@ -128,6 +130,7 @@ Table~\ref{tab:tornado} moves one input at a time between its 5th and 95th perce
 \centering\includegraphics[width=\textwidth]{fig4_03_sensitivity}
 \caption{Sensitivity of the 2030 energy gap (left) and net-peak gap (right): one-at-a-time swings (top) and Sobol indices (bottom).}
 \label{fig:sens}
+\par\vspace{-2pt}\input{tables/figsrc_fig4_03}
 \end{figure}
 
 \section{Headroom from load flexibility (RQ4)}
@@ -185,6 +188,7 @@ Table~\ref{tab:tornado} moves one input at a time between its 5th and 95th perce
 \centering\includegraphics[width=\textwidth]{fig4_04_headroom}
 \caption{Top left: average annual curtailment of a constant load addition on CAISO demand 2019--2025 under four definitions, with Duke's CAISO values. Top right: the headroom solved year by year under the energy and the hours criteria. Bottom left: hours curtailed each year at the 0.5 percent headroom. Bottom right: the headroom against the data center cases and the net-peak gap.}
 \label{fig:headroom}
+\par\vspace{-2pt}\input{tables/figsrc_fig4_04}
 \end{figure}
 
 \section{Data and measurement regimes (RQ3)}
@@ -210,6 +214,7 @@ Table~\ref{tab:tornado} moves one input at a time between its 5th and 95th perce
 \centering\includegraphics[width=0.9\textwidth]{fig4_07_regime_scores}
 \caption{The scored crosswalk.}
 \label{fig:scores}
+\par\vspace{-2pt}\input{tables/figsrc_fig4_07}
 \end{figure}
 
 \begin{table}[H]
@@ -223,6 +228,7 @@ Table~\ref{tab:tornado} moves one input at a time between its 5th and 95th perce
 \centering\includegraphics[width=\textwidth]{fig4_05_ercot_queue}
 \caption{ERCOT's large-load queue: tracked requests by month (left), planning studies approved, approvals to energize and observed monthly peaks of approved loads (middle), and the queue by status at each 2026 snapshot (right).}
 \label{fig:ercot}
+\par\vspace{-2pt}\input{tables/figsrc_fig4_05}
 \end{figure}
 
 \begin{table}[H]
@@ -264,6 +270,7 @@ The CAISO hourly accounting intensity of Chapter~\ref{ch:current} gives the emis
 \centering\includegraphics[width=\textwidth]{fig4_06_emissions_flat_vs_flexible}
 \caption{Left: CAISO hourly accounting intensity in 2025 sorted from highest to lowest, with the quarter of hours that a flexible load would avoid and the quarter that would receive the shifted energy. Right: emissions intensity of a flat, curtailed or shifted load, 2023--2025.}
 \label{fig:emissions}
+\par\vspace{-2pt}\input{tables/figsrc_fig4_06}
 \end{figure}
 
 \section{What the chapter answers}

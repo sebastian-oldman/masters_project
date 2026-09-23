@@ -12,6 +12,7 @@ The Census Bureau's Value of Construction Put in Place survey has carried a ``da
 \centering\includegraphics[width=\textwidth]{fig2_01_census_data_center_construction}
 \caption{US private data center construction spending, seasonally adjusted annual rate, with month-over-month growth. Source: Census C30, July 2026 preliminary.}
 \label{fig:census}
+\par\vspace{-2pt}\input{tables/figsrc_fig2_01}
 \end{figure}
 
 \section{Structural breaks and forecasts}
@@ -23,6 +24,7 @@ The analysis works on the log of the seasonally adjusted series, so that a linea
 \centering\includegraphics[width=\textwidth]{fig2_02_census_breaks_and_forecast}
 \caption{Left: log-linear trends before and after December 2022 with Bai-Perron break dates. Right: 24-month ARIMA and ETS forecasts with 80 and 95 percent prediction bands.}
 \label{fig:breaks}
+\par\vspace{-2pt}\input{tables/figsrc_fig2_02}
 \end{figure}
 
 \begin{table}[H]
@@ -64,6 +66,7 @@ Three California indicators are subjected to the same battery, with the known br
 \centering\includegraphics[width=\textwidth]{fig2_03_california_proxies}
 \caption{California proxies for data center growth: BLS QCEW NAICS 518210 labour indicators (top left), CBRE Silicon Valley construction and inventory (top right), Epoch AI frontier sites, whose snapshot has no California observation (bottom left), and the break-test summary (bottom right); the single-break column is the one-break model's estimate and p-values below 0.001 are shown as such.}
 \label{fig:proxies}
+\par\vspace{-2pt}\input{tables/figsrc_fig2_03}
 \end{figure}
 
 \begin{table}[H]
@@ -118,6 +121,7 @@ Table~\ref{tab:vint} and Figure~\ref{fig:vint} assemble every published vintage 
 \centering\includegraphics[width=\textwidth]{fig2_04_tier_vintages}
 \caption{Energization requests by vintage and tier against CAISO's record peak and the existing data center average load from Chapter~\ref{ch:current}. VEA's requests in Nevada are hatched and California-only totals are labelled; SCE's canceled requests are drawn beside, not on top of, its active pipeline; the three source families are divided because they differ in utilities, stages and dates.}
 \label{fig:vint}
+\par\vspace{-2pt}\input{tables/figsrc_fig2_04}
 \end{figure}
 
 The sums and ratios are stated explicitly. The three December 2025 tiers total 23,277~MW as reported and 20,677~MW located in California. Against CAISO's record instantaneous peak of 52,061~MW on September~6, 2022 \citep{caiso_keystats}, the California pipeline is 40~percent (40~percent against the hourly EIA-930 peak of 51,104~MW, and 45~percent for the reported total including Nevada). This is a scale comparison, not a coincident-peak ratio and not a measure of usable headroom. Against the roughly 1,000~MW of existing data center peak demand that the CEC reports for December 2025, it is 21 times; against the 800 to 1,065~MW of existing average load implied by the chapter~1 statewide estimate and assumed conversion, 19 to 26 times. Finland's ratio of registered to installed capacity was 27 \citep{manner2026}; California's is of the same order.
