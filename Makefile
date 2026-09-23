@@ -60,8 +60,8 @@ defense:                   ## build the defense deck report/defense/defense.pdf 
 release:                   ## export report, defense deck, processed CSVs, figures, tables, notebooks and frozen manifest to release/
 	$(PY) scripts/export_release.py --date $(FREEZE)
 
-brief:                     ## build the advisor progress memo report/brief/advisor_brief_<date>.pdf
-	cd report/brief && tectonic advisor_brief_$(FREEZE).tex
+brief:                     ## generate and build the advisor progress memo report/brief/advisor_brief_<date>.pdf (figures embedded, sources linked from the manifest)
+	$(PY) scripts/make_advisor_brief.py --date $(FREEZE) && cd report/brief && tectonic advisor_brief_$(FREEZE).tex
 
 overleaf:                  ## package report, memo and deck as an Overleaf-ready zip in release/
 	$(PY) scripts/export_overleaf.py --date $(FREEZE)

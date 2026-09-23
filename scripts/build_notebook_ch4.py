@@ -81,7 +81,7 @@ One-at-a-time swings hold every other input at its median and move one input bet
     code("""table("ch4_tornado").round(2)"""),
     code("""sb = table("ch4_sobol"); sb.pivot(index="input", columns="metric", values=["S1", "ST"]).round(3).sort_values(("ST", "gap_energy_twh"), ascending=False)"""),
     code("""show("fig4_03_sensitivity")"""),
-    md("""**Reading.** The energy gap is governed by the supply side and the non-data-center forecast: imports (28 TWh swing), the IEPR case (22), hydro (20) and Diablo Canyon (18) dominate, and the three data center probabilities together explain about 3 percent of the variance. The peak gap depends on Diablo Canyon (ST 0.39), the IEPR case (0.35), the data center ramp (0.14) and generation completion (0.07). The first-order indices sum to about one in both cases, so the model is nearly additive and the tornado ranking is reliable."""),
+    md("""**Reading.** The energy gap is governed by the supply side and the non-data-center forecast: imports (28 TWh swing), the IEPR case (22), hydro (20) and Diablo Canyon (18) dominate, and the three data center probabilities together explain about 2 percent of the energy gap's variance and 4 percent of the peak gap's. The peak gap depends on Diablo Canyon (ST 0.39), the IEPR case (0.35), the data center ramp (0.14) and generation completion (0.07). The first-order indices sum to about one in both cases, so the model is nearly additive and the tornado ranking is reliable."""),
 ]
 
 NB5 = [
