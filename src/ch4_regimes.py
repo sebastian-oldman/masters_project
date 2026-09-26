@@ -9,6 +9,13 @@ from src.ch1_baseline import raw_path
 CRITERIA = ["granularity", "stage_taxonomy", "verification", "timeliness", "coverage", "public_access"]
 
 REGIMES = [
+    {"regime": "EK green-investment registry (Finland)", "source_ids": "ek_green_investments_dashboard; ek_green_investments_excel_2026_09; manner2026 (slides 11 and 12)",
+     "granularity": "project level: company, municipality, technology, phase and MW on a public dashboard (Power BI); data centers are one of about twenty technologies",
+     "stage_taxonomy": "five phases: feasibility study, planning, investment decision, start of operations, discontinued",
+     "verification": "compiled by the Confederation of Finnish Industries from company announcements and public plans; no deposit, study or agreement gating",
+     "timeliness": "continuously updated dashboard; Manner's snapshot is dated June 15 2026 (no archived vintages published)",
+     "coverage": "nationwide, all announced projects regardless of size; data centers 7,777 MW registered on June 15 2026 (Manner) and 9,276 MW on September 15 2026 (the workbook), against about 285 MW operating",
+     "public_access": "full project-level detail on the public dashboard and in a downloadable workbook (investor, municipality, phase, completion year, MW, source link)"},
     {"regime": "CEC energization tiers (California)", "source_ids": "cec_dc_methodology_memo_2026; cec_tn272026; cec_assembly_hearing_2026_01_28; cec_tn268459",
      "granularity": "MW by utility and tier, published as aggregates; project level only in SCE's public database (TN 266008, 268459)",
      "stage_taxonomy": "three groups: signed agreement, active application, inquiry (2026 IEPR proposes a longer milestone list from inquiry to ramp)",
@@ -63,13 +70,13 @@ COMMON_STAGES = ["1 Inquiry or screening", "2 Application and study", "3 Agreeme
 
 def common_taxonomy() -> pd.DataFrame:
     rows = [
-        ("1 Inquiry or screening", "Inquiry (Group 3)", "No studies submitted", "not counted (no adjustment without an agreement)", "not applicable (operating facilities)", "screening study after the flat study fee", "request submitted; study queue"),
-        ("2 Application and study", "Active application (Group 2)", "Under ERCOT review", "non-firm: feasibility study, letter of authorization", "not applicable", "interconnection standards; intermediate agreement with site control and security (proposed rule 25.194)", "study process (60-day study proposed for flexible loads)"),
-        ("3 Agreement or financial commitment", "Signed agreement (Group 1)", "Planning studies approved; Section 9.4/9.5 requirements met", "firm: electric service obligation or construction commitment", "not applicable", "interconnection agreement; USD 50,000/MW fee converts to non-refundable", "interconnection agreement; cost responsibility for upgrades"),
-        ("4 Approved to energize or under construction", "not distinguished (construction and initial energization in the 2026 milestone list)", "Approved to energize but not operational", "firm with ramp of at least 36 months", "not applicable", "curtailment protocol before interconnection", "transition provisions for loads already under study"),
-        ("5 Energized and observed", "existing load (about 1,000 MW peak, Dec 2025)", "Observed energized (all-time non-simultaneous peak)", "embedded in the historical load", "surveyed consumption, energy sources, servers, cooling", "curtailment during emergencies; telemetry to ERCOT", "flexible service options"),
+        ("1 Inquiry or screening", "Feasibility study (2,020 MW)", "Inquiry (Group 3)", "No studies submitted", "not counted (no adjustment without an agreement)", "not applicable (operating facilities)", "screening study after the flat study fee", "request submitted; study queue"),
+        ("2 Application and study", "Planning (3,310 MW)", "Active application (Group 2)", "Under ERCOT review", "non-firm: feasibility study, letter of authorization", "not applicable", "interconnection standards; intermediate agreement with site control and security (proposed rule 25.194)", "study process (60-day study proposed for flexible loads)"),
+        ("3 Agreement or financial commitment", "Investment decision (within the 2,446 MW decided or dated by end-2027)", "Signed agreement (Group 1)", "Planning studies approved; Section 9.4/9.5 requirements met", "firm: electric service obligation or construction commitment", "not applicable", "interconnection agreement; USD 50,000/MW fee converts to non-refundable", "interconnection agreement; cost responsibility for upgrades"),
+        ("4 Approved to energize or under construction", "Start of operations known (within the 2,446 MW)", "not distinguished (construction and initial energization in the 2026 milestone list)", "Approved to energize but not operational", "firm with ramp of at least 36 months", "not applicable", "curtailment protocol before interconnection", "transition provisions for loads already under study"),
+        ("5 Energized and observed", "operating capacity, about 285 MW (half of it one Google site)", "existing load (about 1,000 MW peak, Dec 2025)", "Observed energized (all-time non-simultaneous peak)", "embedded in the historical load", "surveyed consumption, energy sources, servers, cooling", "curtailment during emergencies; telemetry to ERCOT", "flexible service options"),
     ]
-    return pd.DataFrame(rows, columns=["common_stage", "CEC tiers", "ERCOT phases", "PJM firm / non-firm", "EIA pilot survey", "Texas SB 6 / PUCT", "FERC RM26-4"])
+    return pd.DataFrame(rows, columns=["common_stage", "EK registry (Finland)", "CEC tiers", "ERCOT phases", "PJM firm / non-firm", "EIA pilot survey", "Texas SB 6 / PUCT", "FERC RM26-4"])
 
 
 def sce_size_classes(source_id: str = "cec_tn268459") -> pd.DataFrame:
@@ -92,6 +99,7 @@ def headline_by_regime(tiers: pd.DataFrame, cases: pd.DataFrame, sizes: pd.DataF
     c = cases.set_index("case")
     big = sizes.set_index("size_class").share_of_active_mw
     rows = [
+        ("EK-style (Finland): every registered project from feasibility study on", tot, "the EK registry lists every announced project regardless of phase, as the CEC tiers do; Finland's own ratio is 7,777 MW registered (June 2026) or 9,276 MW (September 2026) to about 285 MW operating", "ek_green_investments_excel_2026_09; manner2026"),
         ("CEC: all three tiers", tot, "requested capacity, signed agreements plus applications plus inquiries, California-only (Dec 2025)", "cec_assembly_hearing_2026_01_28; ch2_tier_vintages"),
         ("CEC: all tiers including VEA (Nevada)", tot + vea, "the CEC's published statewide total", "cec_tn272026"),
         ("CEC: agreements plus applications", float(mw["Signed agreement"] + mw["Active application"]), "the comparison the CEC used between the 2024 and 2025 IEPR vintages", "cec_prelim_dc_forecast_2025"),
@@ -142,6 +150,7 @@ RUBRIC = {
     "public_access": "0 not published or confidential; 1 aggregates only; 2 aggregates plus some project-level or docket detail; 3 full project-level detail",
 }
 SCORES = {
+    "EK green-investment registry (Finland)": {"granularity": 3, "stage_taxonomy": 3, "verification": 0, "timeliness": 2, "coverage": 3, "public_access": 3},
     "CEC energization tiers (California)": {"granularity": 1, "stage_taxonomy": 2, "verification": 1, "timeliness": 1, "coverage": 3, "public_access": 2},
     "ERCOT large load interconnection (Texas)": {"granularity": 2, "stage_taxonomy": 3, "verification": 2, "timeliness": 3, "coverage": 2, "public_access": 1},
     "PJM load forecast adjustments": {"granularity": 2, "stage_taxonomy": 1, "verification": 2, "timeliness": 1, "coverage": 1, "public_access": 1},
@@ -154,4 +163,31 @@ SCORES = {
 def regime_scores() -> pd.DataFrame:
     """Scores 0-3 per criterion under RUBRIC; the descriptive cells of crosswalk_matrix() are the evidence for each score."""
     rows = [{"regime": r, **sc, "total": sum(sc.values())} for r, sc in SCORES.items()]
+    return pd.DataFrame(rows)
+
+
+# ---------------------------------------------------------------- EK green-investment registry (Finland): the workbook behind the dashboard
+EK_MANNER_JUNE_2026 = {"0. Feasibility study": 2020.0, "1. Planning": 3310.0, "2. Investment decision": 2446.0, "operating_mw": 285.0, "total_registered_mw": 7777.0}
+
+
+def ek_registry_summary(source_id: str = "ek_green_investments_excel_2026_09") -> pd.DataFrame:
+    """Data center projects in the EK registry workbook (September 15 2026 vintage) by phase: projects, MW, and the MW dated for
+    completion by 2027 and by 2029, next to the June 15 2026 values Manner read from the dashboard (his 2,446 MW combines investment
+    decisions with dated starts of operations by end-2027, so the phase rows are not one-to-one)."""
+    import sys
+    from .ch1_baseline import raw_path
+    x = pd.read_excel(raw_path(source_id))
+    dc = x[x["Theme"].str.strip().str.lower() == "data center"].copy()
+    dc["mw"] = pd.to_numeric(dc["Capacity (MW)"], errors="coerce").fillna(0.0)
+    dc["year"] = pd.to_numeric(dc["Completion"], errors="coerce").fillna(0).astype(int)
+    rows = []
+    for ph, g in dc.groupby("Project Phase"):
+        rows.append({"phase": ph, "projects": int(len(g)), "mw": float(g.mw.sum()), "mw_dated_by_2027": float(g[(g.year >= 2024) & (g.year <= 2027)].mw.sum()),
+                     "mw_dated_by_2029": float(g[(g.year >= 2024) & (g.year <= 2029)].mw.sum()), "mw_undated": float(g[g.year == 0].mw.sum()),
+                     "manner_june_2026_mw": EK_MANNER_JUNE_2026.get(ph, float("nan")), "source": f"{source_id} (Theme = Data center; workbook updated 15.9.2026)"})
+    reg = dc[~dc["Project Phase"].str.startswith(("3", "5"))]
+    rows.append({"phase": "Registered, all phases before operation", "projects": int(len(reg)), "mw": float(reg.mw.sum()), "mw_dated_by_2027": float(reg[(reg.year >= 2024) & (reg.year <= 2027)].mw.sum()),
+                 "mw_dated_by_2029": float(reg[(reg.year >= 2024) & (reg.year <= 2029)].mw.sum()), "mw_undated": float(reg[reg.year == 0].mw.sum()), "manner_june_2026_mw": EK_MANNER_JUNE_2026["total_registered_mw"], "source": source_id})
+    big = dc.sort_values("mw", ascending=False).iloc[0]
+    rows.append({"phase": f"Largest single project: {big['Investor']}, {big['Location']} ({big['Project Phase']})", "projects": 1, "mw": float(big.mw), "mw_dated_by_2027": float("nan"), "mw_dated_by_2029": float("nan"), "mw_undated": float("nan"), "manner_june_2026_mw": 560.0, "source": source_id})
     return pd.DataFrame(rows)

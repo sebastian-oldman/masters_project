@@ -56,7 +56,7 @@ The snapshot is scheduled through a user-level LaunchAgent installed on 2026-09-
 
 ## Freeze, tag, release and defense
 
-- **Data freeze:** `make freeze` copies the manifest to `data/raw/manifest_frozen_2026-09-22.csv` and writes `docs/DATA_FREEZE.md`; nothing fetched after that date enters the report (see the rule there). The commit carrying the freeze is tagged `data-freeze-2026-09-22`.
+- **Data freeze:** `make freeze` copies the manifest to `data/raw/manifest_frozen_2026-09-26.csv` and writes `docs/DATA_FREEZE.md`; nothing fetched after that date enters the report (see the rule there). The commit carrying the freeze is tagged `data-freeze-2026-09-22`.
 - **Every figure carries its source line** (processed files, manifest ids, code, freeze date), stamped on the image by `src/provenance.py` and printed under the figure in the report; Appendix A repeats the map as tables and Appendix B prints the manifest rows (owner, access date, SHA-256, URL) behind every id a figure names (`make provenance`, which also builds the assumption register of the discussion chapter and fails if a source label does not resolve to a manifest row).
 - **Release:** `make release` exports the report, the defense deck, every processed CSV and JSON, the figures, the LaTeX tables, the executed notebooks, the frozen manifest and the docs to `release/consumption_gap_2026-09-22/` with a `CONTENTS.md` of SHA-256 checksums, and zips it.
 - **Defense deck:** `make defense` builds `report/defense/defense.pdf` (beamer, 21 slides) from the same figures.

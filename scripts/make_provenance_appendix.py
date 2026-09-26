@@ -25,8 +25,9 @@ def bown(o):
     """Owner text with break points after slashes, dots and colons and inside long digit runs (Wayback capture ids, DOIs)."""
     import re as _re
     t = esc(str(o))
-    for ch in ("/", ".", ":"):
+    for ch in ("/", ".", ":", "-", ")"):
         t = t.replace(ch, ch + r"\allowbreak{}")
+    t = t.replace("(", r"\allowbreak{}(")
     return _re.sub(r"(\d{5})(?=\d)", r"\1\\allowbreak{}", t)
 
 

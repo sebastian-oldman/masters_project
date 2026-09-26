@@ -11,7 +11,7 @@
 \title{Mapping the Consumption Gap}
 \subtitle{Planned Data Center Capacity versus Electricity Supply in California}
 \author{Sebastian Oldman\\[3pt]\small M.S. capstone, Computer Science and Engineering, UC Santa Cruz}
-\date{Defense deck. Data frozen September 22, 2026}
+\date{Defense deck. Data frozen September 26, 2026}
 \begin{document}
 
 \begin{frame}
@@ -34,14 +34,14 @@
 \begin{itemize}
 \item \textbf{RQ1} Pipeline by stage, absolute and relative to the grid.
 \item \textbf{RQ2} The 2030 gap, raw and probability-weighted, in TWh and net-peak MW.
-\item \textbf{RQ3} Six counting regimes compared; California's number under each rule.
+\item \textbf{RQ3} Seven counting regimes compared; California's number under each rule.
 \item \textbf{RQ4} Headroom from load flexibility as a share of the gap.
 \end{itemize}
 \column{0.45\textwidth}
 \begin{itemize}
 \item An independent replication and audit of the CEC method.
 \item Every raw file in a manifest (URL, access date, SHA-256); one command per chapter; every figure stamped with its files and manifest ids.
-\item Data frozen 2026-09-22; repository tagged; processed outputs exported with the report.
+\item Data frozen 2026-09-26; repository tagged; processed outputs exported with the report.
 \end{itemize}
 \end{columns}
 \end{frame}
@@ -163,7 +163,7 @@
 \end{itemize}
 \end{frame}
 
-\begin{frame}{RQ3: the ERCOT queue as evidence, and six regimes scored}
+\begin{frame}{RQ3: the ERCOT queue as evidence, and seven regimes scored}
 \begin{columns}[T]
 \column{0.58\textwidth}
 \includegraphics[width=\textwidth]{fig4_05_ercot_queue}
@@ -188,7 +188,7 @@
 \item The CEC's published parameters rebuild its forecast: exact at the 2040 endpoints, within 2 to 6 percent in 2030 once the SVP exemption is applied.
 \item The supply side is discounted with the same discipline, from California's own completion record.
 \item The confidence levels are tested against ERCOT's realized transition rates and PJM's firm rule; the gap is a distribution with a stated upper bound and named drivers.
-\item Headroom replicated on CAISO load and expressed as a share of the gap; six regimes scored on one rubric.
+\item Headroom replicated on CAISO load and expressed as a share of the gap; seven regimes scored on one rubric.
 \item Everything reproducible: manifest, one command per chapter, stamped figures, frozen data, tagged repository, exported outputs.
 \end{itemize}
 \end{frame}
@@ -226,7 +226,7 @@
 \begin{frame}{Backup: reproducibility}
 \begin{itemize}\small
 \item Repository: \texttt{src/} (ch1\_baseline, ch2\_growth, ch3\_supply, ch4\_gap, ch4\_regimes, provenance), \texttt{scripts/run\_chapter1..4.py}, \texttt{make ch1..ch4}, \texttt{make provenance}, \texttt{make freeze}, \texttt{make release}.
-\item Raw store: \texttt{data/raw/<group>/<access date>/}, immutable; \texttt{manifest.csv} with URL, access date, SHA-256; frozen copy \texttt{manifest\_frozen\_2026-09-22.csv}.
+\item Raw store: \texttt{data/raw/<group>/<access date>/}, immutable; \texttt{manifest.csv} with URL, access date, SHA-256; frozen copy \texttt{manifest\_frozen\_2026-09-26.csv}.
 \item Every figure stamped with its processed files, manifest ids and code; Appendix A repeats them as tables; \texttt{docs/DATA\_NOTES.md} records every limit found.
 \item Standalone bundle on the Desktop reproduces every output byte for byte in its own environment.
 \end{itemize}

@@ -431,6 +431,35 @@ def main() -> int:
     workshop_record = {"period_2026": period26, "hours_2026": int(len(w)), "flagged_hours_2026": int(len(flagged26)), "price_period": period_p, "emissions_period": period_e,
                        "interchange_check": net_check, "installed_ciso_mw": {k: float(v) for k, v in inst_mw.items()}}
 
+    # ------------------------------------------------------------------ 5b. Finnish benchmarks replicated from official sources (proposal 3.11)
+    print("5b. Finnish benchmarks from Statistics Finland, Fingrid definitions and the EK registry, against the CAISO counterparts")
+    fb = c1.finland_benchmarks()
+    ps = pd.read_csv(PROCESSED / "ch1_price_stats.csv"); dlap25 = ps[ps.node.str.startswith("DLAP") & (ps.year == 2025)]
+    ci_ann = pd.read_csv(PROCESSED / "ch1_carbon_intensity_annual.csv", index_col=0)
+    sw = pd.read_csv(PROCESSED / "ch1_workshop_stats.csv").set_index("series")
+    tiers_total = 20677.0  # California-only December 2025 tiers (chapter 2, Table 3.9)
+    caiso = {
+        "Total electricity consumption 2025": (float(summ.loc[2025, "energy_TWh"]), "CAISO demand 2025 (Table 2.2)"),
+        "Total electricity generation 2025": (float(summ.loc[2025, "energy_TWh"] - summ.loc[2025, "net_imports_TWh"]), "CAISO demand minus net imports 2025"),
+        "Net imports 2025": (float(summ.loc[2025, "net_imports_TWh"]), "CAISO net imports 2025 (Table 2.2)"),
+        "Wind generation 2025": (float(summ.loc[2025, "wind_TWh"]), "CAISO wind 2025"),
+        "Nuclear generation 2025": (float(pd.read_csv(PROCESSED / "ch3_eia923_generation_by_resource.csv").query("year == 2025 and resource == 'Nuclear'").gwh.iloc[0] / 1e3) if (PROCESSED / "ch3_eia923_generation_by_resource.csv").exists() else float("nan"), "California nuclear generation 2025 (EIA-923, chapter 4)"),
+        "Average consumption, January to June 2026": (float(w[w.index < pd.Timestamp("2026-07-01", tz=TZ)]["demand"].mean()), "CAISO demand, January to June 2026 (Figure 2.9)"),
+        "Average generation inside Finland, January to June 2026": (float(w[w.index < pd.Timestamp("2026-07-01", tz=TZ)]["net_generation"].mean()), "net generation inside CAISO, January to June 2026"),
+        "Wind generation, January to June 2026": (float(w[w.index < pd.Timestamp("2026-07-01", tz=TZ)]["wind"].sum() / 1e6), "CAISO wind, January to June 2026"),
+        "Wind capacity factor, January to June 2026": (float(100 * w[w.index < pd.Timestamp("2026-07-01", tz=TZ)]["wind"].mean() / inst_mw["wind"]), f"CAISO wind over {inst_mw['wind']:,.0f} MW nameplate (Table 2.11)"),
+        "Electricity price with taxes, enterprises 20,000 to 69,999 MWh a year, 2025": (float(dlap25["mean"].mean() / 10.0), "mean day-ahead price of the three DLAPs 2025, wholesale only, in cents (Table 2.5)"),
+        "Household price with taxes, 5,000 to 15,000 kWh a year, 2025": (float("nan"), "not compiled (retail tariffs are outside the record)"),
+        "CO2 factor of electricity consumed, January to June 2026 (mean)": (float(sw.loc["CO2 intensity of CAISO demand, accounting (imports net of exports)", "mean"]), "CAISO consumption factor, January to September 2026 (Figure 2.11)"),
+        "CO2 factor of electricity produced, January to June 2026 (mean)": (float(sw.loc["CO2 intensity of generation inside CAISO (production factor)", "mean"]), "in-CAISO production factor, January to September 2026 (Figure 2.11)"),
+        "Data center capacity operating": (1000.0, "CEC, existing data center peak demand, December 2025"),
+        "Data center capacity registered, all phases": (tiers_total, "December 2025 tiers located in California (Table 3.9)"),
+    }
+    fb["caiso_value"] = [caiso.get(b, (float("nan"), ""))[0] for b in fb.benchmark]
+    fb["caiso_basis"] = [caiso.get(b, (float("nan"), ""))[1] for b in fb.benchmark]
+    fb.to_csv(PROCESSED / "ch1_finland_benchmarks.csv", index=False)
+    print("   " + "; ".join(f"{r.benchmark.split(',')[0]} {r.value:,.1f} {r.unit}" for r in fb.itertuples() if r.unit in ("TWh", "%")))
+
     # ------------------------------------------------------------------ 6. run record
     record = {"years": YEARS, "ciso_hours": int(len(h)), "ciso_valid_demand_hours": {int(y): int(v) for y, v in summ["hours"].items()}, "lmp_hours": int(len(p)), "co2_valid_hours": {int(y): int(v) for y, v in csum["hours"].items()},
               "retail_sales_2024_TWh": retail_2024, "retail_sales_2023_TWh": retail_2023, "kollar_grady_california_points": n_ca, "workshop_format": workshop_record, "outputs": sorted(x.name for x in PROCESSED.glob("ch1_*"))}

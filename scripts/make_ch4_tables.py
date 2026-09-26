@@ -136,7 +136,7 @@ def main() -> int:
     write("ch4_scores_note", [r"\begin{minipage}{\textwidth}\scriptsize Rubric: " + "; ".join(f"\\textit{{{esc(r.criterion.replace('_', ' '))}}}: {esc(r.rubric)}" for r in rb.itertuples()) + r".\end{minipage}"])
     tx = pd.read_csv(PROCESSED / "ch4_common_taxonomy.csv")
     rows = [" & ".join(esc(v) for v in r) + r" \\" + "\n" + r"\addlinespace" for r in tx.itertuples(index=False)]
-    write("ch4_taxonomy", [r"\begin{tabular}{p{2.3cm}p{2.6cm}p{2.8cm}p{2.7cm}p{2.3cm}p{3.0cm}p{2.7cm}}", r"\toprule", " & ".join(esc(c_) for c_ in tx.columns) + r" \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+    write("ch4_taxonomy", [r"\begin{tabular}{p{2.1cm}p{2.5cm}p{2.4cm}p{2.6cm}p{2.5cm}p{2.1cm}p{2.8cm}p{2.5cm}}", r"\toprule", " & ".join(esc(c_) for c_ in tx.columns) + r" \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
     hl = pd.read_csv(PROCESSED / "ch4_headline_by_regime.csv")
     rows = [f"{esc(r.counting_rule)} & {'--' if pd.isna(r.california_mw) else format(r.california_mw, ',.0f')} & {esc(r.what_is_counted)} \\\\" for r in hl.itertuples()]
     write("ch4_headline", [r"\begin{tabular}{p{5.2cm}rp{8.6cm}}", r"\toprule", r"Counting rule & California (MW) & What is counted \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
@@ -169,6 +169,14 @@ def main() -> int:
         rows.append(f"{esc(r.series)} & {int(r.year)} & {r.dc_added_twh:,.1f} & {tot} & {r.denominator_twh:,.1f} & {esc(r.denominator)} & {shr} \\\\")
     write("ch4_dc_share", [r"\begin{tabular}{p{5.2cm}rrrrp{4.6cm}r}", r"\toprule", r"Series & Year & Added & Data centers & Denominator & Denominator basis & Share \\",
                            r" & & (TWh) & total (TWh) & (TWh) & & (\%) \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+
+    # EK registry (Finland): data center projects by phase, September 15 2026 workbook against Manner's June 15 2026 reading
+    ek = pd.read_csv(PROCESSED / "ch4_ek_registry.csv")
+    def f0(x):
+        return "--" if pd.isna(x) else f"{x:,.0f}"
+    rows = [f"{esc(r.phase)} & {int(r.projects)} & {f0(r.mw)} & {f0(r.mw_dated_by_2027)} & {f0(r.mw_dated_by_2029)} & {f0(r.mw_undated)} & {f0(r.manner_june_2026_mw)} \\\\" for r in ek.itertuples()]
+    write("ch4_ek_registry", [r"\begin{tabular}{p{6.4cm}rrrrrr}", r"\toprule", r"Phase & Projects & MW & \multicolumn{3}{c}{of which dated for completion} & Manner, Jun 15 2026 \\",
+                              r" & & & by 2027 & by 2029 & undated & (MW) \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
     return 0
 
 

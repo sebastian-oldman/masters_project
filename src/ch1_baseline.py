@@ -15,6 +15,7 @@ Conventions
 from __future__ import annotations
 
 import glob
+import json
 import io
 import re
 import zipfile
@@ -746,3 +747,76 @@ def production_intensity(ci: pd.DataFrame, fm: pd.DataFrame, min_generation_mw: 
     den = fm[gen_cols].sum(axis=1, min_count=1).reindex(ci.index)
     ok = ci["valid_hour"] & den.gt(min_generation_mw)
     return (num / den * 1000.0).where(ok)
+
+
+# --------------------------------------------------------------------------------------
+# 8. Finnish benchmarks replicated from official sources (proposal Section 3.11): Statistics Finland's
+#    monthly electricity supply and electricity price tables, Fingrid's dataset definitions and the EK registry
+# --------------------------------------------------------------------------------------
+STATFIN_QUERIES = {  # the PxWeb POST queries behind the two data pulls recorded in the manifest (statfin_*_2025_2026)
+    "ehi/13rb.px": {"timeperiod_m": "2025M01 .. 2026M06", "energia_48_20220905": ["A", "B", "C", "SSS"], "energia_49_20220905": ["D", "I", "J", "K"], "contentscode": ["hinta_snt_kwh"]},
+    "ehk/12su.px": {"timeperiod_m": "2025M01 .. 2026M06", "energia_30_20200915": "all", "contentscode": ["maara_gwh"]},
+}
+FINLAND_SLIDE_VALUES = {  # values that only Manner's slides give (Fingrid's data API needs a key; the EK dashboard is not machine-readable)
+    "wind_installed_mw": 9405.0, "co2_consumption_g_per_kwh_2026": 29.0, "co2_production_g_per_kwh_2026": 31.0, "price_with_taxes_c_per_kwh_2025_2026": 6.23,
+    "dc_operating_mw": 285.0, "dc_registered_mw": 7777.0, "dc_registered_by_phase_mw": {"investment decision or start of operations by end-2027": 2446.0, "planning by end-2029": 3310.0, "feasibility study": 2020.0},
+    "wind_cf_2026_pct": 24.0, "consumption_2026_avg_mwh_per_h": 10454.0, "generation_2026_avg_mwh_per_h": 9609.0}
+
+
+def _ek_registered_mw(source_id: str = "ek_green_investments_excel_2026_09") -> float:
+    """Data center MW in the EK registry workbook in the feasibility, planning and investment-decision phases."""
+    x = pd.read_excel(raw_path(source_id))
+    dc = x[x["Theme"].str.strip().str.lower() == "data center"]
+    dc = dc[~dc["Project Phase"].astype(str).str.startswith(("3", "5"))]
+    return float(pd.to_numeric(dc["Capacity (MW)"], errors="coerce").fillna(0.0).sum())
+
+
+def _statfin_json(source_id: str) -> dict:
+    return json.loads(raw_path(source_id).read_text())
+
+
+def finland_benchmarks(hours_2026_h1: int = 4344) -> pd.DataFrame:
+    """Finnish 2025 and January to June 2026 benchmarks from Statistics Finland (consumption, generation by source, net imports,
+    enterprise electricity price with taxes), the wind capacity factor at the slide's installed capacity, and the slide-only values
+    (CO2 factors from Fingrid datasets 265 and 266, the EK registry counts). Returns one row per benchmark with the source id."""
+    sup = _statfin_json("statfin_ehk_12su_supply_2025_2026")
+    rows = {}
+    for r in sup["data"]:
+        m, c = r["key"][0], r["key"][1]; v = r["values"][0]
+        if v not in (".", "..", "..."):
+            rows.setdefault((c, m[:4]), 0.0); rows[(c, m[:4])] += float(v)
+    def gwh(code, year):
+        return rows.get((code, year), float("nan"))
+    price = _statfin_json("statfin_ehi_13rb_price_2025_2026")
+    pr = {}
+    for r in price["data"]:
+        m, comp, typ = r["key"]; v = r["values"][0]
+        if v not in (".", "..", "..."):
+            pr.setdefault((comp, typ, m[:4]), []).append(float(v))
+    def cents(comp, typ, year):
+        vals = pr.get((comp, typ, year), []); return sum(vals) / len(vals) if vals else float("nan")
+    sv = FINLAND_SLIDE_VALUES
+    out = [
+        ("Total electricity consumption 2025", gwh("SSS", "2025") / 1e3, "TWh", "statfin_ehk_12su_supply_2025_2026", "Statistics Finland 12su, twelve months of 2025"),
+        ("Total electricity generation 2025", gwh("1", "2025") / 1e3, "TWh", "statfin_ehk_12su_supply_2025_2026", "Statistics Finland 12su"),
+        ("Net imports 2025", gwh("2", "2025") / 1e3, "TWh", "statfin_ehk_12su_supply_2025_2026", "Statistics Finland 12su (Sweden and Norway in, Estonia out)"),
+        ("Wind generation 2025", gwh("1.2", "2025") / 1e3, "TWh", "statfin_ehk_12su_supply_2025_2026", "Statistics Finland 12su"),
+        ("Nuclear generation 2025", gwh("1.4", "2025") / 1e3, "TWh", "statfin_ehk_12su_supply_2025_2026", "Statistics Finland 12su"),
+        ("Average consumption, January to June 2026", gwh("SSS", "2026") * 1e3 / hours_2026_h1, "MW", "statfin_ehk_12su_supply_2025_2026", f"Statistics Finland 12su, six months over {hours_2026_h1:,} h; Manner's slide 4 shows {sv['consumption_2026_avg_mwh_per_h']:,.0f} MWh/h to early July"),
+        ("Average generation inside Finland, January to June 2026", gwh("1", "2026") * 1e3 / hours_2026_h1, "MW", "statfin_ehk_12su_supply_2025_2026", f"Statistics Finland 12su; Manner's slide 4 shows {sv['generation_2026_avg_mwh_per_h']:,.0f} MWh/h"),
+        ("Wind generation, January to June 2026", gwh("1.2", "2026") / 1e3, "TWh", "statfin_ehk_12su_supply_2025_2026", "Statistics Finland 12su"),
+        ("Wind capacity factor, January to June 2026", 100 * gwh("1.2", "2026") * 1e3 / (sv["wind_installed_mw"] * hours_2026_h1), "%", "statfin_ehk_12su_supply_2025_2026; manner2026", f"Statistics Finland wind generation over {sv['wind_installed_mw']:,.0f} MW installed (Manner slide 8; Fingrid dataset 268 holds the series behind it) times {hours_2026_h1:,} h; Manner's slide shows {sv['wind_cf_2026_pct']:.0f}%"),
+        ("Electricity price with taxes, enterprises 2,000 to 19,999 MWh a year, 2025", cents("SSS", "I", "2025"), "c/kWh", "statfin_ehi_13rb_price_2025_2026", "Statistics Finland 13rb, total price, twelve-month mean"),
+        ("Electricity price with taxes, enterprises 20,000 to 69,999 MWh a year, 2025", cents("SSS", "J", "2025"), "c/kWh", "statfin_ehi_13rb_price_2025_2026", "Statistics Finland 13rb"),
+        ("Electricity price with taxes, enterprises 70,000 to 150,000 MWh a year, 2025", cents("SSS", "K", "2025"), "c/kWh", "statfin_ehi_13rb_price_2025_2026", "Statistics Finland 13rb"),
+        ("Electricity price with taxes, enterprises 20,000 to 69,999 MWh a year, January to June 2026", cents("SSS", "J", "2026"), "c/kWh", "statfin_ehi_13rb_price_2025_2026", f"Statistics Finland 13rb; Manner's slide 5 gives {sv['price_with_taxes_c_per_kwh_2025_2026']:.2f} c/kWh with taxes as the 2025-2026 hourly mean"),
+        ("Electricity price with taxes, enterprises 70,000 to 150,000 MWh a year, January to June 2026", cents("SSS", "K", "2026"), "c/kWh", "statfin_ehi_13rb_price_2025_2026", "Statistics Finland 13rb"),
+        ("Energy component of that price, 2025 and January to June 2026", (cents("A", "J", "2025") + cents("A", "J", "2026")) / 2, "c/kWh", "statfin_ehi_13rb_price_2025_2026", "Statistics Finland 13rb, electric energy excluding tax, 20,000 to 69,999 MWh class, mean of the two periods"),
+        ("Household price with taxes, 5,000 to 15,000 kWh a year, 2025", cents("SSS", "D", "2025"), "c/kWh", "statfin_ehi_13rb_price_2025_2026", "Statistics Finland 13rb"),
+        ("CO2 factor of electricity consumed, January to June 2026 (mean)", sv["co2_consumption_g_per_kwh_2026"], "g/kWh", "fingrid_dataset_265_page; manner2026", "Fingrid dataset 265 as shown on Manner's slide 6 (the data API requires a key)"),
+        ("CO2 factor of electricity produced, January to June 2026 (mean)", sv["co2_production_g_per_kwh_2026"], "g/kWh", "fingrid_dataset_266_page; manner2026", "Fingrid dataset 266 as shown on Manner's slide 6"),
+        ("Data center capacity operating", sv["dc_operating_mw"], "MW", "manner2026", "Manner slide 9 (half of it one Google site)"),
+        ("Data center capacity registered, all phases (June 15 2026)", sv["dc_registered_mw"], "MW", "ek_green_investments_dashboard; manner2026", "EK dashboard as read by Manner (slide 12): 2,446 decided or dated by end-2027, 3,310 planning, 2,020 feasibility"),
+        ("Data center capacity registered, all phases (September 15 2026)", _ek_registered_mw(), "MW", "ek_green_investments_excel_2026_09", "EK workbook, Theme = Data center, phases feasibility study, planning and investment decision (chapter 5, EK registry table)"),
+    ]
+    return pd.DataFrame(out, columns=["benchmark", "value", "unit", "source_ids", "basis"])

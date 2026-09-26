@@ -509,16 +509,18 @@ STATIC: list[Source] = [
            "https://gridstrategiesllc.com/wp-content/uploads/Grid-Strategies-National-Load-Growth-Report-2025.pdf"),
     Source("grid_strategies_ltra_review_2025", "context", "Grid Strategies", "Review of NERC's 2025 Long-Term Reliability Assessment",
            "https://gridstrategiesllc.com/wp-content/uploads/FINAL-2025-LTRA-Review.pdf", optional=True),
-    Source("jlarc_data_centers_virginia_2024", "context", "Virginia JLARC", "Data Centers in Virginia, Report 598 (Dec 2024)",
-           "https://jlarc.virginia.gov/pdfs/reports/Rpt598-1.pdf", filename="JLARC_Rpt598_Data_Centers_in_Virginia_2024.pdf"),
+    Source("jlarc_data_centers_virginia_2024", "context", "Virginia JLARC", "Data Centers in Virginia, Report 598 (Dec 2024), full report with the E3 technical analysis (PDF; the earlier Rpt598-1.pdf URL served a different JLARC report and was replaced on 2026-09-26)",
+           "https://jlarc.virginia.gov/pdfs/reports/Rpt598.pdf", filename="JLARC_Rpt598_Data_Centers_in_Virginia_2024.pdf"),
+    Source("jlarc_data_centers_virginia_2024_summary", "context", "Virginia JLARC", "Data Centers in Virginia, Report 598 (Dec 2024), summary (PDF)",
+           "https://jlarc.virginia.gov/pdfs/summary/Rpt598Sum.pdf", filename="JLARC_Rpt598_summary.pdf"),
     Source("congress_crs_r48646", "context", "Congressional Research Service", "Data Centers and Their Energy Consumption: FAQ (R48646, May 2026)",
            "https://www.congress.gov/crs-product/R48646", filename="CRS_R48646.html", tags=["html"], optional=True),
     Source("eia_press585_dc_pilot_surveys", "context", "EIA", "EIA press release 585 (Mar 25 2026): pilot data center energy surveys",
            "https://www.eia.gov/pressroom/releases/press585.php", filename="EIA_press585.html", tags=["html"], optional=True),
     Source("sierra_club_dc_state_policies_2026", "context", "Sierra Club", "Data Center State Policies, fifty-state scan (Jan 2026) - site blocks scripted downloads",
            "https://www.sierraclub.org/sites/default/files/2026-01/policies-for-data-centers-2026.pdf", tags=["manual"], optional=True),
-    Source("iea_energy_and_ai_2025", "context", "IEA", "Energy and AI (2025) report landing page - IEA blocks scripted downloads; download by hand",
-           "https://www.iea.org/reports/energy-and-ai", filename="IEA_energy_and_ai_landing.html", tags=["manual", "html"], optional=True),
+    Source("iea_energy_and_ai_2025", "context", "IEA", "Energy and AI, World Energy Outlook special report (April 2025) (PDF on IEA's file server; the iea.org pages sit behind a bot check)",
+           "https://iea.blob.core.windows.net/assets/86ed1178-4d77-45ac-ab38-28e849f3b93f/EnergyandAI.pdf", filename="iea_energy_and_ai_2025.pdf", tags=["pdf"]),
 
     # ---- Commercial market reports (gated; pages saved, PDFs by hand) ----
     Source("cbre_na_dc_trends_h1_2025_page", "market_reports", "CBRE", "North America Data Center Trends H1 2025 report page (HTML; PDF is gated)",
@@ -764,4 +766,46 @@ STATIC += [
 STATIC += [
     Source("opb_oregon_data_centers_2026_09", "context", "Oregon Public Broadcasting", "Oregon data centers by the numbers: 111 facilities consume nearly a quarter of the state's power (ECOnorthwest and University of Virginia report, Sep 17 2026) (HTML; comparison point raised by the advisor)",
            "https://www.opb.org/article/2026/09/17/oregon-data-centers-consume-quarter-state-power-report/", filename="opb_oregon_data_centers_2026_09_17.html", tags=["html"], optional=True),
+]
+
+# Sources added 2026-09-26 for the proposal's context items (Sections 3.7 to 3.11 of the proposal): state and federal policy
+# comparisons, the national and international context, Ireland's metered statistics, and the Finnish benchmarks.
+STATIC += [
+    Source("ieefa_pjm_capacity_prices_2025", "context", "IEEFA", "Projected data center growth spurs PJM capacity prices by factor of 10 (Cathy Kunkel, Jul 30 2025) (HTML; bot wall to scripted fetches, read in the browser: 28.92, 269.92 and 329.17 USD/MW-day)",
+           "https://ieefa.org/resources/projected-data-center-growth-spurs-pjm-capacity-prices-factor-10", filename="ieefa_pjm_capacity_prices_2025.html", tags=["html"], optional=True),
+    Source("mn_statute_216b_1622", "context", "Minnesota Revisor of Statutes", "Minnesota Statutes 216B.1622: large-load customer rate and reporting provisions (HTML)",
+           "https://www.revisor.mn.gov/statutes/cite/216B.1622", filename="mn_statute_216B_1622.html", tags=["html"]),
+    Source("or_hb3546_power_act_2025", "context", "Oregon Legislature (OLIS)", "Oregon HB 3546 (2025), the POWER Act: large-load customer class and cost allocation, measure overview (HTML)",
+           "https://olis.oregonlegislature.gov/liz/2025R1/Measures/Overview/HB3546", filename="or_hb3546_2025_overview.html", tags=["html"]),
+    Source("sierra_club_data_center_policies_2026", "context", "Sierra Club", "Data Center State Policies, 2026: fifty-state policy scan (PDF; bot wall to scripted fetches)",
+           "https://www.sierraclub.org/sites/default/files/2026-01/policies-for-data-centers-2026.pdf", filename="sierra_club_data_center_state_policies_2026.pdf", tags=["pdf"], optional=True),
+    Source("epri_dcflex_2025", "context", "EPRI", "DCFlex: Data Center Flexible Load Initiative, programme page (HTML)",
+           "https://msites.epri.com/dcflex", filename="epri_dcflex.html", tags=["html"]),
+    Source("unece_lca_electricity_2022", "context", "UNECE", "Carbon Neutrality in the UNECE Region: Integrated Life-cycle Assessment of Electricity Sources (2022) (PDF; bot wall to scripted fetches; Figure 1 values as reproduced on Manner's slide 19)",
+           "https://unece.org/sites/default/files/2022-04/LCA_3_FINAL%20March%202022.pdf", filename="unece_lca_electricity_sources_2022.pdf", tags=["pdf"], optional=True),
+    Source("lbnl_dc_energy_usage_2024", "context", "Lawrence Berkeley National Laboratory", "2024 United States Data Center Energy Usage Report (Shehabi et al., LBNL-2001637) (PDF)",
+           "https://eta-publications.lbl.gov/sites/default/files/2024-12/lbnl-2024-united-states-data-center-energy-usage-report_1.pdf", filename="lbnl_2024_us_data_center_energy_usage_report.pdf", tags=["pdf"]),
+    Source("lbnl_queued_up_2026", "context", "Lawrence Berkeley National Laboratory", "Queued Up: 2026 Edition, characteristics of power plants seeking transmission interconnection as of the end of 2025 (PDF slides)",
+           "https://eta-publications.lbl.gov/sites/default/files/2026-06/queued_up_2026_edition.pdf", filename="lbnl_queued_up_2026_edition.pdf", tags=["pdf"]),
+    Source("cso_ireland_dc_metered_2024", "context", "Central Statistics Office (Ireland)", "Data Centres Metered Electricity Consumption 2024, statistical release (HTML)",
+           "https://www.cso.ie/en/releasesandpublications/ep/p-dcmec/datacentresmeteredelectricityconsumption2024/", filename="cso_ireland_dc_metered_2024.html", tags=["html"]),
+    Source("cso_ireland_dc_metered_2025_keyfindings", "context", "Central Statistics Office (Ireland)", "Data Centres Metered Electricity Consumption 2025, key findings (HTML)",
+           "https://www.cso.ie/en/releasesandpublications/ep/p-dcmec/datacentresmeteredelectricityconsumption2025/keyfindings/", filename="cso_ireland_dc_metered_2025_keyfindings.html", tags=["html"]),
+    Source("fingrid_dataset_265_page", "finland", "Fingrid", "Fingrid open data, dataset 265: emission factor for electricity consumed in Finland, real-time (metadata page; the data API requires a free key)",
+           "https://data.fingrid.fi/en/datasets/265", filename="fingrid_dataset_265.html", tags=["html"]),
+    Source("fingrid_dataset_266_page", "finland", "Fingrid", "Fingrid open data, dataset 266: emission factor of electricity production in Finland, real-time (metadata page)",
+           "https://data.fingrid.fi/en/datasets/266", filename="fingrid_dataset_266.html", tags=["html"]),
+    Source("fingrid_dataset_268_page", "finland", "Fingrid", "Fingrid open data, dataset 268: total wind production capacity used in Fingrid's wind power forecast (metadata page)",
+           "https://data.fingrid.fi/en/datasets/268", filename="fingrid_dataset_268.html", tags=["html"]),
+    Source("ek_green_investments_dashboard", "finland", "EK", "Green investments in Finland: the phased, municipality-level investment registry behind Manner's slides (HTML page; the dashboard itself is a Power BI embed)",
+           "https://ek.fi/en/green-investments-in-finland/", filename="ek_green_investments_in_finland.html", tags=["html"]),
+    Source("statfin_ehi_13rb_page", "finland", "Statistics Finland", "StatFin table 13rb: price of electricity by type of consumer, monthly 2008M01 to 2026M06 (API metadata; the data pull is recorded separately)",
+           "https://pxdata.stat.fi/PxWeb/api/v1/en/StatFin/ehi/13rb.px", filename="statfin_ehi_13rb_metadata.json", tags=["json"]),
+    Source("statfin_ehk_12su_page", "finland", "Statistics Finland", "StatFin table 12su: supplies and total consumption of electricity, monthly 1992M01 to 2026M06 (API metadata; the data pull is recorded separately)",
+           "https://pxdata.stat.fi/PxWeb/api/v1/en/StatFin/ehk/12su.px", filename="statfin_ehk_12su_metadata.json", tags=["json"]),
+]
+
+STATIC += [
+    Source("ek_green_investments_excel_2026_09", "finland", "EK", "Green investments in Finland: the registry behind the dashboard as an Excel workbook (updated 15.9.2026), every announced project with technology, municipality, phase and capacity",
+           "https://ek.fi/wp-content/uploads/2026/09/Data_dashborad_15_9_2026.xlsx", filename="ek_green_investments_data_dashboard_2026_09_15.xlsx", tags=["xlsx"]),
 ]

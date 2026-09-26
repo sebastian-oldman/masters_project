@@ -235,3 +235,13 @@ The Finnish study that motivated this project presented its grid baseline as fiv
 \label{fig:ws_vre}
 \par\vspace{-2pt}\input{tables/figsrc_fig1_13}
 \end{figure}
+
+\paragraph{The Finnish benchmarks from their sources.} The proposal undertook to replicate Manner's benchmarks from the original public data rather than from his slides. Table~\ref{tab:finland} does so where the sources are open without a key. Statistics Finland's monthly supply table gives Finland's 2025 consumption as 84.5~TWh against 78.9~TWh generated in the country and 5.6~TWh of net imports, with wind at 22.2~TWh and nuclear at 31.3~TWh; over January to June 2026 consumption averaged 10,635~MW and in-country generation 9,761~MW, against the 10,454 and 9,609~MWh per hour on Manner's chart, which runs to early July \citep{statfin2026,manner2026}. Finnish wind produced 10.5~TWh in those six months, a capacity factor of 25.7 percent at the 9,405~MW that his slide gives as installed, against his 24 percent; the CAISO fleet, at 9,994~MW, produced the same 10.5~TWh over the same six months at a capacity factor of 24.2 percent (Figure~\ref{fig:ws_vre}). Statistics Finland's price table puts the total price with taxes for enterprises buying 20,000 to 70,000~MWh a year at 4.73 cents per kWh in 2025 and 6.50 in the first half of 2026, and for the largest class at 4.30 and 6.98, which brackets the 6.23 cents his hourly series averages; the energy component alone was 4.7 cents. The CAISO day-ahead price averaged 3.75 cents per kWh across the three aggregation points in 2025 before any retail charge, so the two systems' wholesale energy costs are of the same order and Finland's advantage is in what is added on top. The CO$_2$ factors are Fingrid's datasets 265 and 266, whose definitions match the consumption and production factors of Figure~\ref{fig:ws_emis}; their data API requires a key, so the 29 and 31~g/kWh stand as Manner reports them, against 162.6 and 116.4 for CAISO in 2026 \citep{fingrid_opendata}. The registry itself is downloadable: the EK workbook of September~15, 2026 lists 9,276~MW of data center projects in the feasibility, planning and investment-decision phases, up from the 7,777~MW Manner read on June~15, and 238~MW that started operation since 2021, against the roughly 285~MW he gives as operating \citep{ek_dashboard}; the September detail is in Table~\ref{tab:ekregistry}.
+
+\begin{table}[H]
+\centering\scriptsize
+\caption{Finnish benchmarks replicated from Statistics Finland, Fingrid's dataset definitions and the EK registry, with the values Manner's slides give where the source needs a key, and the CAISO counterparts from this chapter.}
+\label{tab:finland}
+\resizebox{\textwidth}{!}{\input{tables/ch1_finland_benchmarks}}
+\end{table}
+

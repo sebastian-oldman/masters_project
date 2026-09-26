@@ -49,7 +49,7 @@ clean-parts:               ## remove interrupted downloads
 provenance:                ## appendix tables mapping every figure to its processed files, raw sources and code; manifest rows behind the figures; assumption register
 	$(PY) scripts/make_provenance_appendix.py && $(PY) scripts/make_assumption_register.py
 
-FREEZE=2026-09-22
+FREEZE=2026-09-26
 
 freeze:                    ## freeze the raw data: dated manifest copy and docs/DATA_FREEZE.md
 	$(PY) scripts/freeze_data.py --date $(FREEZE)

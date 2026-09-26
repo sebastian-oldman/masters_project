@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import textwrap
 
-FREEZE_DATE = "2026-09-22"
+FREEZE_DATE = "2026-09-26"
 
 ROWS = {
     1: [
@@ -46,7 +46,7 @@ ROWS = {
         ("fig4_04", "Curtailment-enabled headroom on CAISO hourly demand; hours curtailed; headroom against the cases and the gap", ["ch4_headroom_curve.csv", "ch4_headroom_summary.csv", "ch4_headroom_detail.csv", "ch4_headroom_by_year.csv", "ch4_headroom_vs_gap.csv", "ch4_energy_side.csv", "ciso_hourly_2019_2025_clean.parquet"], ["eia930_balance_2019 .. 2025 (CISO adjusted demand)", "duke_rethinking_load_growth_2025_mirror (method, CAISO values)", "caiso_oasis dam_lmp", "caiso_curtailments_monthly_csv"], "ch4_gap.headroom, headroom_by_year; run_chapter4 step 6"),
         ("fig4_05", "ERCOT tracked requests by month, approvals and observed load, queue by status at each snapshot", ["ch4_ercot_queue_monthly.csv", "ch4_ercot_approvals_monthly.csv", "ch4_ercot_status_snapshots.csv", "ch4_ercot_narrative.csv", "ch4_ercot_transition_rates.csv"], ["ercot_board_2025_12_system_planning", "ercot_tac_2026_03_large_load_status", "ercot_monthly_2025_07 .. 2026_06", "ercot_house_hearing_2026_04_09", "ercot_board_2026_05_interconnection_update", "ercot_ops_overview_2026_04 .. 2026_08"], "ch4_gap.ercot_series, ercot_transition_rates; run_chapter4 steps 2 and 7"),
         ("fig4_06", "CAISO hourly intensity 2025 and emissions of a flat, curtailed or shifted 1 MW load", ["ch4_emissions_flat_vs_flexible.csv", "caiso_co2_intensity_hourly.parquet"], ["caiso_outlook co2 and demand daily files"], "ch4_gap.flat_vs_flexible_emissions; run_chapter4 step 8"),
-        ("fig4_07", "Scored crosswalk of the six regimes (0-3 per criterion)", ["ch4_regime_scores.csv", "ch4_regime_rubric.csv", "ch4_regime_crosswalk.csv"], ["the regime sources of Table ch4_crosswalk (CEC, ERCOT, PJM, EIA, Texas SB 6, FERC RM26-4 filings)"], "ch4_regimes.regime_scores, crosswalk_matrix; run_chapter4 step 7"),
+        ("fig4_07", "Scored crosswalk of the seven regimes (0-3 per criterion)", ["ch4_regime_scores.csv", "ch4_regime_rubric.csv", "ch4_regime_crosswalk.csv"], ["the regime sources of Table ch4_crosswalk (EK, CEC, ERCOT, PJM, EIA, Texas SB 6, FERC RM26-4 filings)"], "ch4_regimes.regime_scores, crosswalk_matrix; run_chapter4 step 7"),
         ("fig4_08", "Data centers as a share of California's electricity: history (EPRI 2023, CEC ~1,000 MW converted), CED 2025 Planning and Local Reliability trajectories with the existing range, and the 2030 upper bounds", ["ch4_dc_share_trajectory.csv", "ch1_dc_load_estimates.csv", "ch4_ced2025_data_center_energy.csv", "ch4_ced2025_scenarios.csv", "ch4_demand_cases_2030.csv"], ["epri_powering_intelligence_2024", "cec_dc_methodology_memo_2026", "eia861_2019 .. 2024", "cec_tn268727", "cec_tn268725", "cec_tn268824", "cec_tn268124", "cec_assembly_hearing_2026_01_28"], "run_chapter4 step 9"),
     ],
 }
@@ -78,7 +78,7 @@ def stamp(fig, fig_name: str, fontsize: float = 5.8) -> None:
 
 # ---------------------------------------------------------------- resolving the raw-source labels of ROWS to manifest ids
 _CED_FORMS = ["cec_tn268722", "cec_tn268725", "cec_tn268726", "cec_tn268727"]
-_REGIME_SOURCES = ["cec_dc_methodology_memo_2026", "cec_tn272026", "cec_assembly_hearing_2026_01_28", "cec_tn268459", "ercot_tac_2026_03_large_load_status", "ercot_monthly_2025_11",
+_REGIME_SOURCES = ["ek_green_investments_dashboard", "cec_dc_methodology_memo_2026", "cec_tn272026", "cec_assembly_hearing_2026_01_28", "cec_tn268459", "ercot_tac_2026_03_large_load_status", "ercot_monthly_2025_11",
                    "ercot_ops_overview_2026_06", "ercot_house_hearing_2026_04_09", "ercot_nprr1267_status_report_proposal", "pjm_lar_summary_2025_11_24", "pjm_2026_load_forecast_report",
                    "pjm_2026_load_report_tables", "eia_press585_dc_pilot_surveys", "texas_sb6_2025_enrolled", "caiso_comments_ferc_rm26_4_2025_11", "nerc_rm26_4_accelerated_plan_2026_03",
                    "ferc_news_2026_04_16_large_load", "ferc_news_2026_06_18_show_cause"]
@@ -102,7 +102,7 @@ RAW_LABEL_IDS = {
     "as fig4_02": ["@fig4_02"], "ERCOT decks and monthlies (see fig4_05)": ["@fig4_05"],
     "ercot_monthly_2025_07 .. 2026_06": [r"^ercot_monthly_(2025_(0[7-9]|1[0-2])|2026_0[1-6])$"], "ercot_ops_overview_2026_04 .. 2026_08": [r"^ercot_ops_overview_2026_0[4-8]$"],
     "duke_rethinking_load_growth_2025_mirror (method, CAISO values)": ["duke_rethinking_load_growth_2025_mirror"],
-    "the regime sources of Table ch4_crosswalk (CEC, ERCOT, PJM, EIA, Texas SB 6, FERC RM26-4 filings)": _REGIME_SOURCES,
+    "the regime sources of Table ch4_crosswalk (EK, CEC, ERCOT, PJM, EIA, Texas SB 6, FERC RM26-4 filings)": _REGIME_SOURCES,
 }
 
 

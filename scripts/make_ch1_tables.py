@@ -108,6 +108,15 @@ def main() -> int:
     rows = [f"{esc(r.technology.capitalize())} & {r.ba_nameplate_mw:,.0f} & {int(r.ba_units):,} & {r.california_nameplate_mw:,.0f} & {int(r.california_units):,} \\\\" for r in inst.itertuples()]
     write("ch1_installed_wind_solar", "\n".join([
         r"\begin{tabular}{lrrrr}", r"\toprule", r"Technology & \multicolumn{2}{c}{CAISO balancing authority} & \multicolumn{2}{c}{State of California} \\", r" & nameplate (MW) & units & nameplate (MW) & units \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"]))
+
+    # Finnish benchmarks replicated from official sources against the CAISO counterparts
+    fb = pd.read_csv(PROCESSED / "ch1_finland_benchmarks.csv")
+    def fv(v, u):
+        if pd.isna(v): return "--"
+        return f"{v:,.0f}" if u == "MW" else (f"{v:,.1f}" if u in ("TWh", "%", "g/kWh") else f"{v:,.2f}")
+    rows = [f"{esc(r.benchmark)} & {fv(r.value, r.unit)} & {fv(r.caiso_value, r.unit)} & {esc(r.unit)} & {esc(r.basis)} & {esc(r.caiso_basis)} \\\\" for r in fb.itertuples()]
+    write("ch1_finland_benchmarks", "\n".join([
+        r"\begin{tabular}{p{4.6cm}rrlp{5.2cm}p{4.0cm}}", r"\toprule", r"Benchmark & Finland & CAISO & Unit & Finnish source and basis & CAISO counterpart \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"]))
     return 0
 
 

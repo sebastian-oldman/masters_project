@@ -243,6 +243,8 @@ def main() -> int:
 
     # ------------------------------------------------------------ 7. RQ3: regimes crosswalk and the ERCOT queue figure
     print("7. Regime crosswalk, taxonomy, headline numbers, ERCOT queue figure")
+    ek = rg.ek_registry_summary(); ek.to_csv(PROCESSED / "ch4_ek_registry.csv", index=False)
+    print("   EK registry (Sep 15 2026): " + "; ".join(f"{r.phase.split(':')[0]} {r.mw:,.0f} MW ({r.projects})" for r in ek.itertuples()))
     cw = rg.crosswalk_matrix(); cw.to_csv(PROCESSED / "ch4_regime_crosswalk.csv", index=False)
     tax = rg.common_taxonomy(); tax.to_csv(PROCESSED / "ch4_common_taxonomy.csv", index=False)
     sz = rg.sce_size_classes(); sz.to_csv(PROCESSED / "ch4_sce_size_classes.csv", index=False)
@@ -258,7 +260,7 @@ def main() -> int:
         for j in range(M.shape[1]):
             ax.text(j, i, str(int(M.values[i, j])), ha="center", va="center", fontsize=9, color="white" if M.values[i, j] >= 2 else "black")
     cb = fig.colorbar(im, ax=ax, ticks=[0, 1, 2, 3], fraction=0.03); cb.set_label("score (0 none to 3 strongest)", fontsize=8)
-    ax.set_title("Scored crosswalk of six large-load data and measurement regimes (rubric in the table note)", fontsize=9)
+    ax.set_title("Scored crosswalk of seven large-load data and measurement regimes (rubric in the table note)", fontsize=9)
     save(fig, "fig4_07_regime_scores")
     fig, axes = plt.subplots(1, 3, figsize=(16.5, 5.0), gridspec_kw={"width_ratios": [1.25, 0.95, 1.3]})
     ax = axes[0]
